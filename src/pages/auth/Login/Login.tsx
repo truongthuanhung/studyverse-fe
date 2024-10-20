@@ -8,8 +8,30 @@ import { loginService } from '@/services/user.services';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { isValidEmail } from '@/utils/validations';
+import { GoogleIcon } from '@/assets/icons';
 
 function Login() {
+  const getGoogleAuthURL = () => {
+    const { VITE_GOOGLE_CLIENT_ID, VITE_GOOGLE_REDIRECT_URI } = import.meta.env;
+    const url = 'https://accounts.google.com/o/oauth2/v2/auth';
+    const query = {
+      client_id: VITE_GOOGLE_CLIENT_ID,
+      redirect_uri: VITE_GOOGLE_REDIRECT_URI,
+      response_type: 'code',
+      scope: [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email'
+      ].join(' '),
+      prompt: 'consent',
+      access_type: 'offline'
+    };
+    console.log(query);
+    const queryString = new URLSearchParams(query).toString();
+    return `${url}?${queryString}`;
+  };
+
+  const oauthURL = getGoogleAuthURL();
+
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
 
@@ -75,7 +97,7 @@ function Login() {
       </div>
       <div className='bg-white w-[354px] md:w-[500px] py-[16px] px-[16px] md:px-[20px] rounded-[12px] mx-auto'>
         <h1 className='text-[24px] font-bold'>Account Login</h1>
-        <p className='mt-[10px] text-[#8692A6] text-[14px]'>
+        <p className='mt-[10px] text-slate-500 text-[14px]'>
           If you are already a member you can login with your email address and password.
         </p>
         <div className='grid w-full items-center gap-[8px] mt-[16px]'>
@@ -92,13 +114,22 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <Button className='w-full mt-[16px] bg-sky-500 hover:bg-sky-600' onClick={onSubmitLogin}>
-          Login
-        </Button>
         <Link to='/forgot-password' className='block mt-[16px] text-[14px] text-sky-500 text-right cursor-pointer'>
           Forgotten password?
         </Link>
-        <p className='mt-[4px] text-[#8692A6] text-[14px] text-center'>
+        <Button className='w-full mt-[16px] bg-sky-500 hover:bg-sky-600' onClick={onSubmitLogin}>
+          Login
+        </Button>
+        <div className='mt-[16px] px-[4px] flex justify-between gap-[4px] items-center'>
+          <div className='flex-1 h-[1px] bg-black opacity-15'></div>
+          <p className='inline-block px-[4px] text-slate-500'>or</p>
+          <div className='flex-1 h-[1px] bg-black opacity-15'></div>
+        </div>
+        <Button className='w-full mt-[16px]' variant={'outline'}>
+          <GoogleIcon></GoogleIcon>
+          <Link to={oauthURL}>Continue with Google</Link>
+        </Button>
+        <p className='mt-[16px] text-slate-500 text-[14px] text-center'>
           Don't have an account?{' '}
           <Link to='/register' className='text-sky-500'>
             Sign up here
