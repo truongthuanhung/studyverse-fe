@@ -1,10 +1,10 @@
 import {
   IForgotPasswordBody,
   ILoginBody,
+  ILogoutBody,
   IRefreshTokenBody,
   IRegisterBody,
   IResetPasswordBody,
-  IUser,
   IVerifyEmailBody,
   IVerifyForgotPasswordBody
 } from '@/types/user';
@@ -21,7 +21,7 @@ export const registerService = (payload: IRegisterBody) => {
 };
 
 export const getMeService = () => {
-  return http.get<IUser>(`${baseUrl}/me`);
+  return http.get(`${baseUrl}/me`);
 };
 
 export const refreshToken = (payload: IRefreshTokenBody) => {
@@ -42,4 +42,8 @@ export const verifyForgotPassword = (payload: IVerifyForgotPasswordBody) => {
 
 export const resetPassword = (payload: IResetPasswordBody) => {
   return http.post(`${baseUrl}/reset-password`, payload);
+};
+
+export const logout = (payload: ILogoutBody) => {
+  return http.post(`${baseUrl}/logout`, payload);
 };

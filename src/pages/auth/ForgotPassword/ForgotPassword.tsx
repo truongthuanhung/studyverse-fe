@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import Logo from '@/assets/logo.png';
+import Logo from '@/assets/images/logo.png';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '@/services/user.services';

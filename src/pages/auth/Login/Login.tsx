@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import Logo from '@/assets/logo.png';
+import Logo from '@/assets/images/logo.png';
 import { useState } from 'react';
 import { loginService } from '@/services/user.services';
 import { useToast } from '@/hooks/use-toast';
@@ -25,7 +25,6 @@ function Login() {
       prompt: 'consent',
       access_type: 'offline'
     };
-    console.log(query);
     const queryString = new URLSearchParams(query).toString();
     return `${url}?${queryString}`;
   };

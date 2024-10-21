@@ -11,7 +11,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Link, useNavigate } from 'react-router-dom';
-import Logo from '@/assets/logo.png';
+import Logo from '@/assets/images/logo.png';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { isValidEmail, toISO8601 } from '@/utils/validations';

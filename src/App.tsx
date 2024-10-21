@@ -5,6 +5,7 @@ import PublicRoutes from './layouts/PublicRoutes';
 import { Login, Register, ForgotPassword, ResetPassword, VerifyAccount, OAuth } from './pages/auth';
 import PrivateRoutes from './layouts/PrivateRoutes';
 import Home from './pages/Home/Home';
+import MainLayout from './layouts/MainLayout';
 
 function App() {
   return (
@@ -19,8 +20,10 @@ function App() {
             <Route path='/verify-account' element={<VerifyAccount />}></Route>
             <Route path='/oauth' element={<OAuth />}></Route>
           </Route>
-          <Route element={<PrivateRoutes />}>
-            <Route path='/' element={<Home />} />
+          <Route element={<MainLayout />}>
+            <Route element={<PrivateRoutes />}>
+              <Route path='/' element={<Home />} />
+            </Route>
           </Route>
         </Routes>
         <Toaster />
