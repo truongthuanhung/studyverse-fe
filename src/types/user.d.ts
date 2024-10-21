@@ -54,3 +54,7 @@ export interface IResetPasswordBody {
   password: string;
   confirm_password: string;
 }
+
+export interface ILogoutBody {
+  refresh_token: string;
+}
