@@ -86,7 +86,7 @@ function Header() {
           />
         </div>
         {!isActive && (
-          <div className='flex items-center lg:gap-[4px] justify-between'>
+          <div className='flex grow md:grow-0 items-center lg:gap-[4px] justify-between'>
             <div
               onClick={handleClick}
               className='lg:hidden w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
