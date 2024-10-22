@@ -70,7 +70,7 @@ function Header() {
     getMe();
   }, []);
   return (
-    <div className='fixed top-0 left-0 right-0 h-[80px]'>
+    <div className='fixed top-0 left-0 right-0 h-[60px] border-b'>
       <div className='bg-white lg:w-[1128px] w-full h-full lg:px-0 px-[24px] mx-auto flex items-center justify-between'>
         <div className={`flex items-center gap-[16px] h-full ${isActive ? 'w-full' : 'w-auto'}`}>
           <img src={MainLogo} alt='' className='block h-full' />
