@@ -232,3 +232,62 @@ export const SidebarBookIcon = () => (
     />
   </svg>
 );
+
+export const CalendarIcon = () => (
+  <svg width='24' height='24' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    <rect x='4' y='8' width='24' height='20' rx='2' stroke='#33363F' stroke-width='2' />
+    <path
+      d='M4 12C4 10.1144 4 9.17157 4.58579 8.58579C5.17157 8 6.11438 8 8 8H24C25.8856 8 26.8284 8 27.4142 8.58579C28 9.17157 28 10.1144 28 12V13.3333H4V12Z'
+      fill='#33363F'
+    />
+    <path d='M9.33325 4L9.33325 8' stroke='#33363F' stroke-width='2' stroke-linecap='round' />
+    <path d='M22.6667 4L22.6667 8' stroke='#33363F' stroke-width='2' stroke-linecap='round' />
+    <rect x='9.33325' y='16' width='5.33333' height='2.66667' rx='0.5' fill='#33363F' />
+    <rect x='9.33325' y='21.3335' width='5.33333' height='2.66667' rx='0.5' fill='#33363F' />
+    <rect x='17.3333' y='16' width='5.33333' height='2.66667' rx='0.5' fill='#33363F' />
+    <rect x='17.3333' y='21.3335' width='5.33333' height='2.66667' rx='0.5' fill='#33363F' />
+  </svg>
+);
+
+export const ViewIcon = () => (
+  <svg width='24' height='24' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    <path
+      fill-rule='evenodd'
+      clip-rule='evenodd'
+      d='M26.5237 15C26.5237 14.6489 26.3315 14.4088 25.9469 13.9287C24.2871 11.8562 20.2352 7.5 15.5 7.5C10.7648 7.5 6.71294 11.8562 5.05313 13.9287C4.66859 14.4088 4.47632 14.6489 4.47632 15C4.47632 15.3511 4.66859 15.5912 5.05313 16.0713C6.71293 18.1438 10.7648 22.5 15.5 22.5C20.2352 22.5 24.2871 18.1438 25.9469 16.0713C26.3315 15.5912 26.5237 15.3511 26.5237 15ZM15.5 18.75C17.5711 18.75 19.25 17.0711 19.25 15C19.25 12.9289 17.5711 11.25 15.5 11.25C13.429 11.25 11.75 12.9289 11.75 15C11.75 17.0711 13.429 18.75 15.5 18.75Z'
+      fill='#33363F'
+    />
+  </svg>
+);
+
+export const PeopleAddIcon = () => (
+  <svg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    <g clip-path='url(#clip0_99_1916)'>
+      <path
+        d='M13 8C13 5.79 11.21 4 9 4C6.79 4 5 5.79 5 8C5 10.21 6.79 12 9 12C11.21 12 13 10.21 13 8ZM15 10V12H18V15H20V12H23V10H20V7H18V10H15ZM1 18V20H17V18C17 15.34 11.67 14 9 14C6.33 14 1 15.34 1 18Z'
+        fill='black'
+      />
+    </g>
+    <defs>
+      <clipPath id='clip0_99_1916'>
+        <rect width='24' height='24' fill='white' />
+      </clipPath>
+    </defs>
+  </svg>
+);
+
+export const ContactIcon = () => (
+  <svg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    <g clip-path='url(#clip0_99_1907)'>
+      <path
+        d='M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM12 10C13.1 10 14 10.9 14 12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12C10 10.9 10.9 10 12 10ZM16 18H8V17.43C8 16.62 8.48 15.9 9.22 15.58C10.07 15.21 11.01 15 12 15C12.99 15 13.93 15.21 14.78 15.58C15.52 15.9 16 16.62 16 17.43V18Z'
+        fill='black'
+      />
+    </g>
+    <defs>
+      <clipPath id='clip0_99_1907'>
+        <rect width='24' height='24' fill='white' />
+      </clipPath>
+    </defs>
+  </svg>
+);
