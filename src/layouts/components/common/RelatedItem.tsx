@@ -15,9 +15,9 @@ const RelatedItem: React.FC<RelatedItemProps> = ({ name, image }) => {
       <div className='flex flex-col justify-between flex-1'>
         <p className='font-semibold text-[14px] break-all cursor-pointer'>{name}</p>
         <p className='text-zinc-500 font-medium text-[14px]'>@student</p>
-        <div className='flex justify-between text-[14px] text-sky-500'>
-          <p className='cursor-pointer'>+ Add friend</p>
-          <p className='cursor-pointer'>+ Follow</p>
+        <div className='flex justify-between text-[14px]'>
+          <p className='cursor-pointer text-sky-500 hover:text-sky-600'>+ Add friend</p>
+          <p className='cursor-pointer text-sky-500 hover:text-sky-600'>+ Follow</p>
         </div>
       </div>
     </div>
