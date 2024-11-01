@@ -3,19 +3,21 @@ import { CalendarIcon, PeopleIcon, SidebarBookIcon, ViewIcon } from '@/assets/ic
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MainLogo from '@/assets/images/mainLogo.jpeg';
 import { GroupItem } from './common';
+import { useProfile } from '@/contexts/ProfileContext';
 
 function LeftSidebar() {
+  const profile = useProfile();
   return (
     <ScrollArea className='h-[calc(100vh-60px)] border-r hidden lg:block'>
-      <div className='w-[260px] px-[16px] py-[24px]'>
+      <div className='lg:w-[300px] md:w-[260px] px-[16px] py-[24px]'>
         <div className='flex items-center gap-[12px]'>
           <Avatar className='w-[50px] h-[50px]'>
             <AvatarImage src='https://github.com/shadcn.png' />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
           <div className='flex flex-col justify-between'>
-            <p className='font-semibold text-[14px]'>Hung Truong</p>
-            <p className='text-zinc-500 font-medium text-[14px]'>@student</p>
+            <p className='font-semibold text-[14px]'>{profile?.user?.name || ''}</p>
+            <p className='text-zinc-500 font-medium text-[14px]'>{`@${profile?.user?.role}`}</p>
           </div>
         </div>
         <div className='mt-[16px] flex gap-[24px] py-[8px] items-center font-bold'>

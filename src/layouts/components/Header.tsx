@@ -26,7 +26,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMeService, logout } from '@/services/user.services';
-import { useUser } from '@/contexts/UserContext';
+import { useProfile } from '@/contexts/ProfileContext';
 function Header() {
   const [isActive, setIsActive] = useState(false);
 
@@ -40,13 +40,14 @@ function Header() {
     setIsActive(false);
   };
   const navigate = useNavigate();
-  const user = useUser();
+
+  const profile = useProfile();
   const onLogout = async () => {
     try {
       await logout({ refresh_token: localStorage.getItem('refresh_token') as string });
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      user?.setUser(null);
+      localStorage.removeItem('user');
       navigate('/login');
     } catch (error) {
       console.error(error);
@@ -62,7 +63,8 @@ function Header() {
     const getMe = async () => {
       try {
         const response = await getMeService();
-        user?.setUser(response?.data.result);
+        localStorage.setItem('user', JSON.stringify(response?.data.result));
+        profile?.setUser(response?.data.result);
       } catch (error) {
         console.error(error);
       }
@@ -70,8 +72,8 @@ function Header() {
     getMe();
   }, []);
   return (
-    <div className='fixed top-0 left-0 right-0 h-[60px] border-b'>
-      <div className='bg-white lg:w-[1128px] w-full h-full lg:px-0 px-[24px] mx-auto flex items-center justify-between'>
+    <div className='fixed top-0 left-0 right-0 h-[60px] border-b bg-white z-50'>
+      <div className='lg:w-[1128px] w-full h-full lg:px-0 px-[24px] mx-auto flex items-center justify-between'>
         <div className={`flex items-center gap-[16px] h-full ${isActive ? 'w-full' : 'w-auto'}`}>
           <img src={MainLogo} alt='' className='block h-full' />
           <Input
@@ -94,7 +96,12 @@ function Header() {
               <SearchIcon />
               <p className='hidden md:block text-[12px] font-medium'>Search</p>
             </div>
-            <div className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'>
+            <div
+              onClick={() => {
+                navigate('/');
+              }}
+              className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
+            >
               <HomeIcon />
               <p className='hidden md:block text-[12px] font-medium'>Home</p>
             </div>
@@ -106,7 +113,12 @@ function Header() {
               <BookIcon />
               <p className='hidden md:block text-[12px] font-medium'>Study groups</p>
             </div>
-            <div className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'>
+            <div
+              onClick={() => {
+                navigate('/conversations');
+              }}
+              className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
+            >
               <MessageIcon />
               <p className='hidden md:block text-[12px] font-medium'>Messages</p>
             </div>
@@ -128,7 +140,7 @@ function Header() {
                       <AvatarImage src='https://github.com/shadcn.png' />
                       <AvatarFallback>CN</AvatarFallback>
                     </Avatar>
-                    {user?.user?.name}
+                    {profile?.user?.name || ''}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
