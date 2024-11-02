@@ -1,8 +1,10 @@
+import { Post } from '@/components';
+
 function Home() {
   return (
-    <>
-      <h1 className='text-3xl font-bold underline'>Home page</h1>
-    </>
+    <div className='py-[24px] bg-[#f0f9ff] min-h-[calc(100vh-60px)]'>
+      <Post image='https://github.com/shadcn.png' name='abc' />
+    </div>
   );
 }
 

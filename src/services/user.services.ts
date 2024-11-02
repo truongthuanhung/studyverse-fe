@@ -47,3 +47,11 @@ export const resetPassword = (payload: IResetPasswordBody) => {
 export const logout = (payload: ILogoutBody) => {
   return http.post(`${baseUrl}/logout`, payload);
 };
+
+export const getConversations = () => {
+  return http.get(`/conversations`);
+};
+
+export const getConversationMessages = (conversationId: string) => {
+  return http.get(`/conversations/${conversationId}/messages`);
+};

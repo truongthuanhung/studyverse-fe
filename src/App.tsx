@@ -6,6 +6,8 @@ import { Login, Register, ForgotPassword, ResetPassword, VerifyAccount, OAuth } 
 import PrivateRoutes from './layouts/PrivateRoutes';
 import Home from './pages/Home/Home';
 import MainLayout from './layouts/MainLayout';
+import { Conversation } from './pages';
+import SubLayout from './layouts/SubLayout';
 
 function App() {
   return (
@@ -23,6 +25,12 @@ function App() {
           <Route element={<MainLayout />}>
             <Route element={<PrivateRoutes />}>
               <Route path='/' element={<Home />} />
+            </Route>
+          </Route>
+          <Route element={<SubLayout />}>
+            <Route element={<PrivateRoutes />}>
+              <Route path='/conversations/:conversationId' element={<Conversation />} />
+              <Route path='/conversations' element={<Conversation />} />
             </Route>
           </Route>
         </Routes>
