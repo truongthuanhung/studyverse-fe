@@ -130,14 +130,14 @@ function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar>
-                    <AvatarImage src='https://github.com/shadcn.png' />
+                    <AvatarImage src={profile?.user?.avatar || 'https://github.com/shadcn.png'} />
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className='w-56'>
                   <DropdownMenuLabel className='flex gap-[8px] items-center'>
                     <Avatar className='h-[32px] w-[32px]'>
-                      <AvatarImage src='https://github.com/shadcn.png' />
+                      <AvatarImage src={profile?.user?.avatar || 'https://github.com/shadcn.png'} />
                       <AvatarFallback>CN</AvatarFallback>
                     </Avatar>
                     {profile?.user?.name || ''}

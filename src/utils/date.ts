@@ -32,3 +32,13 @@ export const formatDate = (isoString: string) => {
     return `${date.getDate()}/${date.getMonth() + 1}`;
   }
 };
+
+export const formatDateMessage = (date: string | Date): string => {
+  return new Date(date).toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+};

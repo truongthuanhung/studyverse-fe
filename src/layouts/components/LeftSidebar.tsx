@@ -12,7 +12,7 @@ function LeftSidebar() {
       <div className='lg:w-[300px] md:w-[260px] px-[16px] py-[24px]'>
         <div className='flex items-center gap-[12px]'>
           <Avatar className='w-[50px] h-[50px]'>
-            <AvatarImage src='https://github.com/shadcn.png' />
+            <AvatarImage src={profile?.user?.avatar || 'https://github.com/shadcn.png'} />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
           <div className='flex flex-col justify-between'>

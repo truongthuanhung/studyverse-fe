@@ -51,3 +51,7 @@ export const logout = (payload: ILogoutBody) => {
 export const getConversations = () => {
   return http.get(`/conversations`);
 };
+
+export const getConversationMessages = (conversationId: string) => {
+  return http.get(`/conversations/${conversationId}/messages`);
+};
