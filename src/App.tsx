@@ -8,6 +8,7 @@ import Home from './pages/Home/Home';
 import MainLayout from './layouts/MainLayout';
 import { Conversation } from './pages';
 import SubLayout from './layouts/SubLayout';
+import MyProfile from './pages/Profile/MyProfile';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route element={<MainLayout />}>
             <Route element={<PrivateRoutes />}>
               <Route path='/' element={<Home />} />
+              <Route path='/me' element={<MyProfile />} />
             </Route>
           </Route>
           <Route element={<SubLayout />}>

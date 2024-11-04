@@ -27,8 +27,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMeService, logout } from '@/services/user.services';
 import { useProfile } from '@/contexts/ProfileContext';
+import socket from '@/services/socket';
+import { getUnreadConverationsCount } from '@/services/conversations.services';
 function Header() {
-  const [isActive, setIsActive] = useState(false);
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const [unread, setUnread] = useState<number>(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -54,23 +57,56 @@ function Header() {
     }
   };
 
+  const fetchUnread = async () => {
+    try {
+      const response = await getUnreadConverationsCount();
+      setUnread(response.data.result);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const fetchMe = async () => {
+    try {
+      const response = await getMeService();
+      localStorage.setItem('user', JSON.stringify(response?.data.result));
+      profile?.setUser(response?.data.result);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     if (isActive && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isActive]);
   useEffect(() => {
-    const getMe = async () => {
-      try {
-        const response = await getMeService();
-        localStorage.setItem('user', JSON.stringify(response?.data.result));
-        profile?.setUser(response?.data.result);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    getMe();
+    fetchMe();
+    fetchUnread();
   }, []);
+
+  useEffect(() => {
+    socket.auth = {
+      _id: profile?.user?._id
+    };
+    socket.connect();
+
+    socket.on('mark_as_read', async () => {
+      await fetchUnread();
+    });
+
+    socket.on('get_new_message', async () => {
+      await fetchUnread();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {}, []);
+
   return (
     <div className='fixed top-0 left-0 right-0 h-[60px] border-b bg-white z-50'>
       <div className='lg:w-[1128px] w-full h-full lg:px-0 px-[24px] mx-auto flex items-center justify-between'>
@@ -117,10 +153,15 @@ function Header() {
               onClick={() => {
                 navigate('/conversations');
               }}
-              className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
+              className='relative w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
             >
               <MessageIcon />
               <p className='hidden md:block text-[12px] font-medium'>Messages</p>
+              {unread > 0 && (
+                <span className='absolute -top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
+                  {unread > 99 ? 99 : unread}
+                </span>
+              )}
             </div>
             <div className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'>
               <NotificationIcon />
@@ -144,7 +185,12 @@ function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem className='gap-[8px] cursor-pointer'>
+                    <DropdownMenuItem
+                      className='gap-[8px] cursor-pointer'
+                      onClick={() => {
+                        navigate('/me');
+                      }}
+                    >
                       <ProfileIcon />
                       My profile
                     </DropdownMenuItem>
