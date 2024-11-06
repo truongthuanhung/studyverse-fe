@@ -15,6 +15,7 @@ function RightSidebar() {
     try {
       const response = await getUsers();
       setUsers(response?.data?.result || []);
+      console.log(response.data.result);
     } catch (err) {
       console.log(err);
     }
@@ -65,16 +66,17 @@ function RightSidebar() {
           )}
           {isActive && <Input type='text' id='search' className='w-full' ref={inputRef} onBlur={handleBlur} />}
         </div>
-        {users.map((user: any, index) => (
-          <Link to={user.conversation_id ? `conversations/${user.conversation_id}` : 'conversations/new'}>
-            <ContactItem
-              key={index}
-              name={user?.name || ''}
-              image={user?.avatar || 'https://github.com/shadcn.png'}
-              isOnline
-            />
-          </Link>
-        ))}
+        {users.map((user: any, index) =>
+          user.conversation_id ? (
+            <Link key={index} to={`conversations/${user.conversation_id}`}>
+              <ContactItem name={user?.name || ''} image={user?.avatar || 'https://github.com/shadcn.png'} isOnline />
+            </Link>
+          ) : (
+            <Link key={index} to={`conversations/t/${user._id}`}>
+              <ContactItem name={user?.name || ''} image={user?.avatar || 'https://github.com/shadcn.png'} isOnline />
+            </Link>
+          )
+        )}
       </div>
     </ScrollArea>
   );

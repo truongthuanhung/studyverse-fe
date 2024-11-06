@@ -12,3 +12,9 @@ export const getConversationMessages = (conversationId: string) => {
 export const getUnreadConverationsCount = () => {
   return http.get(`${baseUrl}/unread`);
 };
+
+export const checkConversationParticipants = (partner_id: string) => {
+  return http.post(`${baseUrl}/check-conversation-participants`, {
+    partner_id
+  });
+};

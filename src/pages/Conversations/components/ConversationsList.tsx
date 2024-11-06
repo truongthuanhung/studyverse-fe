@@ -6,7 +6,7 @@ import { MenuIcon } from '@/assets/icons';
 import { Input } from '@/components/ui/input';
 
 interface ConversationsListProps {
-  conversationId: string | undefined;
+  conversationId?: string;
   conversations: any[];
 }
 

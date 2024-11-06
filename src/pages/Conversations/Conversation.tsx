@@ -1,16 +1,16 @@
 import { useProfile } from '@/contexts/ProfileContext';
 import { useEffect, useRef, useState } from 'react';
-import socket from '@/services/socket';
 import ConversationsList from './components/ConversationsList';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Message from './components/Message';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getConversationMessages, getConversations } from '@/services/conversations.services';
-import { formatDateMessage } from '@/utils/date';
+import { getHourFromISOString } from '@/utils/date';
 import { Input } from '@/components/ui/input';
 import { SendIcon } from '@/assets/icons';
 import bg from '@/assets/images/bg.png';
+import { useSocket } from '@/contexts/SocketContext';
 
 function Conversation() {
   const profile = useProfile();
@@ -20,6 +20,9 @@ function Conversation() {
   const [text, setText] = useState<string>('');
   const [conversations, setConversations] = useState<any[]>([]);
 
+  const navigate = useNavigate();
+  const { socket } = useSocket();
+
   const fetchMessages = async (conversationId: string) => {
     try {
       const response = await getConversationMessages(conversationId);
@@ -27,6 +30,7 @@ function Conversation() {
       setConversation(response.data.result);
     } catch (err) {
       console.log(err);
+      navigate('/404');
     }
   };
 
@@ -40,42 +44,40 @@ function Conversation() {
   };
 
   const onSubmit = (e: any) => {
-    if (!text) return;
     e.preventDefault();
+    if (!text) return;
     //socket.emit('create_message', conversationId, text);
     socket.emit('send_message', conversationId, text);
     setText('');
   };
-
   useEffect(() => {
-    socket.auth = {
-      _id: profile?.user?._id
-    };
-    socket.connect();
-    socket.on('get_new_message', async (id) => {
-      console.log(id);
-      try {
-        if (conversationId && conversationId === id) {
-          await Promise.all([fetchMessages(conversationId as string), fetchConversations()]);
-        } else {
-          await fetchConversations();
-        }
-      } catch (err) {
-        console.log(err);
+    // Define the event handlers outside the effect to maintain consistent references
+    const handleNewMessage = async (id: string) => {
+      if (conversationId === id) {
+        await fetchMessages(conversationId);
+        await fetchConversations();
+      } else {
+        await fetchConversations();
       }
-    });
-
-    socket.on('mark_as_read', async () => {
-      await fetchConversations();
-    });
-
-    return () => {
-      socket.disconnect();
     };
-  }, [socket, conversationId]);
+
+    const handleMarkAsRead = async () => {
+      await fetchConversations();
+    };
+
+    // Add event listeners
+    socket.on('get_new_message', handleNewMessage);
+    socket.on('mark_as_read', handleMarkAsRead);
+
+    // Cleanup function to remove event listeners
+    return () => {
+      socket.off('get_new_message', handleNewMessage);
+      socket.off('mark_as_read', handleMarkAsRead);
+    };
+  }, [conversationId]); // Add conversationId as dependency
 
   useEffect(() => {
-    if (conversationId) {
+    if (conversationId && conversationId !== 'new') {
       fetchMessages(conversationId);
     } else {
       setConversation(null);
@@ -84,6 +86,7 @@ function Conversation() {
 
   useEffect(() => {
     fetchConversations();
+    console.log('fetch');
   }, []);
 
   useEffect(() => {
@@ -125,7 +128,7 @@ function Conversation() {
                     key={index}
                     isSender={message.isSender || false}
                     content={message.content || ''}
-                    created_at={formatDateMessage(message.created_at)}
+                    created_at={getHourFromISOString(message.created_at)}
                   />
                 ))}
               </div>

@@ -56,3 +56,7 @@ export const updateMe = (payload: IUpdateMeBody) => {
 export const getUsers = () => {
   return http.get(`${baseUrl}`);
 };
+
+export const getUserProfile = (user_id: string) => {
+  return http.get(`${baseUrl}/${user_id}`);
+};

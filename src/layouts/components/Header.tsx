@@ -27,9 +27,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMeService, logout } from '@/services/user.services';
 import { useProfile } from '@/contexts/ProfileContext';
-import socket from '@/services/socket';
 import { getUnreadConverationsCount } from '@/services/conversations.services';
-function Header() {
+import { memo } from 'react';
+import { useSocket } from '@/contexts/SocketContext';
+const Header = memo(() => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const [unread, setUnread] = useState<number>(0);
 
@@ -38,6 +39,9 @@ function Header() {
   const handleClick = () => {
     setIsActive(true);
   };
+  useEffect(() => {
+    console.log('rendder');
+  }, []);
 
   const handleBlur = () => {
     setIsActive(false);
@@ -73,6 +77,10 @@ function Header() {
       profile?.setUser(response?.data.result);
     } catch (error) {
       console.error(error);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      navigate('/login');
     }
   };
 
@@ -81,31 +89,36 @@ function Header() {
       inputRef.current.focus();
     }
   }, [isActive]);
+
   useEffect(() => {
     fetchMe();
+  }, []);
+
+  useEffect(() => {
     fetchUnread();
   }, []);
 
+  const { socket } = useSocket();
   useEffect(() => {
-    socket.auth = {
-      _id: profile?.user?._id
+    const handleMarkAsRead = async () => {
+      await fetchUnread();
     };
-    socket.connect();
 
-    socket.on('mark_as_read', async () => {
+    const handleNewMessage = async (data: any) => {
+      console.log(data);
       await fetchUnread();
-    });
+    };
 
-    socket.on('get_new_message', async () => {
-      await fetchUnread();
-    });
+    // Đăng ký event listeners
+    socket.on('mark_as_read', handleMarkAsRead);
+    socket.on('get_new_message', handleNewMessage);
 
+    // Cleanup function
     return () => {
-      socket.disconnect();
+      socket.off('mark_as_read', handleMarkAsRead);
+      socket.off('get_new_message', handleNewMessage);
     };
   }, []);
-
-  useEffect(() => {}, []);
 
   return (
     <div className='fixed top-0 left-0 right-0 h-[60px] border-b bg-white z-50'>
@@ -220,6 +233,6 @@ function Header() {
       </div>
     </div>
   );
-}
+});
 
 export default Header;
