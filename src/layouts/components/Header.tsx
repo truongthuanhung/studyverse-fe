@@ -27,14 +27,21 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMeService, logout } from '@/services/user.services';
 import { useProfile } from '@/contexts/ProfileContext';
-function Header() {
-  const [isActive, setIsActive] = useState(false);
+import { getUnreadConverationsCount } from '@/services/conversations.services';
+import { memo } from 'react';
+import { useSocket } from '@/contexts/SocketContext';
+const Header = memo(() => {
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const [unread, setUnread] = useState<number>(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
     setIsActive(true);
   };
+  useEffect(() => {
+    console.log('rendder');
+  }, []);
 
   const handleBlur = () => {
     setIsActive(false);
@@ -54,23 +61,65 @@ function Header() {
     }
   };
 
+  const fetchUnread = async () => {
+    try {
+      const response = await getUnreadConverationsCount();
+      setUnread(response.data.result);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const fetchMe = async () => {
+    try {
+      const response = await getMeService();
+      localStorage.setItem('user', JSON.stringify(response?.data.result));
+      profile?.setUser(response?.data.result);
+    } catch (error) {
+      console.error(error);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      navigate('/login');
+    }
+  };
+
   useEffect(() => {
     if (isActive && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isActive]);
+
   useEffect(() => {
-    const getMe = async () => {
-      try {
-        const response = await getMeService();
-        localStorage.setItem('user', JSON.stringify(response?.data.result));
-        profile?.setUser(response?.data.result);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    getMe();
+    fetchMe();
   }, []);
+
+  useEffect(() => {
+    fetchUnread();
+  }, []);
+
+  const { socket } = useSocket();
+  useEffect(() => {
+    const handleMarkAsRead = async () => {
+      await fetchUnread();
+    };
+
+    const handleNewMessage = async (data: any) => {
+      console.log(data);
+      await fetchUnread();
+    };
+
+    // Đăng ký event listeners
+    socket.on('mark_as_read', handleMarkAsRead);
+    socket.on('get_new_message', handleNewMessage);
+
+    // Cleanup function
+    return () => {
+      socket.off('mark_as_read', handleMarkAsRead);
+      socket.off('get_new_message', handleNewMessage);
+    };
+  }, []);
+
   return (
     <div className='fixed top-0 left-0 right-0 h-[60px] border-b bg-white z-50'>
       <div className='lg:w-[1128px] w-full h-full lg:px-0 px-[24px] mx-auto flex items-center justify-between'>
@@ -117,10 +166,15 @@ function Header() {
               onClick={() => {
                 navigate('/conversations');
               }}
-              className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
+              className='relative w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
             >
               <MessageIcon />
               <p className='hidden md:block text-[12px] font-medium'>Messages</p>
+              {unread > 0 && (
+                <span className='absolute -top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
+                  {unread > 99 ? 99 : unread}
+                </span>
+              )}
             </div>
             <div className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'>
               <NotificationIcon />
@@ -144,7 +198,12 @@ function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem className='gap-[8px] cursor-pointer'>
+                    <DropdownMenuItem
+                      className='gap-[8px] cursor-pointer'
+                      onClick={() => {
+                        navigate('/me');
+                      }}
+                    >
                       <ProfileIcon />
                       My profile
                     </DropdownMenuItem>
@@ -174,6 +233,6 @@ function Header() {
       </div>
     </div>
   );
-}
+});
 
 export default Header;

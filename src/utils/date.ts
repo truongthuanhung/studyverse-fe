@@ -42,3 +42,16 @@ export const formatDateMessage = (date: string | Date): string => {
     hour12: false
   });
 };
+
+export const getHourFromISOString = (isoString: string) => {
+  const date = new Date(isoString);
+
+  // Cộng thêm 7 giờ (7 * 60 * 60 * 1000 milliseconds)
+  const adjustedDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+
+  // Lấy giờ và phút theo định dạng HH:mm
+  const hours = adjustedDate.getUTCHours().toString().padStart(2, '0');
+  const minutes = adjustedDate.getUTCMinutes().toString().padStart(2, '0');
+
+  return `${hours}:${minutes}`;
+};

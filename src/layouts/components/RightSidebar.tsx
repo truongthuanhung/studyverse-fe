@@ -4,9 +4,22 @@ import RelatedItem from './common/RelatedItem';
 import ContactItem from './common/ContactItem';
 import { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { getUsers } from '@/services/user.services';
+import { Link } from 'react-router-dom';
 
 function RightSidebar() {
   const [isActive, setIsActive] = useState(false);
+  const [users, setUsers] = useState([]);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await getUsers();
+      setUsers(response?.data?.result || []);
+      console.log(response.data.result);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -24,8 +37,12 @@ function RightSidebar() {
     }
   }, [isActive]);
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   return (
-    <ScrollArea className='h-[calc(100vh-60px)] border-l hidden md:block'>
+    <ScrollArea className='h-[calc(100vh-60px)] border-l hidden lg:block'>
       <div className='lg:w-[360px] md:w-[280px] px-[16px] py-[16px]'>
         <div className='flex gap-[24px] py-[8px] items-center font-bold'>
           <PeopleAddIcon />
@@ -49,16 +66,17 @@ function RightSidebar() {
           )}
           {isActive && <Input type='text' id='search' className='w-full' ref={inputRef} onBlur={handleBlur} />}
         </div>
-        <ContactItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} isOnline />
-        <ContactItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} isOnline />
-        <ContactItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} isOnline />
-        <ContactItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} isOnline />
-        <ContactItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} isOnline />
-        <ContactItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} isOnline />
-        <ContactItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} isOnline />
-        <ContactItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} isOnline />
-        <ContactItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} isOnline />
-        <ContactItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} isOnline />
+        {users.map((user: any, index) =>
+          user.conversation_id ? (
+            <Link key={index} to={`conversations/${user.conversation_id}`}>
+              <ContactItem name={user?.name || ''} image={user?.avatar || 'https://github.com/shadcn.png'} isOnline />
+            </Link>
+          ) : (
+            <Link key={index} to={`conversations/t/${user._id}`}>
+              <ContactItem name={user?.name || ''} image={user?.avatar || 'https://github.com/shadcn.png'} isOnline />
+            </Link>
+          )
+        )}
       </div>
     </ScrollArea>
   );

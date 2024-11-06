@@ -58,3 +58,13 @@ export interface IResetPasswordBody {
 export interface ILogoutBody {
   refresh_token: string;
 }
+
+export interface IUpdateMeBody {
+  name?: string;
+  bio?: string; //optional
+  location?: string; //optional
+  website?: string; //optional
+  username?: string; //optional
+  avatar?: string; //optional
+  cover_photo?: string; //optional
+}

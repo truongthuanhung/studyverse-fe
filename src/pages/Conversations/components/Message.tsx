@@ -11,7 +11,7 @@ const Message: React.FC<MessageProps> = ({ isSender, content, created_at }) => {
         isSender ? 'ml-auto bg-sky-500 text-white' : 'mr-auto bg-[#f0f0f0]'
       }`}
     >
-      <span>{content}</span>
+      <span className="break-words">{content}</span>
       <span className='text-[12px] text-right'>{created_at}</span>
     </div>
   );

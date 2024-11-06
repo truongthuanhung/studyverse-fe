@@ -1,16 +1,16 @@
 import { useProfile } from '@/contexts/ProfileContext';
 import { useEffect, useRef, useState } from 'react';
-import socket from '@/services/socket';
 import ConversationsList from './components/ConversationsList';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Message from './components/Message';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getConversationMessages } from '@/services/user.services';
-import { formatDateMessage } from '@/utils/date';
+import { getConversationMessages, getConversations } from '@/services/conversations.services';
+import { getHourFromISOString } from '@/utils/date';
 import { Input } from '@/components/ui/input';
 import { SendIcon } from '@/assets/icons';
 import bg from '@/assets/images/bg.png';
+import { useSocket } from '@/contexts/SocketContext';
 
 function Conversation() {
   const profile = useProfile();
@@ -18,6 +18,10 @@ function Conversation() {
   const [conversation, setConversation] = useState<any>(null);
 
   const [text, setText] = useState<string>('');
+  const [conversations, setConversations] = useState<any[]>([]);
+
+  const navigate = useNavigate();
+  const { socket } = useSocket();
 
   const fetchMessages = async (conversationId: string) => {
     try {
@@ -26,50 +30,70 @@ function Conversation() {
       setConversation(response.data.result);
     } catch (err) {
       console.log(err);
+      navigate('/404');
+    }
+  };
+
+  const fetchConversations = async () => {
+    try {
+      const response = await getConversations();
+      setConversations(response.data.result);
+    } catch (err) {
+      console.log(err);
     }
   };
 
   const onSubmit = (e: any) => {
-    if (!text) return;
     e.preventDefault();
-    console.log(text);
-    socket.emit('create_message', conversationId, text);
+    if (!text) return;
+    //socket.emit('create_message', conversationId, text);
+    socket.emit('send_message', conversationId, text);
     setText('');
   };
-
   useEffect(() => {
-    socket.auth = {
-      _id: profile?.user?._id
-    };
-    socket.connect();
-    if (conversationId) {
-      socket.emit('join_conversation', conversationId);
-    }
-    socket.on('get_message', async (data) => {
-      console.log(data);
-      if (conversationId) {
-        try {
-          const response = await getConversationMessages(conversationId as string);
-          console.log(response.data);
-          setConversation(response.data.result);
-        } catch (err) {
-          console.log(err);
-        }
+    // Define the event handlers outside the effect to maintain consistent references
+    const handleNewMessage = async (id: string) => {
+      if (conversationId === id) {
+        await fetchMessages(conversationId);
+        await fetchConversations();
+      } else {
+        await fetchConversations();
       }
-    });
-
-    return () => {
-      socket.disconnect();
     };
-  }, [socket, conversationId]);
+
+    const handleMarkAsRead = async () => {
+      await fetchConversations();
+    };
+
+    // Add event listeners
+    socket.on('get_new_message', handleNewMessage);
+    socket.on('mark_as_read', handleMarkAsRead);
+
+    // Cleanup function to remove event listeners
+    return () => {
+      socket.off('get_new_message', handleNewMessage);
+      socket.off('mark_as_read', handleMarkAsRead);
+    };
+  }, [conversationId]); // Add conversationId as dependency
 
   useEffect(() => {
-    if (conversationId) {
+    if (conversationId && conversationId !== 'new') {
       fetchMessages(conversationId);
     } else {
       setConversation(null);
     }
   }, [conversationId]);
+
+  useEffect(() => {
+    fetchConversations();
+    console.log('fetch');
+  }, []);
+
+  useEffect(() => {
+    if (conversationId) {
+      socket.emit('read_message', conversationId);
+    }
+  }, [conversationId, conversation]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -78,9 +102,10 @@ function Conversation() {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [conversation?.messages]);
+
   return (
     <div className='flex'>
-      <ConversationsList conversationId={conversationId} />
+      <ConversationsList conversationId={conversationId} conversations={conversations} />
       {conversationId && (
         <div className='flex-1'>
           <div className='px-4 flex items-center justify-between border-b'>
@@ -103,7 +128,7 @@ function Conversation() {
                     key={index}
                     isSender={message.isSender || false}
                     content={message.content || ''}
-                    created_at={formatDateMessage(message.created_at)}
+                    created_at={getHourFromISOString(message.created_at)}
                   />
                 ))}
               </div>
@@ -111,7 +136,7 @@ function Conversation() {
             </ScrollArea>
             <form onSubmit={onSubmit}>
               <div className='relative mb-auto'>
-                <Input value={text} onChange={(e) => setText(e.target.value)} />
+                <Input className='pr-10' value={text} onChange={(e) => setText(e.target.value)} />
                 <button
                   type='submit'
                   className={`${text ? 'text-sky-500' : 'text-sky-200'} absolute top-1/2 right-[16px] -translate-y-1/2`}
@@ -124,8 +149,8 @@ function Conversation() {
         </div>
       )}
       {!conversationId && (
-        <div className='flex-1 bg-[#8bacd9]'>
-          <img src={bg} alt='' />
+        <div className='flex-1 bg-[#8bacd9] h-[calc(100vh-60px)]'>
+          <img src={bg} alt='' className='block h-full w-full' />
         </div>
       )}
     </div>

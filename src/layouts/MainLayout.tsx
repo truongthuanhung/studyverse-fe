@@ -2,7 +2,9 @@ import { Outlet } from 'react-router-dom';
 import Header from './components/Header';
 import LeftSidebar from './components/LeftSidebar';
 import RightSidebar from './components/RightSidebar';
-function MainLayout() {
+import { memo } from 'react';
+
+const MainLayout = memo(() => {
   return (
     <>
       <Header />
@@ -15,6 +17,6 @@ function MainLayout() {
       </div>
     </>
   );
-}
+});
 
 export default MainLayout;

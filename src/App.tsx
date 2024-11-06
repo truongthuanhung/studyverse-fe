@@ -8,8 +8,12 @@ import Home from './pages/Home/Home';
 import MainLayout from './layouts/MainLayout';
 import { Conversation } from './pages';
 import SubLayout from './layouts/SubLayout';
+import MyProfile from './pages/Profile/MyProfile';
+import { memo } from 'react';
+import NotFound from './pages/NotFound/NotFound';
+import NewConversation from './pages/Conversations/NewConversation';
 
-function App() {
+const App = memo(() => {
   return (
     <Router>
       <div className='App'>
@@ -25,19 +29,22 @@ function App() {
           <Route element={<MainLayout />}>
             <Route element={<PrivateRoutes />}>
               <Route path='/' element={<Home />} />
+              <Route path='/me' element={<MyProfile />} />
             </Route>
           </Route>
           <Route element={<SubLayout />}>
             <Route element={<PrivateRoutes />}>
+              <Route path='/conversations/t/:userId' element={<NewConversation />} />
               <Route path='/conversations/:conversationId' element={<Conversation />} />
               <Route path='/conversations' element={<Conversation />} />
             </Route>
           </Route>
+          <Route path='*' element={<NotFound />} />
         </Routes>
         <Toaster />
       </div>
     </Router>
   );
-}
+});
 
 export default App;

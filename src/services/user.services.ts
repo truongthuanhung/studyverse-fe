@@ -5,6 +5,7 @@ import {
   IRefreshTokenBody,
   IRegisterBody,
   IResetPasswordBody,
+  IUpdateMeBody,
   IVerifyEmailBody,
   IVerifyForgotPasswordBody
 } from '@/types/user';
@@ -48,10 +49,14 @@ export const logout = (payload: ILogoutBody) => {
   return http.post(`${baseUrl}/logout`, payload);
 };
 
-export const getConversations = () => {
-  return http.get(`/conversations`);
+export const updateMe = (payload: IUpdateMeBody) => {
+  return http.patch(`${baseUrl}/me`, payload);
 };
 
-export const getConversationMessages = (conversationId: string) => {
-  return http.get(`/conversations/${conversationId}/messages`);
+export const getUsers = () => {
+  return http.get(`${baseUrl}`);
+};
+
+export const getUserProfile = (user_id: string) => {
+  return http.get(`${baseUrl}/${user_id}`);
 };
