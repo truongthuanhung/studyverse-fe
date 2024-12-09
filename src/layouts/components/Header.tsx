@@ -158,7 +158,12 @@ const Header = memo(() => {
               <CommunityIcon />
               <p className='hidden md:block  text-[12px] font-medium'>Community</p>
             </div>
-            <div className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'>
+            <div
+              onClick={() => {
+                navigate('/groups');
+              }}
+              className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
+            >
               <BookIcon />
               <p className='hidden md:block text-[12px] font-medium'>Study groups</p>
             </div>

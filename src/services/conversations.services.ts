@@ -5,8 +5,10 @@ export const getConversations = () => {
   return http.get(`${baseUrl}`);
 };
 
-export const getConversationMessages = (conversationId: string) => {
-  return http.get(`${baseUrl}/${conversationId}/messages`);
+export const getConversationMessages = (conversationId: string, limit?: number, page?: number) => {
+  return http.get(`${baseUrl}/${conversationId}/messages`, {
+    params: { limit, page }
+  });
 };
 
 export const getUnreadConverationsCount = () => {
@@ -17,4 +19,8 @@ export const checkConversationParticipants = (partner_id: string) => {
   return http.post(`${baseUrl}/check-conversation-participants`, {
     partner_id
   });
+};
+
+export const getConversationById = (conversationId: string) => {
+  return http.get(`${baseUrl}/${conversationId}`);
 };

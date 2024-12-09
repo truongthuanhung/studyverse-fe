@@ -6,7 +6,7 @@ import { Login, Register, ForgotPassword, ResetPassword, VerifyAccount, OAuth } 
 import PrivateRoutes from './layouts/PrivateRoutes';
 import Home from './pages/Home/Home';
 import MainLayout from './layouts/MainLayout';
-import { Conversation } from './pages';
+import { Conversation, GroupList } from './pages';
 import SubLayout from './layouts/SubLayout';
 import MyProfile from './pages/Profile/MyProfile';
 import { memo } from 'react';
@@ -37,6 +37,7 @@ const App = memo(() => {
               <Route path='/conversations/t/:userId' element={<NewConversation />} />
               <Route path='/conversations/:conversationId' element={<Conversation />} />
               <Route path='/conversations' element={<Conversation />} />
+              <Route path='/groups' element={<GroupList />} />
             </Route>
           </Route>
           <Route path='*' element={<NotFound />} />

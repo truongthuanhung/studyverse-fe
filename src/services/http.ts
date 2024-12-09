@@ -2,7 +2,7 @@ import axios from 'axios';
 import { refreshToken } from './user.services';
 
 const http = axios.create({
-  baseURL: 'http://localhost:3003',
+  baseURL: 'https://studyverse-be.onrender.com',
   headers: {
     'Content-Type': 'application/json'
   }
