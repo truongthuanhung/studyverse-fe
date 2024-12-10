@@ -6,7 +6,16 @@ import { Login, Register, ForgotPassword, ResetPassword, VerifyAccount, OAuth } 
 import PrivateRoutes from './layouts/PrivateRoutes';
 import Home from './pages/Home/Home';
 import MainLayout from './layouts/MainLayout';
-import { Conversation, GroupList } from './pages';
+import {
+  Conversation,
+  GroupAnalytics,
+  GroupDetail,
+  GroupHome,
+  GroupList,
+  GroupMember,
+  GroupRequest,
+  GroupSettings
+} from './pages';
 import SubLayout from './layouts/SubLayout';
 import MyProfile from './pages/Profile/MyProfile';
 import { memo } from 'react';
@@ -37,6 +46,13 @@ const App = memo(() => {
               <Route path='/conversations/t/:userId' element={<NewConversation />} />
               <Route path='/conversations/:conversationId' element={<Conversation />} />
               <Route path='/conversations' element={<Conversation />} />
+              <Route path='/groups/:groupId/:slug' element={<GroupDetail />}>
+                <Route path='home' element={<GroupHome />} />
+                <Route path='requests' element={<GroupRequest />} />
+                <Route path='member' element={<GroupMember />} />
+                <Route path='analytics' element={<GroupAnalytics />} />
+                <Route path='settings' element={<GroupSettings />} />
+              </Route>
               <Route path='/groups' element={<GroupList />} />
             </Route>
           </Route>
