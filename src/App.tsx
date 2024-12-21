@@ -46,7 +46,7 @@ const App = memo(() => {
               <Route path='/conversations/t/:userId' element={<NewConversation />} />
               <Route path='/conversations/:conversationId' element={<Conversation />} />
               <Route path='/conversations' element={<Conversation />} />
-              <Route path='/groups/:groupId/:slug' element={<GroupDetail />}>
+              <Route path='/groups/:groupId' element={<GroupDetail />}>
                 <Route path='home' element={<GroupHome />} />
                 <Route path='requests' element={<GroupRequest />} />
                 <Route path='member' element={<GroupMember />} />
