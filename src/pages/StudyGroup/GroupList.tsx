@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { GroupItem } from '@/layouts/components/common';
 import GroupGridItem from './components/GroupGridItem';
+import { useNavigate } from 'react-router-dom';
 
 const GroupList = () => {
+  const navigate = useNavigate();
   return (
     <div className='flex'>
-      <ScrollArea className='h-[calc(100vh-60px)] w-[364px] border-r hidden md:block bg-white'>
+      <ScrollArea className='h-[calc(100vh-60px)] w-[22%] max-w-[340px] border-r hidden md:block bg-white'>
         <h2 className='font-bold text-xl p-4'>Study groups</h2>
         <div className='px-4 relative'>
           <div className='text-muted-foreground absolute top-1/2 -translate-y-1/2 left-6'>
@@ -27,7 +29,14 @@ const GroupList = () => {
           <p className='font-bold'>Discover</p>
         </div>
         <div className='mt-4 px-4'>
-          <Button className='px-[24px] bg-sky-500 hover:bg-sky-600 text-white w-full'>Create new group</Button>
+          <Button
+            onClick={() => {
+              navigate('/groups/create');
+            }}
+            className='px-[24px] bg-sky-500 hover:bg-sky-600 text-white w-full'
+          >
+            Create new group
+          </Button>
         </div>
         <div className='px-4'>
           <Separator className='my-4'></Separator>

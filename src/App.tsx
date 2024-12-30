@@ -8,6 +8,7 @@ import Home from './pages/Home/Home';
 import MainLayout from './layouts/MainLayout';
 import {
   Conversation,
+  CreateGroup,
   GroupAnalytics,
   GroupDetail,
   GroupHome,
@@ -46,6 +47,7 @@ const App = memo(() => {
               <Route path='/conversations/t/:userId' element={<NewConversation />} />
               <Route path='/conversations/:conversationId' element={<Conversation />} />
               <Route path='/conversations' element={<Conversation />} />
+              <Route path='/groups/create' element={<CreateGroup />}></Route>
               <Route path='/groups/:groupId' element={<GroupDetail />}>
                 <Route path='home' element={<GroupHome />} />
                 <Route path='requests' element={<GroupRequest />} />

@@ -9,7 +9,6 @@ const GroupDetailSidebar = () => {
   const location = useLocation();
   const slug = location.pathname.split('/').pop();
 
-  console.log(slug);
   const navigate = useNavigate();
 
   const handleNavigation = (path: string) => {
@@ -17,7 +16,7 @@ const GroupDetailSidebar = () => {
   };
 
   return (
-    <div className='w-[340px] h-[calc(100vh-60px)] p-4 border-r hidden md:block bg-white'>
+    <div className='w-full h-[calc(100vh-60px)] p-4 border-r hidden lg:block bg-white shadow-lg'>
       <div className='flex items-center gap-2'>
         <Button
           className={`${

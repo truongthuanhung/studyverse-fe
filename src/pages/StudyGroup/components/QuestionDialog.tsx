@@ -1,14 +1,8 @@
-import { DownvoteIcon, PublicIcon, PublishIcon, UpvoteIcon, ThreeDotsIcon, SendIcon } from '@/assets/icons';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+import React, { useState } from 'react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { SendIcon } from '@/assets/icons';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -16,20 +10,34 @@ interface Question {
   _id: string;
   user_id: string;
   content: string;
+  medias: string[];
   status: number;
   createdAt: string;
   updatedAt: string;
 }
 
-interface QuestionProps {
+interface QuestionDialogProps {
   question: Question;
+  initialImageIndex: number; // Index của ảnh được click
 }
 
-const QuestionDialog: React.FC<QuestionProps> = ({ question }) => {
+const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, initialImageIndex }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(initialImageIndex);
   const [convertedText, setConvertedText] = useState('');
 
+  const handleNextImage = () => {
+    if (currentImageIndex < question.medias.length - 1) {
+      setCurrentImageIndex(currentImageIndex + 1);
+    }
+  };
+
+  const handlePrevImage = () => {
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(currentImageIndex - 1);
+    }
+  };
+
   const isTextNotEmpty = (text: string): boolean => {
-    // Loại bỏ thẻ HTML và kiểm tra nội dung
     const plainText = text.replace(/<\/?[^>]+(>|$)/g, '').trim();
     return plainText !== '';
   };
@@ -41,72 +49,69 @@ const QuestionDialog: React.FC<QuestionProps> = ({ question }) => {
       console.log('Reply content is empty');
     }
   };
+
   return (
-    <div className='w-full mx-auto flex-col relative'>
-      <div className='flex items-center justify-between p-3'>
-        <div className='flex gap-[8px] items-center'>
-          <Avatar className='w-[60px] h-[60x]'>
+    <div className='flex w-full -mt-6'>
+      <div className='w-3/5 relative'>
+        {question.medias.length > 0 && (
+          <div className='relative w-full h-full bg-[#1b1e23] rounded-l-lg'>
+            <img
+              src={question.medias[currentImageIndex]}
+              alt={`Gallery item ${currentImageIndex}`}
+              className='w-full h-[80vh] object-cover rounded-l-lg'
+            />
+            {/* Nút Previous */}
+            {currentImageIndex > 0 && (
+              <button
+                className='absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full'
+                onClick={handlePrevImage}
+              >
+                <ChevronLeftIcon />
+              </button>
+            )}
+            {/* Nút Next */}
+            {currentImageIndex < question.medias.length - 1 && (
+              <button
+                className='absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full'
+                onClick={handleNextImage}
+              >
+                <ChevronRightIcon />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+      <div className='flex-1 p-2'>
+        <div className='flex items-center'>
+          <Avatar className='w-12 h-12'>
             <AvatarImage src='https://github.com/shadcn.png' />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
+          <div className='ml-4'>
+            <p className='font-semibold text-sm'>Hung Truong</p>
+            <p className='text-xs text-zinc-500'>@student at HCMC University of Technology</p>
+          </div>
+        </div>
+        <ScrollArea className='h-[calc(80vh-72px)] mt-2'>
           <div className='flex flex-col'>
-            <p className='font-semibold text-[14px]'>Hung Truong</p>
-            <p className='text-zinc-500 text-[12px]'>@student at HCMC University of Technology</p>
-            <div className='flex gap-[8px] items-center'>
-              <p className='text-zinc-500 text-[12px]'>4d</p>
-              <PublicIcon />
-            </div>
+            <div className='whitespace-pre-line' dangerouslySetInnerHTML={{ __html: question.content }}></div>
           </div>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger className='outline-none border-none'>
-            <div className='cursor-pointer text-zinc-500'>
-              <ThreeDotsIcon />
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem>Delete question</DropdownMenuItem>
-            <DropdownMenuItem>Report question</DropdownMenuItem>
-            <DropdownMenuItem>Turn on notifications</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <div>
-        <div className='flex flex-col px-3'>
-          <div className='whitespace-pre-line' dangerouslySetInnerHTML={{ __html: question.content }}></div>
-        </div>
-        <div className='flex p-3 justify-between'>
-          <div className='flex items-center gap-2'>
-            <div className='flex flex-col gap-1 items-center cursor-pointer w-[84px] pt-2'>
-              <UpvoteIcon />
-              <p className='text-sm'>Upvote</p>
-            </div>
-            <div className='flex flex-col gap-1 items-center cursor-pointer w-[84px] pt-2'>
-              <DownvoteIcon />
-              <p className='text-sm'>Downvote</p>
-            </div>
-            <div className='flex flex-col gap-1 items-center cursor-pointer w-[84px] pt-2'>
-              <PublishIcon />
-              <p className='text-sm'>Publish</p>
-            </div>
-          </div>
-          <div className='flex items-center gap-2 font-medium text-zinc-500 text-sm'>
+          <div className='flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
             <p>+22 votes</p>
             <p>19 replies</p>
           </div>
-        </div>
-      </div>
-
-      <div className='px-2 py-2 min-h-[90px] max-h-[50vh] overflow-auto'>
-        <ReactQuill theme='snow' value={convertedText} onChange={setConvertedText} className='w-full' />
-        <div
-          className={`${
-            isTextNotEmpty(convertedText) ? 'text-sky-500' : 'text-sky-200'
-          } absolute right-[28px] bottom-[4px] -translate-y-1/2 cursor-pointer`}
-          onClick={onReply}
-        >
-          <SendIcon />
-        </div>
+          <div className='px-2 py-2 min-h-[90px] overflow-auto relative'>
+            <ReactQuill theme='snow' value={convertedText} onChange={setConvertedText} className='w-full' />
+            <div
+              className={`${
+                isTextNotEmpty(convertedText) ? 'text-sky-500' : 'text-sky-200'
+              } absolute right-[28px] bottom-[4px] -translate-y-1/2 cursor-pointer`}
+              onClick={onReply}
+            >
+              <SendIcon />
+            </div>
+          </div>
+        </ScrollArea>
       </div>
     </div>
   );
