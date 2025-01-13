@@ -58,31 +58,15 @@ const GroupList = () => {
           </div>
         </div>
       </ScrollArea>
-      <ScrollArea className='flex-1 p-8 bg-sky-50'>
+      <ScrollArea className='flex-1 p-8 bg-slate-100'>
         <h3 className='font-semibold mb-4'>All groups you've joined</h3>
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
           <GroupGridItem
-            title='Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM'
+            title='Toán cao cấp 1'
             lastVisited='You last visited 7 weeks ago'
           ></GroupGridItem>
           <GroupGridItem
-            title='Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM'
-            lastVisited='You last visited 7 weeks ago'
-          ></GroupGridItem>
-          <GroupGridItem
-            title='Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM'
-            lastVisited='You last visited 7 weeks ago'
-          ></GroupGridItem>
-          <GroupGridItem
-            title='Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM'
-            lastVisited='You last visited 7 weeks ago'
-          ></GroupGridItem>
-          <GroupGridItem
-            title='Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM'
-            lastVisited='You last visited 7 weeks ago'
-          ></GroupGridItem>
-          <GroupGridItem
-            title='Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM Hội Những Người Ở Ký Túc Xá Khu B - KTX ĐHQG TP.HCM'
+            title='Cùng học Figma'
             lastVisited='You last visited 7 weeks ago'
           ></GroupGridItem>
         </div>

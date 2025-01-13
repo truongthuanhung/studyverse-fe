@@ -1,4 +1,3 @@
-import './App.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import PublicRoutes from './layouts/PublicRoutes';
@@ -15,7 +14,8 @@ import {
   GroupList,
   GroupMember,
   GroupRequest,
-  GroupSettings
+  GroupSettings,
+  CreateQuestion
 } from './pages';
 import SubLayout from './layouts/SubLayout';
 import MyProfile from './pages/Profile/MyProfile';
@@ -54,6 +54,7 @@ const App = memo(() => {
                 <Route path='member' element={<GroupMember />} />
                 <Route path='analytics' element={<GroupAnalytics />} />
                 <Route path='settings' element={<GroupSettings />} />
+                <Route path='create-question' element={<CreateQuestion />} />
               </Route>
               <Route path='/groups' element={<GroupList />} />
             </Route>

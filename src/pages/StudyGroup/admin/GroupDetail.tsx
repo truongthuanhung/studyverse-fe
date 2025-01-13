@@ -24,8 +24,8 @@ const GroupDetail = () => {
       <div className='lg:ml-[22%] flex-1'>
         <ScrollArea className='h-[calc(100vh-60px)]'>
           <img src={bg} alt='' className='block h-[240px] w-full object-cover' />
-          <div className='p-4'>
-            <h1 className='font-bold text-xl'>Cùng học Toán cao cấp</h1>
+          <div className='p-4 bg-white'>
+            <h1 className='font-bold text-xl'>Toán cao cấp 1</h1>
             <div className='flex flex-col md:flex-row md:items-center md:justify-between mt-2 md:mt-0 gap-2'>
               <div className='flex gap-8'>
                 <div className='flex items-center gap-2 text-zinc-500 font-medium'>

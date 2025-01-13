@@ -48,11 +48,11 @@ const GroupAnalytics = () => {
   };
 
   return (
-    <div className='p-6 space-y-6'>
+    <div className='p-6 space-y-6 bg-slate-100'>
       {/* Filters */}
       <div className='flex gap-4'>
         <Select defaultValue='7'>
-          <SelectTrigger className='w-48'>
+          <SelectTrigger className='w-48 bg-white'>
             <SelectValue placeholder='Timeframe' />
           </SelectTrigger>
           <SelectContent>
@@ -63,7 +63,7 @@ const GroupAnalytics = () => {
         </Select>
 
         <Select defaultValue='all'>
-          <SelectTrigger className='w-48'>
+          <SelectTrigger className='w-48 bg-white'>
             <SelectValue placeholder='People' />
           </SelectTrigger>
           <SelectContent>
@@ -74,7 +74,7 @@ const GroupAnalytics = () => {
         </Select>
 
         <Select defaultValue='all'>
-          <SelectTrigger className='w-48'>
+          <SelectTrigger className='w-48 bg-white'>
             <SelectValue placeholder='Topic' />
           </SelectTrigger>
           <SelectContent>

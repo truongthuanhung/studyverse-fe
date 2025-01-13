@@ -86,7 +86,12 @@ const GroupDetailSidebar = () => {
           <p className='font-semibold'>Group settings</p>
         </div>
       </div>
-      <Button className='mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'>Create a question</Button>
+      <Button
+        onClick={() => handleNavigation(`/groups/${groupId}/create-question`)}
+        className='mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'
+      >
+        Create a question
+      </Button>
     </div>
   );
 };

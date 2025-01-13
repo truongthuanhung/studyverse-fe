@@ -10,16 +10,17 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useProfile } from '@/contexts/ProfileContext';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import AvatarEditor from 'react-avatar-editor';
 import { Camera } from 'lucide-react'; // Camera and Globe icons
 import { LockIcon, GlobeIcon, PersonFilledIcon } from '@/assets/icons';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
 
 const CreateGroup = () => {
-  const profile = useProfile();
+  const profile = useSelector((state: RootState) => state.profile.user);
   const [image, setImage] = useState<File | null>(null);
   const [zoom, setZoom] = useState(1);
   const [groupName, setGroupName] = useState('');
@@ -59,11 +60,11 @@ const CreateGroup = () => {
         <h2 className='font-bold text-xl mt-1'>Create study group</h2>
         <div className='flex gap-3 items-center py-2 mt-4'>
           <Avatar>
-            <AvatarImage src={profile?.user?.avatar || 'https://github.com/shadcn.png'} />
+            <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
           <div className='flex flex-col'>
-            <p className='text-sm font-semibold'>{profile?.user?.name || ''}</p>
+            <p className='text-sm font-semibold'>{profile?.name || ''}</p>
             <p className='text-xs'>Admin</p>
           </div>
         </div>

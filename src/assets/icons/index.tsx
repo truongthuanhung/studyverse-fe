@@ -425,10 +425,10 @@ export const ReplyIcon = () => (
     <path
       d='M12.1309 14V13H11.1309H7.63086C4.31715 13 1.63086 10.3137 1.63086 7C1.63086 3.68629 4.31715 1 7.63086 1H14.6309C17.9446 1 20.6309 3.68629 20.6309 7C20.6309 8.965 19.6873 10.7094 18.2243 11.8054L18.2072 11.8182L18.1907 11.8318L12.1309 16.7898V14Z'
       stroke='currentColor'
-      stroke-width='2'
+      strokeWidth='2'
     />
-    <line x1='7.5' y1='5.25' x2='15.5' y2='5.25' stroke='black' stroke-width='1.5' />
-    <line x1='7.5' y1='8.25' x2='13.2143' y2='8.25' stroke='black' stroke-width='1.5' />
+    <line x1='7.5' y1='5.25' x2='15.5' y2='5.25' stroke='black' strokeWidth='1.5' />
+    <line x1='7.5' y1='8.25' x2='13.2143' y2='8.25' stroke='black' strokeWidth='1.5' />
   </svg>
 );
 
@@ -437,7 +437,7 @@ export const PublishIcon = () => (
     <path
       d='M2.86914 14.5C0.369221 11.5 1.46953 7 7.86953 7C14.2695 7 16.8699 7 16.8699 7M16.8699 7L12.3699 1M16.8699 7L12.3699 13.5'
       stroke='currentColor'
-      stroke-width='2'
+      strokeWidth='2'
     />
   </svg>
 );

@@ -25,10 +25,12 @@ const mockRequests = [
 
 const GroupRequest = () => {
   return (
-    <div className='flex flex-col gap-4 bg-blue-50 py-4 px-4'>
-      {mockRequests.map((request, index) => (
-        <JoinRequest key={index} name={request.name} avatar={request.avatar} time={request.time} />
-      ))}
+    <div className='bg-slate-100'>
+      <div className='flex flex-col gap-4 max-w-4xl mx-auto p-6'>
+        {mockRequests.map((request, index) => (
+          <JoinRequest key={index} name={request.name} avatar={request.avatar} time={request.time} />
+        ))}
+      </div>
     </div>
   );
 };

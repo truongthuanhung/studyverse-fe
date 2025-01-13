@@ -1,24 +1,15 @@
-import { LockIcon, PersonFilledIcon } from '@/assets/icons';
-import bg from '@/assets/images/group_bg.webp';
-import { Button } from '@/components/ui/button';
-import Question from '../components/Question';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import Question from './components/Question';
 
 const GroupHome = () => {
   const questions = [
     {
       _id: '1',
       user_id: 'user1',
-      content: `<p><strong><em><u>Some default content</u></em></strong></p>`,
+      content: `I am studying an eigenvalue problem on an Hilbert space. I turn it into a first order dynamical system. I need the asymptotic behavior of that asymptotic system. To do that, I am faced with computing the eigenvalues associated to that asymptotic system.`,
       status: 1,
       createdAt: '2024-12-17T10:00:00Z',
       updatedAt: '2024-12-17T12:00:00Z',
-      medias: [
-        'https://c2.staticflickr.com/9/8817/28973449265_07e3aa5d2e_b.jpg',
-        'https://c2.staticflickr.com/9/8356/28897120681_3b2c0f43e0_b.jpg',
-        'https://c2.staticflickr.com/9/8817/28973449265_07e3aa5d2e_b.jpg',
-        'http://res.cloudinary.com/dr0qbjqgt/image/upload/v1735046689/eqeswcwq2bsc5cchokj2.jpg'
-      ]
+      medias: ['https://ai2-s2-public.s3.amazonaws.com/figures/2017-08-08/792ee0b1bb92d4ea3cbc9e3617536b3e1d33951c/3-Figure1.1-1.png']
     }
     // {
     //   _id: '2',
@@ -39,7 +30,7 @@ const GroupHome = () => {
   ];
 
   return (
-    <div className='flex flex-col gap-4 bg-blue-50 py-4'>
+    <div className='flex flex-col gap-4 bg-slate-100 py-4'>
       {questions.map((question) => (
         <Question key={question._id} question={question} />
       ))}

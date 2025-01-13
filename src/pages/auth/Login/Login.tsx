@@ -84,7 +84,7 @@ function Login() {
         <img src={Logo} alt='' className='block w-[100px] h-[100px]' />
       </div>
       <div className='bg-white w-[354px] md:w-[500px] py-[16px] px-[16px] md:px-[20px] rounded-[12px] mx-auto'>
-        <h1 className='text-[24px] font-bold'>Account Login</h1>
+        <h1 className='text-xl font-bold'>Account Login</h1>
         <p className='mt-[10px] text-slate-500 text-[14px]'>
           If you are already a member you can login with your email address and password.
         </p>
