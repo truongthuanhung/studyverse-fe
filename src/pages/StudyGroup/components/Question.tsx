@@ -7,10 +7,10 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { PublicIcon, PublishIcon, ReplyIcon, UpvoteIcon, ThreeDotsIcon } from '@/assets/icons';
-import PostDialog from './PostDialog';
+import { DownvoteIcon, PublicIcon, PublishIcon, ReplyIcon, UpvoteIcon, ThreeDotsIcon } from '@/assets/icons';
+import QuestionDialog from './QuestionDialog';
 
-interface Post {
+interface Question {
   _id: string;
   user_id: string;
   content: string;
@@ -20,13 +20,13 @@ interface Post {
   updatedAt: string;
 }
 
-interface PostProps {
-  post: Post;
+interface QuestionProps {
+  question: Question;
 }
 
-const Post: React.FC<PostProps> = ({ post }) => {
+const Question: React.FC<QuestionProps> = ({ question }) => {
   const [vote, setVote] = useState('');
-  const totalMedia = post.medias.length;
+  const totalMedia = question.medias.length;
   const extraMediaCount = totalMedia - 4;
 
   const renderMediaGallery = () => {
@@ -37,18 +37,18 @@ const Post: React.FC<PostProps> = ({ post }) => {
           <Dialog>
             <DialogTrigger>
               <div className='relative overflow-hidden rounded-md h-64'>
-                <img src={post.medias[0]} alt='Gallery item 0' className='w-full h-full object-cover' />
+                <img src={question.medias[0]} alt='Gallery item 0' className='w-full h-full object-cover' />
               </div>
             </DialogTrigger>
             <DialogContent className='max-w-[85vw] max-h-[90vh] px-0 pb-0 border-none'>
-              <PostDialog post={post} initialImageIndex={0} />
+              <QuestionDialog question={question} initialImageIndex={0} />
             </DialogContent>
           </Dialog>
         )}
         {/* Dòng thứ hai hiển thị tối đa 3 ảnh nếu có nhiều hơn 1 ảnh */}
         {totalMedia > 1 && (
           <div className='grid grid-cols-3 gap-1'>
-            {post.medias.slice(1, 4).map((src, index) => (
+            {question.medias.slice(1, 4).map((src, index) => (
               <Dialog key={index + 1}>
                 <DialogTrigger>
                   <div className='relative overflow-hidden rounded-md h-24'>
@@ -62,7 +62,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
                   </div>
                 </DialogTrigger>
                 <DialogContent className='max-w-[85vw] max-h-[90vh] px-0 pb-0 border-none'>
-                  <PostDialog post={post} initialImageIndex={index + 1} />
+                  <QuestionDialog question={question} initialImageIndex={index + 1} />
                 </DialogContent>
               </Dialog>
             ))}
@@ -73,11 +73,11 @@ const Post: React.FC<PostProps> = ({ post }) => {
   };
 
   return (
-    <div className='border rounded-xl w-full md:w-[600px] mx-auto bg-white'>
+    <div className='border rounded-xl max-w-full w-[600px] mx-auto bg-white'>
       {/* Header */}
       <div className='flex items-center justify-between p-3'>
         <div className='flex gap-2 items-center'>
-          <Avatar className='w-[48px] h-[48px]'>
+          <Avatar className='w-[60px] h-[60px]'>
             <AvatarImage src='https://github.com/shadcn.png' />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
@@ -106,11 +106,11 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
       {/* Content */}
       <div className='flex flex-col px-3'>
-        <div className='whitespace-pre-line' dangerouslySetInnerHTML={{ __html: post.content }}></div>
+        <div className='whitespace-pre-line' dangerouslySetInnerHTML={{ __html: question.content }}></div>
       </div>
 
       {/* Media Gallery */}
-      {post.medias.length > 0 && <div className='p-4 pb-0'>{renderMediaGallery()}</div>}
+      {question.medias.length > 0 && <div className='p-4 pb-0'>{renderMediaGallery()}</div>}
 
       {/* Footer */}
       <div className='flex p-3 justify-between'>
@@ -120,29 +120,29 @@ const Post: React.FC<PostProps> = ({ post }) => {
             onClick={() => setVote('upvote')}
           >
             <UpvoteIcon />
-            <p className='text-sm'>Like</p>
+            <p className='text-sm'>Upvote</p>
+          </div>
+          <div
+            className='flex flex-col gap-1 items-center cursor-pointer w-[84px] pt-2'
+            onClick={() => setVote('downvote')}
+          >
+            <DownvoteIcon />
+            <p className='text-sm'>Downvote</p>
           </div>
           <Dialog>
             <DialogTrigger>
               <div className='flex flex-col gap-1 items-center cursor-pointer w-[84px] pt-2'>
                 <ReplyIcon />
-                <p className='text-sm'>Comment</p>
+                <p className='text-sm'>Reply</p>
               </div>
             </DialogTrigger>
-            {post.medias.length > 0 && (
-              <DialogContent className='max-w-[85vw] max-h-[90vh] px-0 pb-0 border-none'>
-                <PostDialog post={post} />
-              </DialogContent>
-            )}
-            {post.medias.length === 0 && (
-              <DialogContent className='max-w-[60vw] max-h-[90vh] px-0 pb-0 border-none'>
-                <PostDialog post={post}  />
-              </DialogContent>
-            )}
+            <DialogContent className='max-w-[85vw] max-h-[90vh] px-0 pb-0 border-none'>
+              <QuestionDialog question={question} initialImageIndex={0} />
+            </DialogContent>
           </Dialog>
           <div className='flex flex-col gap-1 items-center cursor-pointer w-[84px] pt-2'>
             <PublishIcon />
-            <p className='text-sm'>Share</p>
+            <p className='text-sm'>Publish</p>
           </div>
         </div>
         <div className='flex items-center gap-2 font-medium text-zinc-500 text-sm'>
@@ -154,4 +154,4 @@ const Post: React.FC<PostProps> = ({ post }) => {
   );
 };
 
-export default Post;
+export default Question;

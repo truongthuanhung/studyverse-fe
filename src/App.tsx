@@ -1,4 +1,3 @@
-import './App.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import PublicRoutes from './layouts/PublicRoutes';
@@ -6,7 +5,18 @@ import { Login, Register, ForgotPassword, ResetPassword, VerifyAccount, OAuth } 
 import PrivateRoutes from './layouts/PrivateRoutes';
 import Home from './pages/Home/Home';
 import MainLayout from './layouts/MainLayout';
-import { Conversation } from './pages';
+import {
+  Conversation,
+  CreateGroup,
+  GroupAnalytics,
+  GroupDetail,
+  GroupHome,
+  GroupList,
+  GroupMember,
+  GroupRequest,
+  GroupSettings,
+  CreateQuestion
+} from './pages';
 import SubLayout from './layouts/SubLayout';
 import MyProfile from './pages/Profile/MyProfile';
 import { memo } from 'react';
@@ -37,6 +47,16 @@ const App = memo(() => {
               <Route path='/conversations/t/:userId' element={<NewConversation />} />
               <Route path='/conversations/:conversationId' element={<Conversation />} />
               <Route path='/conversations' element={<Conversation />} />
+              <Route path='/groups/create' element={<CreateGroup />}></Route>
+              <Route path='/groups/:groupId' element={<GroupDetail />}>
+                <Route path='home' element={<GroupHome />} />
+                <Route path='requests' element={<GroupRequest />} />
+                <Route path='member' element={<GroupMember />} />
+                <Route path='analytics' element={<GroupAnalytics />} />
+                <Route path='settings' element={<GroupSettings />} />
+                <Route path='create-question' element={<CreateQuestion />} />
+              </Route>
+              <Route path='/groups' element={<GroupList />} />
             </Route>
           </Route>
           <Route path='*' element={<NotFound />} />

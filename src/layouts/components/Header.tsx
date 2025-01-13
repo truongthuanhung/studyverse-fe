@@ -24,37 +24,51 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getMeService, logout } from '@/services/user.services';
-import { useProfile } from '@/contexts/ProfileContext';
 import { getUnreadConverationsCount } from '@/services/conversations.services';
-import { memo } from 'react';
 import { useSocket } from '@/contexts/SocketContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
+import { setUser, clearUser } from '@/store/slices/profileSlice';
+import { memo } from 'react';
+
 const Header = memo(() => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const [unread, setUnread] = useState<number>(0);
-
   const inputRef = useRef<HTMLInputElement>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const profile = useSelector((state: RootState) => state.profile.user);
+  const { socket } = useSocket();
+
+  const isActivePath = (path: string) => {
+    if (path === '/groups' || path === '/conversations') {
+      return location.pathname.startsWith(path);
+    }
+    return location.pathname === path;
+  };
+
+  const getTextColor = (path: string) => {
+    return isActivePath(path) ? 'text-sky-500' : 'text-zinc-500';
+  };
 
   const handleClick = () => {
     setIsActive(true);
   };
-  useEffect(() => {
-    console.log('rendder');
-  }, []);
 
   const handleBlur = () => {
     setIsActive(false);
   };
-  const navigate = useNavigate();
 
-  const profile = useProfile();
   const onLogout = async () => {
     try {
       await logout({ refresh_token: localStorage.getItem('refresh_token') as string });
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      dispatch(clearUser());
       navigate('/login');
     } catch (error) {
       console.error(error);
@@ -74,12 +88,13 @@ const Header = memo(() => {
     try {
       const response = await getMeService();
       localStorage.setItem('user', JSON.stringify(response?.data.result));
-      profile?.setUser(response?.data.result);
+      dispatch(setUser(response?.data.result));
     } catch (error) {
       console.error(error);
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      dispatch(clearUser());
       navigate('/login');
     }
   };
@@ -98,27 +113,23 @@ const Header = memo(() => {
     fetchUnread();
   }, []);
 
-  const { socket } = useSocket();
   useEffect(() => {
     const handleMarkAsRead = async () => {
       await fetchUnread();
     };
 
     const handleNewMessage = async (data: any) => {
-      console.log(data);
       await fetchUnread();
     };
 
-    // Đăng ký event listeners
     socket.on('mark_as_read', handleMarkAsRead);
     socket.on('get_new_message', handleNewMessage);
 
-    // Cleanup function
     return () => {
       socket.off('mark_as_read', handleMarkAsRead);
       socket.off('get_new_message', handleNewMessage);
     };
-  }, []);
+  }, [socket]);
 
   return (
     <div className='fixed top-0 left-0 right-0 h-[60px] border-b bg-white z-50'>
@@ -140,33 +151,44 @@ const Header = memo(() => {
           <div className='flex grow md:grow-0 items-center lg:gap-[4px] justify-between'>
             <div
               onClick={handleClick}
-              className='lg:hidden w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
+              className={`lg:hidden w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
+                '/search'
+              )}`}
             >
               <SearchIcon />
               <p className='hidden md:block text-[12px] font-medium'>Search</p>
             </div>
             <div
-              onClick={() => {
-                navigate('/');
-              }}
-              className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
+              onClick={() => navigate('/')}
+              className={`w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
+                '/'
+              )}`}
             >
               <HomeIcon />
               <p className='hidden md:block text-[12px] font-medium'>Home</p>
             </div>
-            <div className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'>
+            <div
+              className={`w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
+                '/community'
+              )}`}
+            >
               <CommunityIcon />
-              <p className='hidden md:block  text-[12px] font-medium'>Community</p>
+              <p className='hidden md:block text-[12px] font-medium'>Community</p>
             </div>
-            <div className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'>
+            <div
+              onClick={() => navigate('/groups')}
+              className={`w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
+                '/groups'
+              )}`}
+            >
               <BookIcon />
               <p className='hidden md:block text-[12px] font-medium'>Study groups</p>
             </div>
             <div
-              onClick={() => {
-                navigate('/conversations');
-              }}
-              className='relative w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'
+              onClick={() => navigate('/conversations')}
+              className={`relative w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
+                '/conversations'
+              )}`}
             >
               <MessageIcon />
               <p className='hidden md:block text-[12px] font-medium'>Messages</p>
@@ -176,7 +198,11 @@ const Header = memo(() => {
                 </span>
               )}
             </div>
-            <div className='w-[40px] md:w-[80px] flex flex-col items-center justify-between text-zinc-500 hover:text-sky-500 cursor-pointer'>
+            <div
+              className={`w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
+                '/notifications'
+              )}`}
+            >
               <NotificationIcon />
               <p className='hidden md:block text-[12px] font-medium'>Notifications</p>
             </div>
@@ -184,26 +210,21 @@ const Header = memo(() => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar>
-                    <AvatarImage src={profile?.user?.avatar || 'https://github.com/shadcn.png'} />
+                    <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className='w-56'>
                   <DropdownMenuLabel className='flex gap-[8px] items-center'>
                     <Avatar className='h-[32px] w-[32px]'>
-                      <AvatarImage src={profile?.user?.avatar || 'https://github.com/shadcn.png'} />
+                      <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
                       <AvatarFallback>CN</AvatarFallback>
                     </Avatar>
-                    {profile?.user?.name || ''}
+                    {profile?.name || ''}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem
-                      className='gap-[8px] cursor-pointer'
-                      onClick={() => {
-                        navigate('/me');
-                      }}
-                    >
+                    <DropdownMenuItem className='gap-[8px] cursor-pointer' onClick={() => navigate('/me')}>
                       <ProfileIcon />
                       My profile
                     </DropdownMenuItem>
@@ -217,13 +238,13 @@ const Header = memo(() => {
                     </DropdownMenuItem>
                     <DropdownMenuItem className='gap-[8px] cursor-pointer'>
                       <SettingsIcon />
-                      Account settings
+                      Settings
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className='gap-[8px] cursor-pointer' onClick={onLogout}>
                     <LogoutIcon />
-                    Log out
+                    Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

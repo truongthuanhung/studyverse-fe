@@ -18,6 +18,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { capitalize } from 'lodash';
 import { updateMe } from '@/services/user.services';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
+import { setUser } from '@/store/slices/profileSlice';
 
 // Define form data type
 interface ProfileFormData {
@@ -29,8 +32,9 @@ interface ProfileFormData {
 }
 
 const MyProfile: React.FC = () => {
-  const profile = useProfile();
+  const profile = useSelector((state: RootState) => state.profile.user);
   const [open, setOpen] = useState(false);
+  const dispatch = useDispatch();
 
   const {
     register,
@@ -39,19 +43,17 @@ const MyProfile: React.FC = () => {
     reset
   } = useForm<ProfileFormData>({
     defaultValues: {
-      name: profile?.user?.name || '',
-      username: profile?.user?.username || '',
-      bio: profile?.user?.bio || '',
-      location: profile?.user?.location || '',
-      website: profile?.user?.website || ''
+      name: profile?.name || '',
+      username: profile?.username || '',
+      bio: profile?.bio || '',
+      location: profile?.location || '',
+      website: profile?.website || ''
     }
   });
 
-  const onSubmit = (data: ProfileFormData) => {
-    console.log(data);
-    // Implement your update logic here
+  const onSubmit = async (data: ProfileFormData) => {
     try {
-      const response = updateMe({
+      const response = await updateMe({
         name: data.name,
         bio: data.bio,
         location: data.location,
@@ -59,14 +61,16 @@ const MyProfile: React.FC = () => {
         username: data.username
       });
       console.log(response);
-      profile?.setUser({
-        ...profile.user,
-        name: data.name,
-        bio: data.bio,
-        location: data.location,
-        website: data.website,
-        username: data.username
-      } as any);
+      dispatch(
+        setUser({
+          ...profile,
+          name: data.name,
+          bio: data.bio,
+          location: data.location,
+          website: data.website,
+          username: data.username
+        } as any)
+      );
     } catch (err) {
       console.log(err);
       reset();
@@ -93,21 +97,21 @@ const MyProfile: React.FC = () => {
       <div className='flex flex-col md:flex-row justify-between relative'>
         <div>
           <Avatar className='w-[132px] h-[132px] absolute top-[-78px] md:left-[32px] md:translate-x-0 left-1/2 -translate-x-1/2'>
-            <AvatarImage src={profile?.user?.avatar || 'https://github.com/shadcn.png'} />
+            <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
           <div className='flex flex-col gap-1 mt-16'>
-            <h2 className='text-xl font-semibold text-center md:text-left'>{profile?.user?.name} (Student)</h2>
-            <p className='text-sm text-center md:text-left'>@{profile?.user?.username}</p>
-            <p className='text-sm font-medium'>{`${capitalize(profile?.user?.role) || ''} at HCMUT`}</p>
-            {profile?.user?.location && (
+            <h2 className='text-xl font-semibold text-center md:text-left'>{profile?.name} (Student)</h2>
+            <p className='text-sm text-center md:text-left'>@{profile?.username}</p>
+            <p className='text-sm font-medium'>{`${capitalize(profile?.role) || ''} at HCMUT`}</p>
+            {profile?.location && (
               <p className='text-sm'>
-                <span className='font-medium'>Address:</span> {profile?.user?.location}
+                <span className='font-medium'>Address:</span> {profile?.location}
               </p>
             )}
-            {profile?.user?.website && (
+            {profile?.website && (
               <p className='text-sm'>
-                <span className='font-medium'>Website:</span> {profile?.user?.website}
+                <span className='font-medium'>Website:</span> {profile?.website}
               </p>
             )}
           </div>
@@ -237,7 +241,7 @@ const MyProfile: React.FC = () => {
               <span className='font-bold text-sky-500'>12345</span> Followers
             </p>
           </div>
-          <p className='text-sm'>{profile?.user?.bio}</p>
+          <p className='text-sm'>{profile?.bio}</p>
         </div>
       </div>
     </div>

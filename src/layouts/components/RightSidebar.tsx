@@ -42,14 +42,19 @@ function RightSidebar() {
   }, []);
 
   return (
-    <ScrollArea className='h-[calc(100vh-60px)] border-l hidden lg:block'>
-      <div className='lg:w-[360px] md:w-[280px] px-[16px] py-[16px]'>
+    <ScrollArea className='h-[calc(100vh-60px)] border-l bg-white'>
+      <div className='px-[16px] py-[16px]'>
         <div className='flex gap-[24px] py-[8px] items-center font-bold'>
           <PeopleAddIcon />
           <p>Related people</p>
         </div>
-        <RelatedItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} />
-        <RelatedItem name='Cristiano Ronaldo' image={'https://github.com/shadcn.png'} />
+        <RelatedItem
+          name='John Smith'
+          image={
+            'https://media.istockphoto.com/id/1336063208/photo/single-portrait-of-smiling-confident-male-student-teenager-looking-at-camera-in-library.jpg?s=612x612&w=0&k=20&c=w9SCRRCFa-Li82fmZotJzHdGGWXBVN7FgfBCD5NK7ic='
+          }
+        />
+        <RelatedItem name='James Green' image={'https://cdn-icons-png.flaticon.com/512/5556/5556499.png'} />
         <div className='flex gap-[24px] py-[8px] items-center font-medium text-[14px] cursor-pointer hover:bg-accent px-[16px] mx-[-16px]'>
           <ViewIcon />
           <p>View more people</p>

@@ -75,3 +75,32 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.quill {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  max-height: 300px;
+  overflow: hidden;
+}
+
+.quill .ql-container {
+  border: none !important;
+  font-family: inherit;
+  max-height: 110px;
+  overflow-y: auto;
+}
+.quill .ql-toolbar {
+  border: none !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+.quill .ql-editor {
+  min-height: 80px;
+}
+.ql-editor .katex {
+  display: inline-block;
+}
+.ql-tooltip.ql-editing {
+  left: 12px !important;
+}

@@ -1,1 +1,10 @@
 export { default as Conversation } from '@/pages/Conversations/Conversation';
+export { default as GroupList } from '@/pages/StudyGroup/GroupList';
+export { default as GroupDetail } from '@/pages/StudyGroup/admin/GroupDetail';
+export { default as GroupHome } from '@/pages/StudyGroup/GroupHome';
+export { default as GroupRequest } from '@/pages/StudyGroup/admin/GroupRequest';
+export { default as GroupMember } from '@/pages/StudyGroup/admin/GroupMember';
+export { default as GroupAnalytics } from '@/pages/StudyGroup/admin/GroupAnalytics';
+export { default as GroupSettings } from '@/pages/StudyGroup/admin/GroupSettings';
+export { default as CreateGroup } from '@/pages/StudyGroup/admin/CreateGroup';
+export { default as CreateQuestion } from '@/pages/StudyGroup/GroupCreateQuestion';

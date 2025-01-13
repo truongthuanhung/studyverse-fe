@@ -9,7 +9,15 @@ export default defineConfig({
     port: 3000
   },
   css: {
-    devSourcemap: true
+    modules: {
+      localsConvention: 'camelCase',
+      generateScopedName: '[name]_[local]_[hash:base64:5]'
+    },
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler' // or "modern"
+      }
+    }
   },
   resolve: {
     alias: {

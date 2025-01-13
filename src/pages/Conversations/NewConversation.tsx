@@ -9,9 +9,9 @@ import { checkConversationParticipants, getConversations } from '@/services/conv
 import { formatDateMessage } from '@/utils/date';
 import { Input } from '@/components/ui/input';
 import { SendIcon } from '@/assets/icons';
-import socket from '@/services/socket';
 import { IUser } from '@/types/user';
 import { getUserProfile } from '@/services/user.services';
+import { useSocket } from '@/contexts/SocketContext';
 
 function NewConversation() {
   const profile = useProfile();
