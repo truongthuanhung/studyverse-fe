@@ -1,10 +1,12 @@
 import {
+  IFollowBody,
   IForgotPasswordBody,
   ILoginBody,
   ILogoutBody,
   IRefreshTokenBody,
   IRegisterBody,
   IResetPasswordBody,
+  IUnfollowBody,
   IUpdateMeBody,
   IVerifyEmailBody,
   IVerifyForgotPasswordBody
@@ -57,6 +59,18 @@ export const getUsers = () => {
   return http.get(`${baseUrl}`);
 };
 
-export const getUserProfile = (user_id: string) => {
-  return http.get(`${baseUrl}/${user_id}`);
+export const getUserProfile = (username: string) => {
+  return http.get(`${baseUrl}/${username}`);
+};
+
+export const getFollowStats = () => {
+  return http.get(`${baseUrl}/follow-stats`);
+};
+
+export const follow = (body: IFollowBody) => {
+  return http.post(`${baseUrl}/follow`, body);
+};
+
+export const unfollow = (body: IUnfollowBody) => {
+  return http.post(`${baseUrl}/unfollow`, body);
 };

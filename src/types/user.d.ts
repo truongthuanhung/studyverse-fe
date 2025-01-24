@@ -17,6 +17,12 @@ export interface IUser {
   username?: string; //optional
   avatar?: string; //optional
   cover_photo?: string; //optional
+
+  friends?: string;
+  followings?: string;
+  followers?: string;
+
+  isFollowed?: boolean;
 }
 
 export interface ILoginBody {
@@ -67,4 +73,12 @@ export interface IUpdateMeBody {
   username?: string; //optional
   avatar?: string; //optional
   cover_photo?: string; //optional
+}
+
+export interface IFollowBody {
+  followed_user_id: string;
+}
+
+export interface IUnfollowBody {
+  unfollowed_user_id: string;
 }

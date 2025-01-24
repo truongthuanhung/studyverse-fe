@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
-import profileReducer from './slices/profileSlice';
+import { profileReducer, postReducer, commentReducer } from './slices';
 
 const store = configureStore({
   reducer: {
-    profile: profileReducer
+    profile: profileReducer,
+    posts: postReducer,
+    comments: commentReducer
   }
 });
 

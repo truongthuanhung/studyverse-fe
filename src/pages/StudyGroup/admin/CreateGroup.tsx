@@ -8,25 +8,39 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import AvatarEditor from 'react-avatar-editor';
-import { Camera } from 'lucide-react'; // Camera and Globe icons
+import { Camera } from 'lucide-react';
 import { LockIcon, GlobeIcon, PersonFilledIcon } from '@/assets/icons';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
+import { uploadFiles } from '@/services/medias.services';
+import { CreateStudyGroupRequestBody } from '@/types/group';
+import { StudyGroupPrivacy } from '@/types/enums';
+import { createStudyGroup } from '@/services/study_groups.services';
+import { useNavigate } from 'react-router-dom';
+import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/hooks/use-toast';
 
 const CreateGroup = () => {
   const profile = useSelector((state: RootState) => state.profile.user);
   const [image, setImage] = useState<File | null>(null);
   const [zoom, setZoom] = useState(1);
   const [groupName, setGroupName] = useState('');
-  const [privacy, setPrivacy] = useState('public');
+  const [privacy, setPrivacy] = useState(StudyGroupPrivacy.Public.toString());
   const [description, setDescription] = useState('');
   const editorRef = useRef<AvatarEditor>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>(undefined);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
+
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -34,13 +48,50 @@ const CreateGroup = () => {
     }
   };
 
-  const onSubmit = () => {
-    if (editorRef.current) {
+  const handleSaveImage = async () => {
+    if (editorRef.current && image) {
       const canvas = editorRef.current.getImageScaledToCanvas().toDataURL();
-      console.log('Cropped Image Data URL:', canvas);
+      const blob = await (await fetch(canvas)).blob();
+      const file = new File([blob], image.name, { type: image.type });
+      const formData = new FormData();
+      formData.append('files', file);
+      try {
+        setIsUploading(true);
+        const response = await uploadFiles(formData);
+        const uploadedUrl = response?.data?.urls[0]?.url;
+        if (uploadedUrl) {
+          setUploadedImageUrl(uploadedUrl);
+          console.log('Image uploaded successfully:', uploadedUrl);
+        }
+      } catch (error) {
+        console.error('Failed to upload image:', error);
+      } finally {
+        setIsUploading(false);
+      }
     }
-    console.log('Group Data Submitted:', { groupName, privacy, description });
-    // Logic to create group
+  };
+
+  const onSubmit = async () => {
+    console.log('Group Data Submitted:', { groupName, privacy, description, uploadedImageUrl });
+    const payload: CreateStudyGroupRequestBody = {
+      name: groupName,
+      privacy: parseInt(privacy),
+      description,
+      cover_photo: uploadedImageUrl
+    };
+    try {
+      setIsCreating(true);
+      const response = await createStudyGroup(payload);
+      console.log(response);
+      toast({
+        description: 'Create study group successfully'
+      });
+      navigate('/groups');
+    } catch (err) {
+      console.error('Failed to create study group:', err);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -87,15 +138,17 @@ const CreateGroup = () => {
           </div>
           <div className='grid w-full max-w-sm items-center gap-1.5 mt-4'>
             <Label htmlFor='privacy'>Group privacy</Label>
-            <select
-              id='privacy'
-              value={privacy}
-              onChange={(e) => setPrivacy(e.target.value)}
-              className='border border-gray-300 rounded-md p-2 w-full'
-            >
-              <option value='public'>Public</option>
-              <option value='private'>Private</option>
-            </select>
+            <Select value={privacy} onValueChange={(value: string) => setPrivacy(value)}>
+              <SelectTrigger className='w-full' id='privacy'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value={StudyGroupPrivacy.Public.toString()}>Public</SelectItem>
+                  <SelectItem value={StudyGroupPrivacy.Private.toString()}>Private</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div className='grid w-full gap-1.5 mt-4'>
             <Label htmlFor='description'>Group description</Label>
@@ -107,8 +160,12 @@ const CreateGroup = () => {
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-          <Button type='submit' className='w-full bg-sky-500 text-white hover:bg-sky-600 mt-4 rounded-[20px]'>
-            Create
+          <Button
+            type='submit'
+            className='w-full bg-sky-500 text-white hover:bg-sky-600 mt-4 rounded-[20px]'
+            disabled={isUploading || isCreating} // Disable khi đang xử lý
+          >
+            {isCreating ? <Spinner size='small' /> : 'Create'}
           </Button>
         </form>
       </div>
@@ -139,15 +196,24 @@ const CreateGroup = () => {
               </div>
             </div>
             {image && (
-              <input
-                type='range'
-                min={1}
-                max={3}
-                step={0.1}
-                value={zoom}
-                onChange={(e) => setZoom(parseFloat(e.target.value))}
-                className='w-full mt-4'
-              />
+              <div className='flex items-center gap-4 mt-4'>
+                <input
+                  type='range'
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  className='w-full'
+                />
+                <Button
+                  onClick={handleSaveImage}
+                  className='bg-green-500 text-white hover:bg-green-600 rounded-[20px]'
+                  disabled={isUploading} // Disable khi đang upload
+                >
+                  {isUploading ? <Spinner size='small' /> : 'Save'}
+                </Button>
+              </div>
             )}
           </div>
           <div className='p-4'>

@@ -55,3 +55,48 @@ export const getHourFromISOString = (isoString: string) => {
 
   return `${hours}:${minutes}`;
 };
+
+export const getRelativeTime = (isoTime: string): string => {
+  const now = new Date();
+  const target = new Date(isoTime);
+
+  // Kiểm tra tính hợp lệ của thời gian đầu vào
+  if (isNaN(target.getTime())) {
+    throw new Error('Invalid ISO String');
+  }
+
+  const diff = now.getTime() - target.getTime(); // Khoảng thời gian chênh lệch tính bằng ms
+
+  if (diff < 0) return 'In the future'; // Nếu thời gian là tương lai
+  if (diff < 60000) return 'Just now'; // <1 phút
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 60) return `${minutes}m`; // <1 giờ
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`; // <1 ngày
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d`; // <1 tháng
+  const months = Math.floor(days / 30.44); // Trung bình 30.44 ngày/tháng
+  if (months < 12) return `${months}mo`; // <1 năm
+  const years = Math.floor(months / 12);
+  return `${years}y`; // >=1 năm
+};
+
+export const getFullTime = (isoString: string): string => {
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) {
+    throw new Error('Invalid ISO String');
+  }
+
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true,
+    timeZone: 'Asia/Bangkok'
+  };
+
+  return new Intl.DateTimeFormat('en-US', options).format(date);
+};

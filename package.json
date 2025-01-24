@@ -31,7 +31,6 @@
     "@types/react-avatar-editor": "^13.0.3",
     "@types/react-window": "^1.8.8",
     "axios": "^1.7.7",
-    "better-react-mathjax": "^2.0.4-beta1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",

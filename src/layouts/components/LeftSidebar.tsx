@@ -5,9 +5,27 @@ import MainLogo from '@/assets/images/mainLogo.jpeg';
 import { GroupItem } from './common';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
+import { useEffect, useState } from 'react';
+import { getFollowStats } from '@/services/user.services';
 
-function LeftSidebar() {
+const LeftSidebar = () => {
   const profile = useSelector((state: RootState) => state.profile.user);
+  const [followStats, setFollowStats] = useState({
+    followers: 0,
+    followings: 0,
+    friends: 0
+  });
+  useEffect(() => {
+    const fetchFollowStats = async () => {
+      try {
+        const response = await getFollowStats();
+        setFollowStats(response.data.result);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchFollowStats();
+  }, []);
   return (
     <ScrollArea className='h-[calc(100vh-60px)] border-r hidden lg:block w-full bg-white'>
       <div className='w-full px-[16px] py-[24px]'>
@@ -28,15 +46,15 @@ function LeftSidebar() {
         <div className='flex flex-col pl-[48px] gap-[8px]'>
           <div className='flex items-center justify-between text-[14px] font-medium'>
             <p className='text-zinc-500'>Friends</p>
-            <p className='text-sky-500'>140</p>
+            <p className='text-sky-500'>{followStats.friends}</p>
           </div>
           <div className='flex items-center justify-between text-[14px] font-medium'>
             <p className='text-zinc-500'>Followers</p>
-            <p className='text-sky-500'>140</p>
+            <p className='text-sky-500'>{followStats.followers}</p>
           </div>
           <div className='flex items-center justify-between text-[14px] font-medium'>
             <p className='text-zinc-500'>Following</p>
-            <p className='text-sky-500'>140</p>
+            <p className='text-sky-500'>{followStats.followings}</p>
           </div>
         </div>
         <div className='flex gap-[24px] py-[12px] items-center font-bold'>
@@ -86,6 +104,6 @@ function LeftSidebar() {
       </div>
     </ScrollArea>
   );
-}
+};
 
 export default LeftSidebar;

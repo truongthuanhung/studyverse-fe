@@ -7,9 +7,25 @@ import { Separator } from '@/components/ui/separator';
 import { GroupItem } from '@/layouts/components/common';
 import GroupGridItem from './components/GroupGridItem';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { getMyStudyGroups } from '@/services/study_groups.services';
+import { StudyGroup } from '@/types/group';
 
 const GroupList = () => {
   const navigate = useNavigate();
+  const [groups, setGroups] = useState<StudyGroup[]>([]);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const response = await getMyStudyGroups();
+        setGroups(response.data.result);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchGroups();
+  }, []);
   return (
     <div className='flex'>
       <ScrollArea className='h-[calc(100vh-60px)] w-[22%] max-w-[340px] border-r hidden md:block bg-white'>
@@ -61,14 +77,15 @@ const GroupList = () => {
       <ScrollArea className='flex-1 p-8 bg-slate-100'>
         <h3 className='font-semibold mb-4'>All groups you've joined</h3>
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
-          <GroupGridItem
-            title='Toán cao cấp 1'
-            lastVisited='You last visited 7 weeks ago'
-          ></GroupGridItem>
-          <GroupGridItem
-            title='Cùng học Figma'
-            lastVisited='You last visited 7 weeks ago'
-          ></GroupGridItem>
+          {groups.map((group) => (
+            <GroupGridItem
+              key={group._id}
+              _id={group._id}
+              title={group.name}
+              cover_photo={group.cover_photo}
+              lastVisited='You last visited 7 weeks ago'
+            />
+          ))}
         </div>
       </ScrollArea>
     </div>
