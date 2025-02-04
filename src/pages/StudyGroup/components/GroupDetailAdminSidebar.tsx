@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react';
 
-const GroupDetailSidebar = () => {
+const GroupDetailAdminSidebar = () => {
   const [activeTab, setActiveTab] = useState<'manage' | 'chats'>('manage');
   const { groupId } = useParams();
   const location = useLocation();
@@ -59,7 +59,7 @@ const GroupDetailSidebar = () => {
           <p className='font-semibold'>Join requests</p>
         </div>
         <div
-          onClick={() => handleNavigation(`/groups/${groupId}/member`)}
+          onClick={() => handleNavigation(`/groups/${groupId}/members`)}
           className={`${
             slug === 'member' ? 'text-sky-500 bg-accent' : 'hover:bg-accent'
           } flex gap-4 items-center cursor-pointer px-4 py-3`}
@@ -96,4 +96,4 @@ const GroupDetailSidebar = () => {
   );
 };
 
-export default GroupDetailSidebar;
+export default GroupDetailAdminSidebar;

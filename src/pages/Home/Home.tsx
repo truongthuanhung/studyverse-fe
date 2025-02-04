@@ -1,12 +1,12 @@
 import styles from './Home.module.scss';
 import { Post } from '@/components';
-import { memo, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import ReactQuill from 'react-quill';
 import { Button } from '@/components/ui/button';
 import { Upload, File, Trash2, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
+import { useSelector, useDispatch } from 'react-redux';
+import { AppDispatch, RootState } from '@/store/store';
 import {
   Dialog,
   DialogContent,
@@ -17,13 +17,23 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { MAX_FILES, PRIVACY_OPTIONS } from '@/constants/constants';
-import { posts } from './faker';
 import Editor from '@/components/common/Editor';
+import { CreatePostRequestBody } from '@/types/post';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  addUploadedFiles,
+  createNewPost,
+  fetchPosts,
+  removeUploadedFile,
+  resetPostState,
+  setContent,
+  setPrivacy
+} from '@/store/slices/postSlice';
+import PostSkeleton from '@/components/common/PostSkeleton';
 window.katex = katex as any;
 
 interface UploadedFile extends File {
@@ -33,24 +43,80 @@ interface UploadedFile extends File {
 const Home = memo(() => {
   const quillRef = useRef<ReactQuill | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [content, setContent] = useState('');
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [showFileLimitAlert, setShowFileLimitAlert] = useState(false);
-  const [privacy, setPrivacy] = useState<string>(PRIVACY_OPTIONS[0].value);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+
   const profile = useSelector((state: RootState) => state.profile.user);
+  const dispatch = useDispatch<AppDispatch>();
+
+  const {
+    posts,
+    isFetching: isPostsLoading,
+    content,
+    privacy,
+    uploadedFiles,
+    hasMore
+  } = useSelector((state: RootState) => state.posts);
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        if (firstEntry.isIntersecting && hasMore && !isPostsLoading) {
+          dispatch(
+            fetchPosts({
+              page: page + 1,
+              limit: 5
+            })
+          ).then((action) => {
+            if (action.meta.requestStatus === 'fulfilled') {
+              setPage((prev) => prev + 1);
+            }
+          });
+        }
+      },
+      {
+        root: scrollAreaRef.current,
+        threshold: 0.5
+      }
+    );
+
+    const currentTarget = containerRef.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, isPostsLoading, page, dispatch]);
+
+  // Initial posts fetch
+  useEffect(() => {
+    setIsLoading(true);
+    setPage(1);
+    dispatch(
+      fetchPosts({
+        page: 1,
+        limit: 5
+      })
+    ).finally(() => setIsLoading(false));
+  }, [dispatch]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
       const newFiles = Array.from(files);
-
       if (uploadedFiles.length + newFiles.length > MAX_FILES) {
-        setShowFileLimitAlert(true);
-        setTimeout(() => setShowFileLimitAlert(false), 3000);
+        alert(`Maximum ${MAX_FILES} files allowed`);
         return;
       }
-
       const processedFiles: UploadedFile[] = newFiles.map((file) => {
         const processedFile = file as UploadedFile;
         if (file.type.startsWith('image/')) {
@@ -58,49 +124,35 @@ const Home = memo(() => {
         }
         return processedFile;
       });
-
-      setUploadedFiles((prev) => [...prev, ...processedFiles]);
+      dispatch(addUploadedFiles(processedFiles));
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const handleFileRemove = (fileIndex: number) => {
-    setUploadedFiles((prev) => {
-      const newFiles = prev.filter((_, index) => index !== fileIndex);
-      if (prev[fileIndex]?.preview) {
-        URL.revokeObjectURL(prev[fileIndex].preview!);
-      }
-      return newFiles;
-    });
+  const handleFileRemove = (index: number) => {
+    dispatch(removeUploadedFile(index));
   };
 
-  const handleSubmit = () => {
-    const editor = quillRef.current?.getEditor();
-    const htmlContent = content;
-    const textContent = editor?.getText() || '';
+  const handleSubmit = async () => {
+    try {
+      const body: CreatePostRequestBody = {
+        content,
+        privacy: parseInt(privacy),
+        medias: [],
+        tags: [],
+        mentions: [],
+        parent_id: null
+      };
 
-    const formData = {
-      content: {
-        html: htmlContent,
-        text: textContent.trim()
-      },
-      files: uploadedFiles,
-      privacy
-    };
-
-    console.log('Post Submission Data:', formData);
-    setContent('');
-    setUploadedFiles((prev) => {
-      prev.forEach((file) => {
-        if (file.preview) {
-          URL.revokeObjectURL(file.preview);
-        }
-      });
-      return [];
-    });
-    setIsDialogOpen(false);
+      await dispatch(createNewPost(body)).unwrap();
+      dispatch(resetPostState());
+    } catch (error) {
+      console.error('Failed to create post:', error);
+    } finally {
+      setIsDialogOpen(false);
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -112,7 +164,11 @@ const Home = memo(() => {
   };
 
   return (
-    <>
+    <ScrollArea
+      ref={scrollAreaRef}
+      className='lg:max-w-3xl mx-auto pt-4 h-[calc(100vh-60px)] bg-[#F3F4F8] overflow-y-auto custom-scrollbar'
+    >
+      {/* Create Post Card */}
       <div className='bg-white rounded-lg shadow-md p-4 flex gap-2 w-full md:w-[600px] mx-auto'>
         <Avatar className='h-[40px] w-[40px]'>
           <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
@@ -125,6 +181,15 @@ const Home = memo(() => {
             </div>
           </DialogTrigger>
           <DialogContent className='sm:max-w-[600px] max-h-[90vh] gap-2'>
+            {isLoading && (
+              <div className='absolute inset-0 z-10 flex flex-col items-center justify-center'>
+                <div className='absolute inset-0 bg-white bg-opacity-60 rounded-[12px]'></div>
+                <div className='relative z-10'>
+                  <Spinner size='medium' />
+                  <span className='text-gray-600 mt-2'>Posting</span>
+                </div>
+              </div>
+            )}
             <DialogHeader>
               <DialogTitle>Create a post</DialogTitle>
               <DialogDescription>Share your thoughts, including rich text and mathematical formulas</DialogDescription>
@@ -137,7 +202,7 @@ const Home = memo(() => {
               </Avatar>
               <div className='space-y-1'>
                 <div className={`font-semibold text-sm ${styles.hello}`}>{profile?.name || 'User'}</div>
-                <Select value={privacy} onValueChange={setPrivacy}>
+                <Select value={privacy} onValueChange={(value) => dispatch(setPrivacy(value))}>
                   <SelectTrigger className='h-auto px-2 py-1 w-[110px]'>
                     <SelectValue />
                   </SelectTrigger>
@@ -158,12 +223,13 @@ const Home = memo(() => {
             </div>
 
             <div className='space-y-4'>
-              <Editor ref={quillRef} value={content} onChange={setContent} />
-              {showFileLimitAlert && (
-                <Alert variant='destructive'>
-                  <AlertDescription>Maximum {MAX_FILES} files allowed</AlertDescription>
-                </Alert>
-              )}
+              <Editor
+                ref={quillRef}
+                value={content}
+                onChange={(value) => {
+                  dispatch(setContent(value));
+                }}
+              />
               <div className='mt-2'>
                 <input
                   type='file'
@@ -186,7 +252,7 @@ const Home = memo(() => {
                   </Button>
                 </div>
                 <ScrollArea>
-                  <div className='max-h-[120px]'>
+                  <div className='max-h-[120px] overflow-y-auto'>
                     {/* Image Preview Grid */}
                     {uploadedFiles.some((file) => file.type.startsWith('image/')) && (
                       <div className='grid grid-cols-4 gap-2 my-2'>
@@ -238,12 +304,30 @@ const Home = memo(() => {
         </Dialog>
       </div>
 
-      <div className='space-y-4 mt-4'>
-        {posts.map((post) => (
-          <Post key={post._id} post={post} />
-        ))}
+      {/* Posts List */}
+      <div className='flex flex-col gap-4 px-4 mt-4'>
+        {isPostsLoading && posts.length === 0 ? (
+          Array(3)
+            .fill(null)
+            .map((_, index) => <PostSkeleton key={index} />)
+        ) : (
+          <>
+            {posts.map((post) => (
+              <Post key={post._id} post={post} />
+            ))}
+            {/* Loading indicator */}
+            <div ref={containerRef} className='flex flex-col gap-4 items-center justify-center'>
+              {isPostsLoading && (
+                <>
+                  <PostSkeleton />
+                  <PostSkeleton />
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
-    </>
+    </ScrollArea>
   );
 });
 

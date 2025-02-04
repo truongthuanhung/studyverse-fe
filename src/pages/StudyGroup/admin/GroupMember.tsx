@@ -1,44 +1,33 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import GroupMemberItem from '../components/GroupMemberItem';
 import { Input } from '@/components/ui/input'; // Shadcn Input component
+import { useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store/store';
+import { fetchStudyGroupAdmins, fetchStudyGroupMembers } from '@/store/slices/studyGroupSlice';
+import GroupMemberItemSkeleton from '@/components/common/GroupMemberItemSkeleton';
 
 const GroupMember = () => {
-  const mockMembers = [
-    {
-      name: 'Jessica Drew',
-      avatar: 'https://via.placeholder.com/150',
-      joinDate: new Date(Date.now() - 5 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 5 years ago
-      isAdmin: true
-    },
-    {
-      name: 'Peter Parker',
-      avatar: 'https://via.placeholder.com/150',
-      joinDate: new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 2 years ago
-      isAdmin: false
-    },
-    {
-      name: 'Mary Jane',
-      avatar: 'https://via.placeholder.com/150',
-      joinDate: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString(), // 6 months ago
-      isAdmin: false
-    },
-    {
-      name: 'John Doe',
-      avatar: 'https://via.placeholder.com/150',
-      joinDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
-      isAdmin: true
+  const { groupId } = useParams();
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { admins, members, isFetchingMembers } = useSelector((state: RootState) => state.studyGroup);
+
+  useEffect(() => {
+    if (groupId) {
+      dispatch(fetchStudyGroupAdmins(groupId));
+      dispatch(fetchStudyGroupMembers(groupId));
     }
-  ];
+  }, [dispatch, groupId]);
 
   const [search, setSearch] = useState('');
 
-  // Lọc danh sách Admins và Members
-  const filteredAdmins = mockMembers.filter(
-    (member) => member.isAdmin && member.name.toLowerCase().includes(search.toLowerCase())
+  // Lọc danh sách Admins và Members theo từ khóa tìm kiếm
+  const filteredAdmins = admins.filter((admin) => admin.user_info.name.toLowerCase().includes(search.toLowerCase()));
+  const filteredMembers = members.filter((member) =>
+    member.user_info.name.toLowerCase().includes(search.toLowerCase())
   );
-  const filteredMembers = mockMembers.filter(
-    (member) => !member.isAdmin && member.name.toLowerCase().includes(search.toLowerCase())
-  );
+  console.log({ filteredAdmins, filteredMembers });
 
   return (
     <div className='bg-slate-100'>
@@ -53,41 +42,59 @@ const GroupMember = () => {
           />
         </div>
 
-        {/* Admins Section */}
-        <h3 className='font-bold text-lg'>Admins</h3>
-        <div className='flex flex-col gap-2 bg-blue-50 mt-4'>
-          {filteredAdmins.length > 0 ? (
-            filteredAdmins.map((member, index) => (
-              <GroupMemberItem
-                key={index}
-                name={member.name}
-                avatar={member.avatar}
-                joinDate={member.joinDate}
-                isAdmin={member.isAdmin}
-              />
-            ))
-          ) : (
-            <p className='text-gray-500'>No admins found.</p>
-          )}
-        </div>
+        {/* Loading State */}
+        {isFetchingMembers ? (
+          <div className='flex flex-col gap-2'>
+            <GroupMemberItemSkeleton />
+            <GroupMemberItemSkeleton />
+            <GroupMemberItemSkeleton />
+          </div>
+        ) : (
+          <>
+            <h3 className='font-bold text-lg'>Admins</h3>
+            <div className='flex flex-col gap-2 bg-blue-50 p-4 rounded-lg'>
+              {filteredAdmins.length > 0 ? (
+                filteredAdmins.map((admin) => (
+                  <GroupMemberItem
+                    key={admin._id}
+                    id={admin._id}
+                    username={admin.user_info.username}
+                    userId={admin.user_info._id}
+                    groupId={groupId as string}
+                    name={admin.user_info.name}
+                    avatar={admin.user_info.avatar}
+                    joinDate={admin.created_at}
+                    isAdmin={true}
+                  />
+                ))
+              ) : (
+                <p className='text-gray-500'>No admins found.</p>
+              )}
+            </div>
 
-        {/* Other Members Section */}
-        <h3 className='font-bold text-lg mt-4'>Other members</h3>
-        <div className='flex flex-col gap-2 bg-blue-50 mt-4'>
-          {filteredMembers.length > 0 ? (
-            filteredMembers.map((member, index) => (
-              <GroupMemberItem
-                key={index}
-                name={member.name}
-                avatar={member.avatar}
-                joinDate={member.joinDate}
-                isAdmin={member.isAdmin}
-              />
-            ))
-          ) : (
-            <p className='text-gray-500'>No members found.</p>
-          )}
-        </div>
+            {/* Other Members Section */}
+            <h3 className='font-bold text-lg mt-4'>Other members</h3>
+            <div className='flex flex-col gap-2 bg-blue-50 p-4 rounded-lg'>
+              {filteredMembers.length > 0 ? (
+                filteredMembers.map((member) => (
+                  <GroupMemberItem
+                    key={member._id}
+                    id={member._id}
+                    userId={member.user_info._id}
+                    username={member.user_info.username}
+                    groupId={groupId as string}
+                    name={member.user_info.name}
+                    avatar={member.user_info.avatar}
+                    joinDate={member.created_at}
+                    isAdmin={false}
+                  />
+                ))
+              ) : (
+                <p className='text-gray-500'>No members found.</p>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -6,6 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store/store';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { StudyGroupPrivacy } from '@/types/enums';
+import { editGroupById } from '@/store/slices/studyGroupSlice';
+import { useToast } from '@/hooks/use-toast';
 
 const schema = yup.object({
   name: yup.string().required('Name is required').min(3, 'Name must be at least 3 characters'),
@@ -13,13 +20,12 @@ const schema = yup.object({
   description: yup.string().required('Description is required').min(10, 'Description must be at least 10 characters')
 });
 
-const initialValues = {
-  name: 'Cùng học Toán cao cấp',
-  privacy: 'private',
-  description: 'Cùng học Toán cao cấp'
-};
-
 const GroupSettings = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { info, isLoading } = useSelector((state: RootState) => state.studyGroup);
+  const { groupId } = useParams();
   const {
     register,
     handleSubmit,
@@ -28,15 +34,46 @@ const GroupSettings = () => {
     watch
   } = useForm({
     resolver: yupResolver(schema),
-    defaultValues: initialValues
+    defaultValues: {
+      name: '',
+      privacy: '',
+      description: ''
+    }
   });
 
-  const onSubmit = (data: any) => {
-    console.log('Form submitted:', data);
+  useEffect(() => {
+    if (info) {
+      setValue('name', info.name);
+      setValue('privacy', info.privacy.toString());
+      setValue('description', info.description);
+    }
+  }, [info, setValue]);
+
+  const onSubmit = async (data: any) => {
+    try {
+      const body = { name: data.name, privacy: parseInt(data.privacy), description: data.description };
+      await dispatch(editGroupById({ groupId: info!._id, body })).unwrap();
+      if (groupId) {
+        navigate(`/groups/${groupId}/home`);
+      }
+    } catch (error: any) {
+      console.error('Failed to update group:', error);
+      toast({
+        description: 'Failed to update group',
+        variant: 'destructive'
+      });
+    }
   };
 
   const formValues = watch();
-  const isFormChanged = JSON.stringify(formValues) !== JSON.stringify(initialValues);
+  const isFormChanged = info
+    ? JSON.stringify(formValues) !==
+      JSON.stringify({
+        name: info.name,
+        privacy: info.privacy,
+        description: info.description
+      })
+    : false;
 
   return (
     <div className='min-h-screen bg-slate-50 py-8'>
@@ -59,8 +96,8 @@ const GroupSettings = () => {
                   <SelectValue placeholder='Select privacy level' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value='public'>Public</SelectItem>
-                  <SelectItem value='private'>Private</SelectItem>
+                  <SelectItem value={StudyGroupPrivacy.Public.toString()}>Public</SelectItem>
+                  <SelectItem value={StudyGroupPrivacy.Private.toString()}>Private</SelectItem>
                 </SelectContent>
               </Select>
               {errors.privacy && <p className='text-sm text-red-500'>{errors.privacy.message}</p>}
@@ -79,10 +116,10 @@ const GroupSettings = () => {
             <div className='flex justify-end pt-4'>
               <Button
                 type='submit'
-                disabled={!isFormChanged}
+                disabled={!isFormChanged || isLoading}
                 className='rounded-full px-6 bg-sky-500 hover:bg-sky-600 disabled:opacity-50'
               >
-                Save changes
+                {isLoading ? 'Saving...' : 'Save changes'}
               </Button>
             </div>
           </form>

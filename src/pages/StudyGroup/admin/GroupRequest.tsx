@@ -1,38 +1,37 @@
+import { useDispatch, useSelector } from 'react-redux';
 import JoinRequest from '../components/JoinRequest';
+import { AppDispatch, RootState } from '@/store/store';
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { fetchStudyGroupJoinRequests } from '@/store/slices/studyGroupSlice';
+import { memo } from 'react';
 
-const mockRequests = [
-  {
-    name: 'Jessica Drew',
-    avatar: 'https://via.placeholder.com/150',
-    time: new Date(Date.now() - 8 * 60 * 1000).toISOString() // 8 minutes ago
-  },
-  {
-    name: 'Peter Parker',
-    avatar: 'https://via.placeholder.com/150',
-    time: new Date(Date.now() - 2 * 3600 * 1000).toISOString() // 2 hours ago
-  },
-  {
-    name: 'Mary Jane',
-    avatar: 'https://via.placeholder.com/150',
-    time: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString() // 1 day ago
-  },
-  {
-    name: 'John Doe',
-    avatar: 'https://via.placeholder.com/150',
-    time: new Date().toISOString() // just now
-  }
-];
-
-const GroupRequest = () => {
+const GroupRequest = memo(() => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { joinRequests } = useSelector((state: RootState) => state.studyGroup);
+  const { groupId } = useParams();
+  useEffect(() => {
+    if (groupId) {
+      dispatch(fetchStudyGroupJoinRequests(groupId));
+    }
+  }, [groupId, dispatch]);
   return (
-    <div className='bg-slate-100'>
+    <div className='bg-[#f3f4f8] flex-grow'>
       <div className='flex flex-col gap-4 max-w-4xl mx-auto p-6'>
-        {mockRequests.map((request, index) => (
-          <JoinRequest key={index} name={request.name} avatar={request.avatar} time={request.time} />
+        {joinRequests.map((request) => (
+          <JoinRequest
+            key={request._id}
+            groupId={groupId as string}
+            joinRequestId={request._id}
+            username={request.user_info.username}
+            name={request.user_info.name}
+            avatar={request.user_info.avatar}
+            time={request.created_at}
+          />
         ))}
       </div>
     </div>
   );
-};
+});
 
 export default GroupRequest;

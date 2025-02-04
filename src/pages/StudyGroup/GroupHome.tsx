@@ -1,41 +1,34 @@
+import { useDispatch, useSelector } from 'react-redux';
 import Question from './components/Question';
+import { AppDispatch, RootState } from '@/store/store';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { fetchQuestions } from '@/store/slices/questionsSlice';
+import { memo } from 'react';
+import CreateDialog from '@/components/common/CreateDialog';
 
-const GroupHome = () => {
-  const questions = [
-    {
-      _id: '1',
-      user_id: 'user1',
-      content: `I am studying an eigenvalue problem on an Hilbert space. I turn it into a first order dynamical system. I need the asymptotic behavior of that asymptotic system. To do that, I am faced with computing the eigenvalues associated to that asymptotic system.`,
-      status: 1,
-      createdAt: '2024-12-17T10:00:00Z',
-      updatedAt: '2024-12-17T12:00:00Z',
-      medias: ['https://ai2-s2-public.s3.amazonaws.com/figures/2017-08-08/792ee0b1bb92d4ea3cbc9e3617536b3e1d33951c/3-Figure1.1-1.png']
-    }
-    // {
-    //   _id: '2',
-    //   user_id: 'user2',
-    //   content: 'What is TypeScript?',
-    //   status: 1,
-    //   createdAt: '2024-12-16T09:30:00Z',
-    //   updatedAt: '2024-12-16T11:00:00Z'
-    // }
-    // {
-    //   _id: '3',
-    //   user_id: 'user3',
-    //   content: 'What is Node.js?',
-    //   status: 1,
-    //   createdAt: '2024-12-15T08:00:00Z',
-    //   updatedAt: '2024-12-15T10:00:00Z'
-    // }
-  ];
-
+const GroupHome = memo(() => {
+  const { data, isFetchingQuestions } = useSelector((state: RootState) => state.questions);
+  const profile = useSelector((state: RootState) => state.profile.user);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   return (
-    <div className='flex flex-col gap-4 bg-slate-100 py-4'>
-      {questions.map((question) => (
-        <Question key={question._id} question={question} />
-      ))}
+    <div className='bg-slate-100 pt-4'>
+      {/* Create Post Card */}
+      <div className='bg-white rounded-lg shadow-md p-4 flex gap-2 w-full md:w-[600px] mx-auto'>
+        <Avatar className='h-[40px] w-[40px]'>
+          <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
+          <AvatarFallback>CN</AvatarFallback>
+        </Avatar>
+        <CreateDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} isLoading={false} isGroup={true} />
+      </div>
+      <div className='flex flex-col gap-4 py-4'>
+        {data.map((question) => (
+          <Question key={question._id} question={question} />
+        ))}
+      </div>
     </div>
   );
-};
+});
 
 export default GroupHome;

@@ -18,10 +18,11 @@ import {
   CreateQuestion
 } from './pages';
 import SubLayout from './layouts/SubLayout';
-import MyProfile from './pages/Profile/MyProfile';
 import { memo } from 'react';
 import NotFound from './pages/NotFound/NotFound';
 import NewConversation from './pages/Conversations/NewConversation';
+import UserProfile from './pages/Profile/UserProfile';
+import Profile from './pages/Profile/Profile';
 
 const App = memo(() => {
   return (
@@ -39,7 +40,6 @@ const App = memo(() => {
           <Route element={<MainLayout />}>
             <Route element={<PrivateRoutes />}>
               <Route path='/' element={<Home />} />
-              <Route path='/me' element={<MyProfile />} />
             </Route>
           </Route>
           <Route element={<SubLayout />}>
@@ -51,12 +51,14 @@ const App = memo(() => {
               <Route path='/groups/:groupId' element={<GroupDetail />}>
                 <Route path='home' element={<GroupHome />} />
                 <Route path='requests' element={<GroupRequest />} />
-                <Route path='member' element={<GroupMember />} />
+                <Route path='members' element={<GroupMember />} />
                 <Route path='analytics' element={<GroupAnalytics />} />
                 <Route path='settings' element={<GroupSettings />} />
                 <Route path='create-question' element={<CreateQuestion />} />
               </Route>
               <Route path='/groups' element={<GroupList />} />
+              <Route path='/me' element={<Profile />} />
+              <Route path='/:username' element={<UserProfile />} />
             </Route>
           </Route>
           <Route path='*' element={<NotFound />} />
