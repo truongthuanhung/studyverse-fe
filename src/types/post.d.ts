@@ -1,10 +1,3 @@
-interface IUserInfo {
-  user_id: string;
-  name: string;
-  username: string;
-  avatar: string;
-}
-
 export interface IPost {
   _id: string;
   content: string; // Nội dung bài viết (HTML)

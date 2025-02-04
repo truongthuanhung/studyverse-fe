@@ -86,7 +86,7 @@ body {
 .quill .ql-container {
   border: none !important;
   font-family: inherit;
-  max-height: 110px;
+  max-height: 90px;
   overflow-y: auto;
 }
 .quill .ql-toolbar {
@@ -96,7 +96,7 @@ body {
   border-top-right-radius: 0.5rem;
 }
 .quill .ql-editor {
-  min-height: 80px;
+  min-height: 70px;
 }
 .ql-editor .katex {
   display: inline-block;

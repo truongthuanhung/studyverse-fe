@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { profileReducer, postReducer, commentReducer } from './slices';
+import { profileReducer, postReducer, commentReducer, studyGroupReducer, questionsReducer } from './slices';
 
 const store = configureStore({
   reducer: {
     profile: profileReducer,
     posts: postReducer,
-    comments: commentReducer
+    comments: commentReducer,
+    studyGroup: studyGroupReducer,
+    questions: questionsReducer
   }
 });
 

@@ -1,8 +1,11 @@
-import React from 'react';
-import { Button } from '@/components/ui/button'; // Shadcn Button component
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Shadcn Avatar component
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/store/store';
+import { acceptGroupJoinRequest, declineGroupJoinRequest } from '@/store/slices/studyGroupSlice';
 
-// Hàm xử lý thời gian (hiển thị "8m ago", "just now", ...)
 const formatTime = (time: string) => {
   const now = new Date();
   const requestTime = new Date(time);
@@ -15,17 +18,53 @@ const formatTime = (time: string) => {
 };
 
 interface JoinRequestProps {
+  groupId: string;
+  joinRequestId: string;
+  username: string;
   name: string;
   avatar: string;
   time: string;
 }
 
-const JoinRequest: React.FC<JoinRequestProps> = ({ name, avatar, time }) => {
+const JoinRequest: React.FC<JoinRequestProps> = ({ groupId, joinRequestId, username, name, avatar, time }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [isDeclining, setIsDeclining] = useState(false);
+
+  const handleAccept = async () => {
+    setIsAccepting(true);
+    try {
+      await dispatch(acceptGroupJoinRequest({ groupId, joinRequestId })).unwrap();
+    } catch (error) {
+      console.error('Failed to accept join request:', error);
+    } finally {
+      setIsAccepting(false);
+    }
+  };
+
+  const handleDecline = async () => {
+    setIsDeclining(true);
+    try {
+      await dispatch(declineGroupJoinRequest({ groupId, joinRequestId })).unwrap();
+    } catch (error) {
+      console.error('Failed to decline join request:', error);
+    } finally {
+      setIsDeclining(false);
+    }
+  };
+
   return (
     <div className='flex items-center justify-between px-4 py-3 border bg-white rounded-xl shadow-sm'>
       {/* User Avatar and Information */}
       <div className='flex items-center gap-4'>
-        <Avatar className='w-12 h-12'>
+        <Avatar
+          className='w-12 h-12 cursor-pointer'
+          onClick={() => {
+            navigate(`/${username}`);
+          }}
+        >
           <AvatarImage src={avatar} alt={name} />
           <AvatarFallback>{name[0]}</AvatarFallback>
         </Avatar>
@@ -39,9 +78,20 @@ const JoinRequest: React.FC<JoinRequestProps> = ({ name, avatar, time }) => {
 
       {/* Action Buttons */}
       <div className='flex gap-2'>
-        <Button className='bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'>Accept</Button>
-        <Button variant='outline' className='text-gray-500 border-gray-300 hover:bg-gray-100 rounded-[20px]'>
-          Decline
+        <Button
+          className='bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'
+          onClick={handleAccept}
+          disabled={isAccepting || isDeclining}
+        >
+          {isAccepting ? 'Processing...' : 'Accept'}
+        </Button>
+        <Button
+          variant='outline'
+          className='text-gray-500 border-gray-300 hover:bg-gray-100 rounded-[20px]'
+          onClick={handleDecline}
+          disabled={isAccepting || isDeclining}
+        >
+          {isDeclining ? 'Processing...' : 'Decline'}
         </Button>
       </div>
     </div>

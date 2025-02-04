@@ -83,7 +83,7 @@ const GroupList = () => {
               _id={group._id}
               title={group.name}
               cover_photo={group.cover_photo}
-              lastVisited='You last visited 7 weeks ago'
+              joined_at={(group as any).joined_at}
             />
           ))}
         </div>

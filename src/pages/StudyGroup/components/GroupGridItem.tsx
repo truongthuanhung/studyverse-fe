@@ -8,13 +8,13 @@ interface GroupGridItemProps {
   _id: string;
   title: string;
   cover_photo?: string;
-  lastVisited: string;
+  joined_at: string;
 }
 
-const GroupGridItem: React.FC<GroupGridItemProps> = ({ _id, title, cover_photo = '', lastVisited }) => {
+const GroupGridItem: React.FC<GroupGridItemProps> = ({ _id, title, cover_photo = '', joined_at }) => {
   const navigate = useNavigate();
   const navigateToGroup = (group_id: string) => {
-    navigate(`${group_id}/home`);
+    navigate(`/groups/${group_id}/home`);
   };
 
   return (
@@ -28,7 +28,7 @@ const GroupGridItem: React.FC<GroupGridItemProps> = ({ _id, title, cover_photo =
           <p className='font-semibold truncate max-w-[210px] lg:max-w-[230px]' onClick={() => navigateToGroup(_id)}>
             {title}
           </p>
-          <p className='text-xs text-zinc-500'>{lastVisited}</p>
+          <p className='text-xs text-zinc-500'>{joined_at}</p>
         </div>
       </div>
       <div className='flex gap-2 mt-4 items-center'>

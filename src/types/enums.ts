@@ -16,5 +16,6 @@ export enum StudyGroupPrivacy {
 
 export enum StudyGroupRole {
   Admin,
-  Member
+  Member,
+  Guest
 }

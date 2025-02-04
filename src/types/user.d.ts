@@ -1,5 +1,12 @@
 import { Gender, Role } from './enums';
 
+interface IUserInfo {
+  _id: string;
+  name: string;
+  username: string;
+  avatar: string;
+}
+
 export interface IUser {
   _id?: ObjectId;
   name: string;

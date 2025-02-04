@@ -100,3 +100,20 @@ export const getFullTime = (isoString: string): string => {
 
   return new Intl.DateTimeFormat('en-US', options).format(date);
 };
+
+export const MMDDYYYYConvert = (dateString: string) => {
+  // Parse the ISO string into a Date object
+  const date = new Date(dateString);
+
+  // Convert to GMT+7 by adjusting the timezone offset
+  const gmt7Date = new Date(date.getTime() + (7 - date.getTimezoneOffset() / 60) * 60 * 60 * 1000);
+
+  // Format the date to 'Month Day, Year'
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  };
+
+  return gmt7Date.toLocaleDateString('en-US', options);
+};

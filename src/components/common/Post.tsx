@@ -12,9 +12,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import PostDialog from './PostDialog';
 import { ILike, IPost } from '@/types/post';
 import { Separator } from '../ui/separator';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { likePostAction, unlikePostAction } from '@/store/slices/postSlice';
-import { AppDispatch } from '@/store/store';
+import { AppDispatch, RootState } from '@/store/store';
 import { useNavigate } from 'react-router-dom';
 import { Globe, Handshake, Lock, Users } from 'lucide-react';
 import { getFullTime, getRelativeTime } from '@/utils/date';
@@ -39,6 +39,17 @@ const Post: React.FC<PostProps> = ({ post }) => {
   const [page, setPage] = useState(1);
   const limit = 5;
   const [hasMore, setHasMore] = useState(true);
+
+  const navigate = useNavigate();
+
+  const profile = useSelector((state: RootState) => state.profile.user);
+  const navigateToProfile = () => {
+    if (profile?._id === post.user_info.user_id) {
+      navigate('/me');
+    } else {
+      navigate(`${post.user_info.username}`);
+    }
+  };
 
   const loadMoreLikes = async () => {
     try {
@@ -73,12 +84,6 @@ const Post: React.FC<PostProps> = ({ post }) => {
         setIsFetchingLikes(false);
       }
     }
-  };
-
-  const navigate = useNavigate();
-
-  const navigateToProfile = (username: string) => {
-    navigate(`/${username}`);
   };
 
   // Fixed handleLike function with proper typing
@@ -154,15 +159,12 @@ const Post: React.FC<PostProps> = ({ post }) => {
       {/* Header */}
       <div className='flex items-center justify-between'>
         <div className='flex gap-2 items-center'>
-          <Avatar
-            className='w-[48px] h-[48px] cursor-pointer'
-            onClick={() => navigateToProfile(post.user_info.username)}
-          >
+          <Avatar className='w-[48px] h-[48px] cursor-pointer' onClick={navigateToProfile}>
             <AvatarImage src={post.user_info.avatar || 'https://github.com/shadcn.png'} />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
           <div className='flex flex-col'>
-            <p className='font-semibold cursor-pointer' onClick={() => navigateToProfile(post.user_info.username)}>
+            <p className='font-semibold cursor-pointer' onClick={navigateToProfile}>
               {post.user_info.name}
             </p>
             <p className='text-zinc-500 text-xs'>{`@${post.user_info.username}`}</p>
