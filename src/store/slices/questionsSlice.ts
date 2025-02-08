@@ -1,5 +1,7 @@
 import { uploadFiles } from '@/services/medias.services';
 import { createQuestion, getQuestionsByGroupId } from '@/services/questions.services';
+import { voteQuestion } from '@/services/votes.services';
+import { VoteType } from '@/types/enums';
 import { IQuestion } from '@/types/question';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 
@@ -19,11 +21,14 @@ interface QuestionsState {
   isFetchingQuestions: boolean;
   isUploadingFiles: boolean;
   isCreatingQuestion: boolean;
+  isVoting: boolean;
   error: string | null;
   content: string;
   title: string;
   uploadedFiles: UploadedFile[];
   uploadedUrls: UploadedFileInfo[];
+  hasMore: boolean;
+  currentPage: number;
 }
 
 const initialState: QuestionsState = {
@@ -31,19 +36,49 @@ const initialState: QuestionsState = {
   isFetchingQuestions: false,
   isUploadingFiles: false,
   isCreatingQuestion: false,
+  isVoting: false,
   error: null,
   content: '',
   title: '',
   uploadedFiles: [],
-  uploadedUrls: []
+  uploadedUrls: [],
+  hasMore: true,
+  currentPage: 1
 };
+
+export const voteOnQuestion = createAsyncThunk(
+  'questions/voteOnQuestion',
+  async (
+    {
+      groupId,
+      questionId,
+      type
+    }: {
+      groupId: string;
+      questionId: string;
+      type: VoteType;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      await voteQuestion({ groupId, questionId, type });
+      return { questionId, type };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to vote on question');
+    }
+  }
+);
 
 export const fetchQuestions = createAsyncThunk(
   'questions/fetchQuestions',
-  async (groupId: string, { rejectWithValue }) => {
+  async ({ groupId, page = 1, limit = 10 }: { groupId: string; page: number; limit: number }, { rejectWithValue }) => {
     try {
-      const response = await getQuestionsByGroupId(groupId);
-      return response.data.result.questions;
+      const response = await getQuestionsByGroupId(groupId, { page, limit });
+      return {
+        questions: response.data.result.questions,
+        page,
+        limit
+      };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch questions');
     }
@@ -55,8 +90,7 @@ export const createNewQuestion = createAsyncThunk(
   async ({ groupId, body }: { groupId: string; body: any }, { rejectWithValue }) => {
     try {
       const response = await createQuestion(groupId, body);
-      console.log(response.data.result);
-      return response.data.result; // Giả sử API trả về question vừa tạo
+      return response.data.result;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create question');
     }
@@ -107,6 +141,13 @@ const questionsSlice = createSlice({
         URL.revokeObjectURL(file.preview); // Free memory for object URLs
       }
       state.uploadedFiles = state.uploadedFiles.filter((_, i) => i !== index);
+    },
+    updateQuestionReplies(state, action: PayloadAction<{ questionId: string; replies: number }>) {
+      const { questionId, replies } = action.payload;
+      const question = state.data.find((q) => q._id === questionId);
+      if (question) {
+        question.replies = replies;
+      }
     }
   },
   extraReducers: (builder) => {
@@ -129,9 +170,16 @@ const questionsSlice = createSlice({
         state.isFetchingQuestions = true;
         state.error = null;
       })
-      .addCase(fetchQuestions.fulfilled, (state, action: PayloadAction<IQuestion[]>) => {
+      .addCase(fetchQuestions.fulfilled, (state, action) => {
         state.isFetchingQuestions = false;
-        state.data = action.payload;
+        const { questions, page, limit } = action.payload;
+        if (page === 1) {
+          state.data = questions;
+        } else {
+          state.data = [...state.data, ...questions];
+        }
+        state.currentPage = page;
+        state.hasMore = questions.length === limit;
       })
       .addCase(fetchQuestions.rejected, (state, action) => {
         state.isFetchingQuestions = false;
@@ -160,11 +208,57 @@ const questionsSlice = createSlice({
         state.isUploadingFiles = false;
         state.uploadedFiles = state.uploadedFiles.map((file) => ({ ...file, status: 'error' }));
         state.error = action.payload as string;
+      })
+      // Vote question
+      .addCase(voteOnQuestion.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(voteOnQuestion.fulfilled, (state, action) => {
+        const { questionId, type } = action.payload;
+        const question = state.data.find((q) => q._id === questionId);
+
+        if (question) {
+          if (question.user_vote === type) {
+            // Nếu đã vote loại này trước đó, thì hủy vote
+            if (type === VoteType.Upvote) {
+              question.upvotes -= 1;
+            } else {
+              question.downvotes -= 1;
+            }
+            question.user_vote = null;
+          } else {
+            // Nếu đổi vote (hoặc vote mới)
+            if (question.user_vote === VoteType.Upvote) {
+              question.upvotes -= 1;
+            } else if (question.user_vote === VoteType.Downvote) {
+              question.downvotes -= 1;
+            }
+
+            if (type === VoteType.Upvote) {
+              question.upvotes += 1;
+            } else {
+              question.downvotes += 1;
+            }
+            question.user_vote = type;
+          }
+        }
+      })
+      .addCase(voteOnQuestion.rejected, (state, action) => {
+        state.isVoting = false;
+        state.error = action.payload as string;
       });
   }
 });
 
-export const { reset, setContent, setTitle, addUploadedFiles, removeUploadedFile, setUploadedFiles } =
-  questionsSlice.actions;
+export const {
+  reset,
+  setContent,
+  setTitle,
+  addUploadedFiles,
+  removeUploadedFile,
+  setUploadedFiles,
+  updateQuestionReplies
+} = questionsSlice.actions;
 
 export default questionsSlice.reducer;

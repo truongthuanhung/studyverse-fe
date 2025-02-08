@@ -80,9 +80,48 @@ const GroupDetail = () => {
 
   useEffect(() => {
     if (groupId) {
-      dispatch(fetchQuestions(groupId as string));
+      dispatch(
+        fetchQuestions({
+          groupId,
+          page: 1,
+          limit: 5
+        })
+      );
     }
   }, [groupId]);
+
+  // useEffect(() => {
+  //   const observer = new IntersectionObserver(
+  //     (entries) => {
+  //       const firstEntry = entries[0];
+  //       if (firstEntry.isIntersecting && hasMore && !isFetchingQuestions) {
+  //         dispatch(
+  //           fetchQuestions({
+  //             groupId: groupId as string,
+  //             page: currentPage + 1,
+  //             limit: 5
+  //           })
+  //         );
+  //       }
+  //     },
+  //     {
+  //       threshold: 0.5
+  //     }
+  //   );
+
+  //   console.log('aaaaaa');
+
+  //   // const currentTarget = containerRef.current;
+  //   // if (currentTarget) {
+  //   //   observer.observe(currentTarget);
+  //   // }
+
+  //   // return () => {
+  //   //   if (currentTarget) {
+  //   //     observer.unobserve(currentTarget);
+  //   //   }
+  //   // };
+  // }, [hasMore, isFetchingQuestions, currentPage, groupId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

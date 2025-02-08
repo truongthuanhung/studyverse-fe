@@ -1,4 +1,4 @@
-import { IUserInfo } from "./user";
+import { IUserInfo } from './user';
 
 interface IQuestion {
   _id: string;
@@ -13,4 +13,19 @@ interface IQuestion {
   created_at: string;
   updated_at: string;
   user_info: IUserInfo;
+  upvotes: number;
+  downvotes: number;
+  replies: number;
+  user_vote: VoteType | null;
+}
+
+interface IReply {
+  _id: string;
+  question_id: string;
+  content: string;
+  medias: string[];
+  created_at: string;
+  updated_at: string;
+  user_info: IUserInfo;
+  reply_count: number;
 }
