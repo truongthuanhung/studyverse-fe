@@ -6,12 +6,13 @@ import { ScrollArea } from '../ui/scroll-area';
 
 type EditorProps = {
   value: string;
+  placeholder?: string;
   onChange: (value: string) => void;
 };
 
 const mockUsers = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'George', 'Hannah', 'Ian', 'Julia'];
 
-const Editor = forwardRef<ReactQuill, EditorProps>(({ value, onChange }, ref) => {
+const Editor = forwardRef<ReactQuill, EditorProps>(({ value, placeholder, onChange }, ref) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [filteredUsers, setFilteredUsers] = useState<string[]>([]);
@@ -147,6 +148,7 @@ const Editor = forwardRef<ReactQuill, EditorProps>(({ value, onChange }, ref) =>
         ref={ref}
         theme='snow'
         value={value}
+        placeholder={placeholder || ''}
         onChange={handleEditorChange}
         onKeyDown={handleKeyDown}
         modules={modules}

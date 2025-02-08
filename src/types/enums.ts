@@ -19,3 +19,8 @@ export enum StudyGroupRole {
   Member,
   Guest
 }
+
+export enum VoteType {
+  Upvote,
+  Downvote
+}

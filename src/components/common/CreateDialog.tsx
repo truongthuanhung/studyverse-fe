@@ -38,8 +38,6 @@ interface CreateDialogProps {
   onOpenChange: (open: boolean) => void;
   isLoading: boolean;
   isGroup: boolean;
-  content: string;
-  onSubmit: () => void;
 }
 
 interface UploadedFile extends File {
@@ -63,8 +61,25 @@ const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateD
 
   const { toast } = useToast();
 
+  const isRichTextEmpty = (content: string): boolean => {
+    // Remove all HTML tags and whitespace
+    const strippedContent = content.replace(/<[^>]*>/g, '').trim();
+
+    // Check if the content is empty or only contains empty paragraphs
+    const onlyEmptyParagraphs = content.replace(/(<p>(<br>)*<\/p>)|(<p><\/p>)/g, '').trim();
+
+    return strippedContent === '' || onlyEmptyParagraphs === '';
+  };
+
   const handleSubmit = async () => {
     try {
+      if (!title || isRichTextEmpty(content)) {
+        toast({
+          description: 'Title and content cannot be empty',
+          variant: 'destructive'
+        });
+        return;
+      }
       const body = {
         title,
         content,
@@ -77,10 +92,9 @@ const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateD
       toast({
         description: 'Create question successfully'
       });
-    } catch (error) {
-      console.error('Failed to create post:', error);
-    } finally {
       onOpenChange(false);
+    } catch (error) {
+      console.log('Failed to create post:', error);
     }
   };
 

@@ -6,7 +6,7 @@ import SocketProvider from './contexts/SocketContext.tsx';
 import { Provider } from 'react-redux';
 import store from './store/store.ts';
 createRoot(document.getElementById('root')!).render(
-  <Provider store={store}>
+  <Provider store={store} stabilityCheck='never'>
     <ProfileProvider>
       <SocketProvider>
         <App />

@@ -1,5 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { profileReducer, postReducer, commentReducer, studyGroupReducer, questionsReducer } from './slices';
+import {
+  profileReducer,
+  postReducer,
+  commentReducer,
+  studyGroupReducer,
+  questionsReducer,
+  repliesReducer
+} from './slices';
 
 const store = configureStore({
   reducer: {
@@ -7,7 +14,8 @@ const store = configureStore({
     posts: postReducer,
     comments: commentReducer,
     studyGroup: studyGroupReducer,
-    questions: questionsReducer
+    questions: questionsReducer,
+    replies: repliesReducer
   }
 });
 
