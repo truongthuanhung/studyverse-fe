@@ -23,6 +23,9 @@ import NotFound from './pages/NotFound/NotFound';
 import NewConversation from './pages/Conversations/NewConversation';
 import UserProfile from './pages/Profile/UserProfile';
 import Profile from './pages/Profile/Profile';
+import GroupManageQuestions from './pages/StudyGroup/admin/GroupManageQuestions';
+import GroupQuestionDetail from './pages/StudyGroup/GroupQuestionDetail';
+import { ToastContainer } from 'react-toastify';
 
 const App = memo(() => {
   return (
@@ -49,11 +52,13 @@ const App = memo(() => {
               <Route path='/conversations' element={<Conversation />} />
               <Route path='/groups/create' element={<CreateGroup />}></Route>
               <Route path='/groups/:groupId' element={<GroupDetail />}>
+                <Route path='questions/:questionId' element={<GroupQuestionDetail />} />
                 <Route path='home' element={<GroupHome />} />
                 <Route path='requests' element={<GroupRequest />} />
                 <Route path='members' element={<GroupMember />} />
                 <Route path='analytics' element={<GroupAnalytics />} />
                 <Route path='settings' element={<GroupSettings />} />
+                <Route path='manage-questions' element={<GroupManageQuestions />} />
                 <Route path='create-question' element={<CreateQuestion />} />
               </Route>
               <Route path='/groups' element={<GroupList />} />
@@ -65,6 +70,7 @@ const App = memo(() => {
         </Routes>
         <Toaster />
       </div>
+      <ToastContainer position='bottom-left' />
     </Router>
   );
 });

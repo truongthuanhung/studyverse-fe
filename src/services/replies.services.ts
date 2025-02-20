@@ -8,7 +8,12 @@ interface PagingParams {
 export interface CreateReplyRequestBody {
   parent_id: string | null;
   content: string;
-  medias?: string[],
+  medias?: string[];
+}
+
+export interface EditReplyRequestBody {
+  content?: string;
+  medias?: string[];
 }
 
 export const getRepliesByQuestionId = (
@@ -46,4 +51,18 @@ export const deleteReply = ({
   replyId: string;
 }) => {
   return http.delete(`/study-groups/${groupId}/questions/${questionId}/replies/${replyId}`);
+};
+
+export const editReply = ({
+  groupId,
+  questionId,
+  replyId,
+  body
+}: {
+  groupId: string;
+  questionId: string;
+  replyId: string;
+  body: EditReplyRequestBody;
+}) => {
+  return http.patch(`/study-groups/${groupId}/questions/${questionId}/replies/${replyId}`, body);
 };

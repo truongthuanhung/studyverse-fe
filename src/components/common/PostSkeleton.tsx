@@ -3,7 +3,7 @@ import { Separator } from '@/components/ui/separator';
 
 const PostSkeleton = () => {
   return (
-    <div className='border rounded-xl w-full md:w-[600px] mx-auto bg-white px-4 pt-3'>
+    <div className='border rounded-xl w-full md:w-[580px] mx-auto bg-white px-4 pt-3'>
       {/* Header */}
       <div className='flex items-center justify-between'>
         <div className='flex gap-2 items-center'>

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { File, X, Download, ChevronRight, ChevronLeft } from 'lucide-react';
+import { downloadFile } from '@/utils/file';
 
 const MediaGallery: React.FC<{
   medias: string[];
@@ -24,16 +25,6 @@ const MediaGallery: React.FC<{
       rawFiles: medias.filter((url) => getMediaType(url) === 'raw')
     };
   }, [medias]);
-
-  const downloadFile = (url: string) => {
-    const fileName = url.split('/').pop() || 'download';
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const [currentIndex, setCurrentIndex] = React.useState(0);
 

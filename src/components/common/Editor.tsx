@@ -1,194 +1,148 @@
-import { forwardRef, useState, useEffect, useRef } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import { modules, formats } from '@/utils/quill';
-import { ScrollArea } from '../ui/scroll-area';
+import { forwardRef, useEffect } from 'react';
+import { useQuill } from 'react-quilljs';
+import 'quill/dist/quill.snow.css';
+import 'quill-mention/autoregister';
+
+import { IUserInfo } from '@/types/user';
+import { Op } from 'quill';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
 
 type EditorProps = {
   value: string;
   placeholder?: string;
+  mention_users?: IUserInfo[];
+  mentions: string[];
+  setMentions: (value: any[]) => void;
   onChange: (value: string) => void;
+  className?: string;
 };
 
-const mockUsers = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'George', 'Hannah', 'Ian', 'Julia'];
+const Editor = forwardRef<any, EditorProps>(
+  ({ value, placeholder, mention_users, mentions, setMentions, className, onChange }, ref) => {
+    // Convert mention_users to the format expected by quill-mention
+    const profile = useSelector((state: RootState) => state.profile.user);
 
-const Editor = forwardRef<ReactQuill, EditorProps>(({ value, placeholder, onChange }, ref) => {
-  const [dropdownVisible, setDropdownVisible] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState<string[]>([]);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-  const [mentionStartIndex, setMentionStartIndex] = useState(0);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const activeItemRef = useRef<HTMLDivElement>(null);
+    const mentionUsers =
+      mention_users
+        ?.filter((user) => user._id !== profile?._id) // Lọc bỏ user hiện tại
+        .map((user) => ({
+          id: user._id,
+          value: user.name,
+          avatar: user.avatar,
+          username: user.username
+        })) || [];
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (dropdownVisible) {
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        setActiveIndex((prev) => (prev + 1) % filteredUsers.length);
-      } else if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        setActiveIndex((prev) => (prev - 1 + filteredUsers.length) % filteredUsers.length);
-      } else if (event.key === 'Enter') {
-        event.preventDefault();
-        handleUserSelect(filteredUsers[activeIndex]);
-      }
-    }
-    if (event.key === 'Backspace' && ref && 'current' in ref && ref.current) {
-      const quill = ref.current.getEditor();
-      const selection = quill.getSelection();
-      if (!selection || selection.length > 0) return;
+    const mentionModule = {
+      mention: {
+        allowedChars: /^[A-Za-z\sÅÄÖåäö]*$/,
+        mentionDenotationChars: ['@'],
+        source: function (searchTerm: string, renderList: any, mentionChar: string) {
+          let values = mentionUsers;
 
-      const [index] = [selection.index];
-      const textBeforeCursor = quill.getText(0, index);
+          if (searchTerm.length === 0) {
+            renderList(values, searchTerm);
+          } else {
+            const matches = values.filter((item) => item.value.toLowerCase().includes(searchTerm.toLowerCase()));
+            renderList(matches, searchTerm);
+          }
+        },
+        renderItem: function (item: any) {
+          // Tạo container
+          const itemElement = document.createElement('div');
+          itemElement.className = 'mention-item flex items-center p-2 cursor-pointer';
 
-      // Kiểm tra mention với space hoặc newline trước @
-      const match = /(?:^|[\s\n])@\w+(?=\s|$)/.exec(textBeforeCursor);
-      if (match && match.index + match[0].length === index) {
-        const mentionStart = match.index + match[0].indexOf('@');
-        const mentionLength = index - mentionStart;
+          // Tạo hình ảnh
+          const avatarElement = document.createElement('img');
+          avatarElement.src = item.avatar;
+          avatarElement.alt = item.value;
+          avatarElement.className = 'w-8 h-8 rounded-full mr-2';
 
-        // Kiểm tra xem có phải đang xóa mention hợp lệ không
-        const textAfterMention = quill.getText(index, 1);
-        if (textAfterMention === '\n' || textAfterMention === ' ' || textAfterMention === '') {
-          quill.deleteText(mentionStart, mentionLength);
-          event.preventDefault();
-          setDropdownVisible(false);
+          // Tạo span chứa tên
+          const textElement = document.createElement('span');
+          textElement.textContent = item.value;
+
+          // Gắn các phần tử vào container
+          itemElement.appendChild(avatarElement);
+          itemElement.appendChild(textElement);
+
+          return itemElement;
         }
       }
-    }
-  };
-
-  const handleEditorChange = (content: string, delta: any, source: string, editor: any) => {
-    onChange(content);
-
-    if (source === 'user') {
-      const selection = editor.getSelection();
-      if (!selection) return;
-
-      const cursorPosition = selection.index;
-      const textBeforeCursor = editor.getText(0, cursorPosition);
-
-      // Kiểm tra @ với điều kiện có space hoặc newline trước nó, hoặc là ký tự đầu tiên
-      const match = /(?:^|[\s\n])@(\w*)$/.exec(textBeforeCursor);
-
-      if (match) {
-        const mentionStart = cursorPosition - match[1].length - 1; // -1 for @
-        const charBeforeMention = textBeforeCursor[mentionStart - 1];
-
-        // Kiểm tra xem ký tự trước @ có phải là space/newline hoặc không tồn tại (đầu text)
-        if (!charBeforeMention || /[\s\n]/.test(charBeforeMention)) {
-          setMentionStartIndex(mentionStart);
-          setMentionQuery(match[1]);
-          setFilteredUsers(mockUsers.filter((user) => user.toLowerCase().includes(match[1].toLowerCase())));
-          setDropdownVisible(true);
-
-          const bounds = editor.getBounds(cursorPosition);
-          setDropdownPosition({
-            top: bounds.top + bounds.height,
-            left: bounds.left
-          });
-          return;
-        }
-      }
-      setDropdownVisible(false);
-    }
-  };
-
-  const handleUserSelect = (user: string) => {
-    if (ref && 'current' in ref && ref.current) {
-      const quill = ref.current.getEditor();
-      const mentionLength = mentionQuery.length + 1; // +1 for the @ symbol
-
-      quill.deleteText(mentionStartIndex, mentionLength);
-
-      quill.insertText(mentionStartIndex, `@${user} `, {
-        color: '#0369a1',
-        italic: true
-      });
-
-      const newPosition = mentionStartIndex + user.length + 2;
-      quill.setSelection(newPosition);
-
-      quill.format('color', false);
-      quill.format('italic', false);
-
-      setDropdownVisible(false);
-      setMentionQuery('');
-      setActiveIndex(0);
-    }
-  };
-
-  const handleClickOutside = (event: MouseEvent) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-      setDropdownVisible(false);
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
 
-  useEffect(() => {
-    if (activeItemRef.current && dropdownVisible) {
-      activeItemRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest'
-      });
-    }
-  }, [activeIndex, dropdownVisible]);
+    const formats = [
+      'size',
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'align',
+      'list', // This handles both ordered and bullet lists
+      'link',
+      'image',
+      'formula',
+      'code-block',
+      'blockquote',
+      'color',
+      'background',
+      'mention'
+    ];
 
-  return (
-    <div className='relative'>
-      <ReactQuill
-        ref={ref}
-        theme='snow'
-        value={value}
-        placeholder={placeholder || ''}
-        onChange={handleEditorChange}
-        onKeyDown={handleKeyDown}
-        modules={modules}
-        formats={formats}
-      />
-      {dropdownVisible && (
-        <div
-          ref={dropdownRef}
-          className='absolute bg-white border border-gray-200 rounded-lg shadow-lg z-[999] w-64'
-          style={{
-            top: dropdownPosition.top + 50,
-            left: dropdownPosition.left - 12
-          }}
-        >
-          <ScrollArea className='h-48'>
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((user, index) => (
-                <div
-                  key={user}
-                  ref={index === activeIndex ? activeItemRef : null}
-                  className={`px-4 py-2 cursor-pointer flex items-center gap-2 border-b border-gray-100 last:border-0 ${
-                    index === activeIndex ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-50 text-gray-700'
-                  }`}
-                  onClick={() => handleUserSelect(user)}
-                >
-                  <div className='w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium'>
-                    {user.charAt(0)}
-                  </div>
-                  <span>{user}</span>
-                </div>
-              ))
-            ) : (
-              <div className='px-4 py-3 text-gray-500 text-sm'>No users found</div>
-            )}
-          </ScrollArea>
-        </div>
-      )}
-    </div>
-  );
-});
+    const modules = {
+      toolbar: [
+        ['bold', 'italic', 'underline', 'strike'],
+        // [{ color: [] }, { background: [] }],
+        ['blockquote', 'code-block'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['link', 'image', 'formula'],
+        [{ align: [] }],
+        ['clean']
+      ],
+      ...mentionModule
+    };
+
+    const { quill, quillRef } = useQuill({
+      placeholder,
+      modules,
+      formats,
+      theme: 'snow'
+    });
+
+    // Set initial content if provided
+    useEffect(() => {
+      if (quill && value && !quill.root.innerHTML) {
+        quill.root.innerHTML = value;
+      } else if (quill && value === '') {
+        quill.root.innerHTML = '';
+      }
+    }, [quill, value]);
+
+    // Handle content changes
+    useEffect(() => {
+      if (quill) {
+        quill.on('text-change', () => {
+          onChange(quill.root.innerHTML);
+          // Extract mentions from content
+          const mentions = quill
+            .getContents()
+            .ops?.filter((op) => op.insert && typeof op.insert === 'object' && op.insert.mention)
+            .map((op: Op) => (op.insert as any)?.mention?.id);
+
+          if (mentions && mentions.length > 0) {
+            setMentions(mentions);
+          }
+        });
+      }
+    }, [quill]);
+
+    return (
+      <div className='editor-container'>
+        <div ref={quillRef} className={`${className ?? ''} max-h-[200px] min-h-[100px] overflow-y-auto`} />
+      </div>
+    );
+  }
+);
 
 Editor.displayName = 'Editor';
 

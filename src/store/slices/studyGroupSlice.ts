@@ -13,12 +13,16 @@ import {
   demoteMember,
   promoteMember
 } from '@/services/study_groups.services';
-import { StudyGroupRole } from '@/types/enums';
+import { QuestionStatus, StudyGroupRole } from '@/types/enums';
 import { IJoinRequest, IMember, StudyGroup } from '@/types/group';
+import { IQuestion } from '@/types/question';
+import { approveQuestion, getPendingCount, getQuestionsByGroupId, rejectQuestion } from '@/services/questions.services';
 
 interface StudyGroupState {
   info: StudyGroup | null;
   joinRequests: IJoinRequest[];
+  pendingQuestions: IQuestion[];
+  rejectedQuestions: IQuestion[];
   members: IMember[];
   admins: IMember[];
   role: StudyGroupRole;
@@ -26,19 +30,91 @@ interface StudyGroupState {
   isFetchingGroupInfo: boolean;
   isFetchingMembers: boolean;
   error: string | null;
+  isFetchingPendingQuestions: boolean;
+  isFetchingRejectedQuestions: boolean;
+  hasMorePending: boolean;
+  hasMoreRejected: boolean;
+  pendingCurrentPage: number;
+  rejectedCurrentPage: number;
+  pendingCount: number;
 }
 
 const initialState: StudyGroupState = {
   info: null,
   joinRequests: [],
+  pendingQuestions: [],
+  rejectedQuestions: [],
   members: [],
   admins: [],
   role: StudyGroupRole.Guest,
   isLoading: false,
   isFetchingGroupInfo: false,
   isFetchingMembers: false,
-  error: null
+  isFetchingPendingQuestions: false,
+  isFetchingRejectedQuestions: false,
+  hasMorePending: true,
+  hasMoreRejected: true,
+  pendingCurrentPage: 1,
+  rejectedCurrentPage: 1,
+  error: null,
+  pendingCount: 0
 };
+
+export const approveGroupQuestion = createAsyncThunk(
+  'group/approveQuestion',
+  async ({ groupId, questionId }: { groupId: string; questionId: string }, { rejectWithValue }) => {
+    try {
+      const response = await approveQuestion(groupId, questionId);
+      return { questionId, message: response.data.message };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to approve question');
+    }
+  }
+);
+
+export const rejectGroupQuestion = createAsyncThunk(
+  'group/rejectQuestion',
+  async ({ groupId, questionId }: { groupId: string; questionId: string }, { rejectWithValue }) => {
+    try {
+      const response = await rejectQuestion(groupId, questionId);
+      return { questionId, message: response.data.message };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to reject question');
+    }
+  }
+);
+
+export const fetchPendingQuestions = createAsyncThunk(
+  'group/fetchPendingQuestions',
+  async ({ groupId, page = 1, limit = 10 }: { groupId: string; page: number; limit: number }, { rejectWithValue }) => {
+    try {
+      const response = await getQuestionsByGroupId(groupId, { page, limit, status: QuestionStatus.Pending });
+      return {
+        questions: response.data.result.questions,
+        page,
+        limit
+      };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch questions');
+    }
+  }
+);
+
+export const fetchRejectedQuestions = createAsyncThunk(
+  'group/fetchRejectedQuestions',
+  async ({ groupId, page = 1, limit = 10 }: { groupId: string; page: number; limit: number }, { rejectWithValue }) => {
+    try {
+      const response = await getQuestionsByGroupId(groupId, { page, limit, status: QuestionStatus.Rejected });
+      return {
+        questions: response.data.result.questions,
+        page,
+        limit
+      };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch questions');
+    }
+  }
+);
 
 export const fetchStudyGroupMembers = createAsyncThunk(
   'group/fetchStudyGroupMembers',
@@ -180,6 +256,18 @@ export const removeGroupMember = createAsyncThunk(
   }
 );
 
+export const getGroupPendingCount = createAsyncThunk(
+  'group/getGroupPendingCount',
+  async (groupId: string, { rejectWithValue }) => {
+    try {
+      const response = await getPendingCount(groupId);
+      return response.data.result;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch group details');
+    }
+  }
+);
+
 const groupSlice = createSlice({
   name: 'group',
   initialState,
@@ -192,6 +280,98 @@ const groupSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Get pending count
+      .addCase(getGroupPendingCount.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getGroupPendingCount.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.pendingCount = action.payload.total;
+      })
+      .addCase(getGroupPendingCount.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Approve question
+      .addCase(approveGroupQuestion.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        approveGroupQuestion.fulfilled,
+        (state, action: PayloadAction<{ questionId: string; message: string }>) => {
+          state.isLoading = false;
+          // Remove the approved question from pending questions list
+          state.pendingQuestions = state.pendingQuestions.filter(
+            (question) => question._id !== action.payload.questionId
+          );
+        }
+      )
+      .addCase(approveGroupQuestion.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+
+      // Reject question
+      .addCase(rejectGroupQuestion.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        rejectGroupQuestion.fulfilled,
+        (state, action: PayloadAction<{ questionId: string; message: string }>) => {
+          state.isLoading = false;
+          // Remove the rejected question from pending questions list
+          state.pendingQuestions = state.pendingQuestions.filter(
+            (question) => question._id !== action.payload.questionId
+          );
+        }
+      )
+      .addCase(rejectGroupQuestion.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Fetch questions
+      .addCase(fetchPendingQuestions.pending, (state) => {
+        state.isFetchingPendingQuestions = true;
+        state.error = null;
+      })
+      .addCase(fetchPendingQuestions.fulfilled, (state, action) => {
+        state.isFetchingPendingQuestions = false;
+        const { questions, page, limit } = action.payload;
+        if (page === 1) {
+          state.pendingQuestions = questions;
+        } else {
+          state.pendingQuestions = [...state.pendingQuestions, ...questions];
+        }
+        state.pendingCurrentPage = page;
+        state.hasMorePending = questions.length === limit;
+      })
+      .addCase(fetchPendingQuestions.rejected, (state, action) => {
+        state.isFetchingPendingQuestions = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(fetchRejectedQuestions.pending, (state) => {
+        state.isFetchingRejectedQuestions = true;
+        state.error = null;
+      })
+      .addCase(fetchRejectedQuestions.fulfilled, (state, action) => {
+        state.isFetchingRejectedQuestions = false;
+        const { questions, page, limit } = action.payload;
+        if (page === 1) {
+          state.rejectedQuestions = questions;
+        } else {
+          state.rejectedQuestions = [...state.rejectedQuestions, ...questions];
+        }
+        state.rejectedCurrentPage = page;
+        state.hasMoreRejected = questions.length === limit;
+      })
+      .addCase(fetchRejectedQuestions.rejected, (state, action) => {
+        state.isFetchingRejectedQuestions = false;
+        state.error = action.payload as string;
+      })
       // Fetch group detail
       .addCase(fetchGroupById.pending, (state) => {
         state.isFetchingGroupInfo = true;
@@ -214,7 +394,7 @@ const groupSlice = createSlice({
       .addCase(editGroupById.fulfilled, (state, action: PayloadAction<StudyGroup>) => {
         state.isLoading = false;
         state.info = action.payload;
-        state.role = action.payload.role;
+        //state.role = action.payload.role;
       })
       .addCase(editGroupById.rejected, (state, action) => {
         state.isLoading = false;

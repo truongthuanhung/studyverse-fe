@@ -24,3 +24,23 @@ export enum VoteType {
   Upvote,
   Downvote
 }
+
+export enum QuestionStatus {
+  Pending,
+  Open,
+  Resolved,
+  Closed,
+  Rejected
+}
+
+export enum NotificationStatus {
+  Unread,
+  Read
+}
+
+export enum NotificationType {
+  Group,
+  Personal,
+  Message,
+  System
+}

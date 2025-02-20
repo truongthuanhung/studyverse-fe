@@ -28,5 +28,6 @@ export const formats = [
   'code-block',
   'blockquote',
   'color',
-  'background'
+  'background',
+  'mention'
 ];

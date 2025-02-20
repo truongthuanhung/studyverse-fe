@@ -28,7 +28,7 @@ const GroupGridItem: React.FC<GroupGridItemProps> = ({ _id, title, cover_photo =
           <p className='font-semibold truncate max-w-[210px] lg:max-w-[230px]' onClick={() => navigateToGroup(_id)}>
             {title}
           </p>
-          <p className='text-xs text-zinc-500'>{joined_at}</p>
+          <p className='text-xs text-zinc-500'>Joined at {joined_at}</p>
         </div>
       </div>
       <div className='flex gap-2 mt-4 items-center'>

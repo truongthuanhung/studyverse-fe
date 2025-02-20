@@ -221,8 +221,8 @@ const CreateGroup = () => {
             <div className='flex flex-col md:flex-row md:items-center md:justify-between mt-2 md:mt-0 gap-2'>
               <div className='flex gap-8'>
                 <div className='flex items-center gap-2 text-zinc-500 font-medium'>
-                  {privacy === 'public' ? <GlobeIcon /> : <LockIcon />}
-                  <p className='text-sm'>{privacy === 'public' ? 'Public group' : 'Private group'}</p>
+                  {privacy === '0' ? <GlobeIcon /> : <LockIcon />}
+                  <p className='text-sm'>{privacy === '0' ? 'Public group' : 'Private group'}</p>
                 </div>
                 <div className='flex items-center gap-2 text-zinc-500 font-medium'>
                   <PersonFilledIcon />

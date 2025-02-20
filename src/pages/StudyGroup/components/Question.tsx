@@ -6,27 +6,42 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFullTime, getRelativeTime } from '@/utils/date';
-import { MessageCircleMore, Repeat2, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { Check, Ellipsis, MessageCircleMore, Repeat2, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import MediaGallery from './MediaGallery';
-import { ThreeDotsIcon } from '@/assets/icons';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import QuestionDialog from './QuestionDialog';
 import { IQuestion } from '@/types/question';
-import { VoteType } from '@/types/enums';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/store/store';
-import { voteOnQuestion } from '@/store/slices/questionsSlice';
-import { useParams } from 'react-router-dom';
-import QuestionSheet from './QuestionSheet';
+import { QuestionStatus, StudyGroupRole, VoteType } from '@/types/enums';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store/store';
+import { removeQuestion, voteOnQuestion } from '@/store/slices/questionsSlice';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { approveGroupQuestion, getGroupPendingCount, rejectGroupQuestion } from '@/store/slices/studyGroupSlice';
+
 interface QuestionProps {
   question: IQuestion;
 }
 
 const Question: React.FC<QuestionProps> = ({ question }) => {
   const MAX_HEIGHT = 64;
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   useEffect(() => {
     if (contentRef.current) {
       setShouldShowReadMore(contentRef.current.scrollHeight > MAX_HEIGHT);
@@ -36,26 +51,47 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
   const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const dispatch = useDispatch<AppDispatch>();
   const [userVote, setUserVote] = useState(question.user_vote);
-  const [voteCount, setVoteCount] = useState(question.upvotes - question.downvotes);
 
   const { groupId } = useParams();
+  const navigate = useNavigate();
+
+  const profile = useSelector((state: RootState) => state.profile.user);
+  const { role } = useSelector((state: RootState) => state.studyGroup);
 
   const handleVote = (voteType: VoteType) => {
     if (userVote === voteType) {
-      // Hủy vote nếu đã vote trước đó
       setUserVote(null);
-      setVoteCount(voteType === VoteType.Upvote ? voteCount - 1 : voteCount + 1);
       dispatch(voteOnQuestion({ groupId: groupId as string, questionId: question._id, type: voteType }));
     } else {
-      // Upvote hoặc Downvote mới
-      const voteChange = voteType === VoteType.Upvote ? 1 : -1;
       setUserVote(voteType);
-      setVoteCount(userVote ? voteCount + 2 * voteChange : voteCount + voteChange);
       dispatch(voteOnQuestion({ groupId: groupId as string, questionId: question._id, type: voteType }));
     }
+  };
+
+  const handleDeleteQuestion = async () => {
+    try {
+      await dispatch(removeQuestion({ groupId: groupId as string, questionId: question._id })).unwrap();
+      toast({
+        description: 'Delete queston successfully'
+      });
+    } catch (err) {
+      console.error('Error when deleteing question: ', err);
+      toast({
+        description: 'Failed to delete question',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const handleOpenDeleteDialog = () => {
+    setIsDropdownOpen(false); // Close dropdown when opening alert
+    setIsDeleteDialogOpen(true);
   };
 
   const { mediaFiles, rawFiles } = React.useMemo(() => {
@@ -78,10 +114,44 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
     };
   }, [question.medias]);
 
+  const handleApproveQuestion = async () => {
+    try {
+      await dispatch(approveGroupQuestion({ groupId: question.group_id, questionId: question._id })).unwrap();
+      toast({
+        description: 'Approve question successfully'
+      });
+      if (groupId) {
+        dispatch(getGroupPendingCount(groupId)).unwrap();
+      }
+    } catch (err) {
+      console.error(err);
+      toast({
+        description: 'Failed to approve question',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleRejectQuestion = async () => {
+    try {
+      await dispatch(rejectGroupQuestion({ groupId: question.group_id, questionId: question._id })).unwrap();
+      toast({
+        description: 'Reject question successfully'
+      });
+      if (groupId) {
+        dispatch(getGroupPendingCount(groupId)).unwrap();
+      }
+    } catch (err) {
+      console.error(err);
+      toast({
+        description: 'Failed to approve question',
+        variant: 'destructive'
+      });
+    }
+  };
   return (
-    <div className='border rounded-xl w-full md:w-[576px] mx-auto bg-white pt-3'>
-      {/* Header */}
-      <div className='flex items-center justify-between px-4'>
+    <div className='border rounded-xl w-full bg-white p-4 pb-0 backdrop-blur-md'>
+      <div className='flex items-center justify-between tracking-tight'>
         <div className='flex gap-2 items-center'>
           <Avatar className='w-[48px] h-[48px] cursor-pointer'>
             <AvatarImage src={question.user_info.avatar || 'https://github.com/shadcn.png'} />
@@ -94,32 +164,58 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className='cursor-pointer'>{getRelativeTime(question.created_at)}</span>
+                    <span className='cursor-pointer'>
+                      {question.status === QuestionStatus.Pending || question.status === QuestionStatus.Rejected
+                        ? getRelativeTime(question.created_at)
+                        : getRelativeTime(question.approved_at as string)}
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span>{getFullTime(question.created_at)}</span>
+                    <span>
+                      {question.status === QuestionStatus.Pending || question.status === QuestionStatus.Rejected
+                        ? getFullTime(question.created_at)
+                        : getFullTime(question.approved_at as string)}
+                    </span>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </p>
           </div>
         </div>
-        <DropdownMenu>
+        <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
           <DropdownMenuTrigger className='outline-none border-none'>
             <div className='cursor-pointer text-zinc-500'>
-              <ThreeDotsIcon />
+              <Ellipsis />
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem>Delete question</DropdownMenuItem>
+            {(role === StudyGroupRole.Admin || profile?._id === question.user_info._id) && (
+              <DropdownMenuItem onClick={handleOpenDeleteDialog}>Delete question</DropdownMenuItem>
+            )}
             <DropdownMenuItem>Report question</DropdownMenuItem>
             <DropdownMenuItem>Turn on notifications</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this question?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your question and all its replies.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className='outline-none'>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteQuestion} className='bg-red-500 hover:bg-red-600 outline-none'>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
-      {/* Content with Read More functionality */}
-      <div className='flex flex-col px-4 py-2'>
+      <div className='flex flex-col'>
         {question.title && <h2 className='text-base md:text-lg font-semibold leading-tight'>{question.title}</h2>}
         <div
           ref={contentRef}
@@ -133,6 +229,18 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
               !isExpanded && shouldShowReadMore ? 'linear-gradient(to bottom, black 45%, transparent 100%)' : 'none'
           }}
           dangerouslySetInnerHTML={{ __html: question.content }}
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            const mentionSpan = target.closest('.mention[data-id]') as HTMLElement;
+
+            if (mentionSpan) {
+              const userId = mentionSpan.getAttribute('data-id');
+              if (userId) {
+                console.log('Navigate to user profile:', userId);
+                navigate(`/${userId}`);
+              }
+            }
+          }}
         />
         {shouldShowReadMore && (
           <button
@@ -144,68 +252,83 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
         )}
       </div>
       {question.medias.length > 0 && <MediaGallery medias={question.medias} />}
-
-      {/* Footer */}
-      <div className='px-2 flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
-        <p className='cursor-pointer'>
-          {question.upvotes - question.downvotes === 0
-            ? '0 votes'
-            : `${question.upvotes - question.downvotes > 0 ? '+' : ''}${question.upvotes - question.downvotes} votes`}
-        </p>
-
-        <p className='cursor-pointer'>{question.replies} replies</p>
-      </div>
-      <div className='flex items-center gap-2 py-2 border-t px-2'>
-        <div
-          className={`${
-            userVote === VoteType.Upvote ? 'text-sky-500' : 'text-zinc-500'
-          } text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm`}
-          onClick={() => handleVote(VoteType.Upvote)}
-        >
-          <ThumbsUp size={16} />
-          <p>Upvote</p>
+      {question.status === 0 && role === StudyGroupRole.Admin ? (
+        <div className='px-4 py-2 flex items-center gap-2 border-t'>
+          <Button onClick={handleApproveQuestion} className='flex-1 bg-sky-500 hover:bg-sky-600 text-white gap-2'>
+            <Check size={16} />
+            Approve
+          </Button>
+          <Button onClick={handleRejectQuestion} className='flex-1' variant='outline'>
+            <X size={16} />
+            Decline
+          </Button>
         </div>
+      ) : (
+        <>
+          <div className='flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
+            <p className='cursor-pointer'>
+              {question.upvotes - question.downvotes === 0
+                ? '0 votes'
+                : `${question.upvotes - question.downvotes > 0 ? '+' : ''}${
+                    question.upvotes - question.downvotes
+                  } votes`}
+            </p>
 
-        <div
-          className={`${
-            userVote === VoteType.Downvote ? 'text-sky-500' : 'text-zinc-500'
-          } text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm`}
-          onClick={() => handleVote(VoteType.Downvote)}
-        >
-          <ThumbsDown size={16} />
-          <p>Downvote</p>
-        </div>
-        {mediaFiles.length > 0 ? (
-          <Dialog>
-            <DialogTrigger className='flex-1 outline-none'>
-              <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
-                <MessageCircleMore size={16} />
-                <p>Reply</p>
-              </div>
-            </DialogTrigger>
-            <DialogContent className='max-w-[90vw] md:max-w-[100vw] max-h-[100vh] p-0 border-none'>
-              <QuestionDialog question={question} handleVote={handleVote} userVote={userVote} />
-            </DialogContent>
-          </Dialog>
-        ) : (
-          <Sheet>
-            <SheetTrigger className='flex-1 outline-none'>
-              <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
-                <MessageCircleMore size={16} />
-                <p>Reply</p>
-              </div>
-            </SheetTrigger>
-            <SheetContent className='md:w-[504px] p-0 border-none'>
-              <QuestionSheet question={question} handleVote={handleVote} userVote={userVote} />
-            </SheetContent>
-          </Sheet>
-        )}
+            <p className='cursor-pointer'>{question.replies} replies</p>
+          </div>
+          <div className='flex items-center gap-2 py-2 border-t px-2'>
+            <div
+              className={`${
+                userVote === VoteType.Upvote ? 'text-sky-500' : 'text-zinc-500'
+              } text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm`}
+              onClick={() => handleVote(VoteType.Upvote)}
+            >
+              <ThumbsUp size={16} />
+              <p>Upvote</p>
+            </div>
 
-        <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
-          <Repeat2 size={16} />
-          <p>Publish</p>
-        </div>
-      </div>
+            <div
+              className={`${
+                userVote === VoteType.Downvote ? 'text-sky-500' : 'text-zinc-500'
+              } text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm`}
+              onClick={() => handleVote(VoteType.Downvote)}
+            >
+              <ThumbsDown size={16} />
+              <p>Downvote</p>
+            </div>
+            {mediaFiles.length > 0 ? (
+              <Dialog>
+                <DialogTrigger className='flex-1 outline-none'>
+                  <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
+                    <MessageCircleMore size={16} />
+                    <p>Reply</p>
+                  </div>
+                </DialogTrigger>
+                <DialogContent className='max-w-[90vw] md:max-w-[100vw] max-h-[100vh] p-0 border-none'>
+                  <QuestionDialog question={question} handleVote={handleVote} userVote={userVote} />
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <Sheet>
+                <SheetTrigger className='flex-1 outline-none'>
+                  <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
+                    <MessageCircleMore size={16} />
+                    <p>Reply</p>
+                  </div>
+                </SheetTrigger>
+                <SheetContent className='md:w-[580px] p-0 border-none'>
+                  <QuestionDialog question={question} handleVote={handleVote} userVote={userVote} />
+                </SheetContent>
+              </Sheet>
+            )}
+
+            <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
+              <Repeat2 size={16} />
+              <p>Publish</p>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

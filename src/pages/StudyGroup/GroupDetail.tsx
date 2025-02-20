@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { PersonFilledIcon } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Ban, Camera, Clock5, Globe, Lock, Plus, UserMinus, UserPlus } from 'lucide-react';
+import { Ban, Camera, Clock5, Globe, Lock, UserPlus } from 'lucide-react';
 import { StudyGroupPrivacy, StudyGroupRole } from '@/types/enums';
 import { Spinner } from '@/components/ui/spinner';
 import AvatarEditor from 'react-avatar-editor';
@@ -18,13 +18,13 @@ import {
   clearGroupState,
   editGroupById,
   fetchGroupById,
+  fetchStudyGroupAdmins,
+  fetchStudyGroupMembers,
   requestToJoin
 } from '@/store/slices/studyGroupSlice';
 import NotFound from '../NotFound/NotFound';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MMDDYYYYConvert } from '@/utils/date';
 import bg from '@/assets/images/mainLogo.jpeg';
-import { fetchQuestions } from '@/store/slices/questionsSlice';
 
 const GroupDetail = () => {
   const { groupId } = useParams();
@@ -60,11 +60,17 @@ const GroupDetail = () => {
 
   useEffect(() => {
     if (groupId) {
+      dispatch(fetchStudyGroupAdmins(groupId));
+      dispatch(fetchStudyGroupMembers(groupId));
+    }
+  }, [dispatch, groupId]);
+
+  useEffect(() => {
+    if (groupId) {
       dispatch(fetchGroupById(groupId))
         .unwrap()
         .then((result) => {
           if (result?.role === StudyGroupRole.Guest) {
-            console.log(!!result?.hasRequested);
             setHasRequested(!!result?.hasRequested);
           }
         })
@@ -77,51 +83,6 @@ const GroupDetail = () => {
       dispatch(clearGroupState());
     };
   }, [groupId]);
-
-  useEffect(() => {
-    if (groupId) {
-      dispatch(
-        fetchQuestions({
-          groupId,
-          page: 1,
-          limit: 5
-        })
-      );
-    }
-  }, [groupId]);
-
-  // useEffect(() => {
-  //   const observer = new IntersectionObserver(
-  //     (entries) => {
-  //       const firstEntry = entries[0];
-  //       if (firstEntry.isIntersecting && hasMore && !isFetchingQuestions) {
-  //         dispatch(
-  //           fetchQuestions({
-  //             groupId: groupId as string,
-  //             page: currentPage + 1,
-  //             limit: 5
-  //           })
-  //         );
-  //       }
-  //     },
-  //     {
-  //       threshold: 0.5
-  //     }
-  //   );
-
-  //   console.log('aaaaaa');
-
-  //   // const currentTarget = containerRef.current;
-  //   // if (currentTarget) {
-  //   //   observer.observe(currentTarget);
-  //   // }
-
-  //   // return () => {
-  //   //   if (currentTarget) {
-  //   //     observer.unobserve(currentTarget);
-  //   //   }
-  //   // };
-  // }, [hasMore, isFetchingQuestions, currentPage, groupId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -371,7 +332,7 @@ const GroupDetail = () => {
                           <div className='flex flex-col'>
                             <p className='font-semibold'>History</p>
                             <p className='text-sm text-muted-foreground'>
-                              Study group created on {MMDDYYYYConvert(studyGroup.info?.created_at as string)}
+                              Study group created on {studyGroup.info?.created_at as string}
                             </p>
                           </div>
                         </div>

@@ -5,7 +5,8 @@ import {
   commentReducer,
   studyGroupReducer,
   questionsReducer,
-  repliesReducer
+  repliesReducer,
+  notificationsSlice
 } from './slices';
 
 const store = configureStore({
@@ -15,7 +16,8 @@ const store = configureStore({
     comments: commentReducer,
     studyGroup: studyGroupReducer,
     questions: questionsReducer,
-    replies: repliesReducer
+    replies: repliesReducer,
+    notifications: notificationsSlice
   }
 });
 

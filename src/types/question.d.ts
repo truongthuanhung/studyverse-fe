@@ -10,6 +10,7 @@ interface IQuestion {
   tags: string[];
   medias: string[];
   mentions: string[];
+  approved_at: string | null;
   created_at: string;
   updated_at: string;
   user_info: IUserInfo;
@@ -28,4 +29,7 @@ interface IReply {
   updated_at: string;
   user_info: IUserInfo;
   reply_count: number;
+  upvotes: number;
+  downvotes: number;
+  user_vote: VoteType | null;
 }
