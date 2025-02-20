@@ -227,10 +227,10 @@ const Profile = () => {
           </p>
         </div>
         <div className='flex gap-2 mt-4'>
-          <Button className='px-4 rounded-[20px] text-white bg-sky-500 hover:bg-sky-600'>
+          {/* <Button className='px-4 rounded-[20px] text-white bg-sky-500 hover:bg-sky-600'>
             <Plus />
             Follow
-          </Button>
+          </Button> */}
           <Dialog open={open} onOpenChange={handleDialogOpen}>
             <DialogTrigger asChild>
               <Button className='rounded-[20px]' variant='outline'>

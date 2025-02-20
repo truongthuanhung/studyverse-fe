@@ -1,8 +1,17 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { IReply } from '@/types/question';
-import { createReply, CreateReplyRequestBody, deleteReply, getRepliesByQuestionId } from '@/services/replies.services';
+import {
+  createReply,
+  CreateReplyRequestBody,
+  deleteReply,
+  editReply,
+  EditReplyRequestBody,
+  getRepliesByQuestionId
+} from '@/services/replies.services';
 import { updateQuestionReplies } from './questionsSlice';
 import { uploadFiles } from '@/services/medias.services';
+import { VoteType } from '@/types/enums';
+import { voteReply } from '@/services/votes.services';
 
 interface UploadedFile extends File {
   preview?: string;
@@ -33,7 +42,9 @@ interface RepliesState {
   hasMore: { [questionId: string]: boolean };
   isFetchingReplies: boolean;
   isCreatingReply: boolean;
+  isEditingReply: boolean;
   isDeletingReply: boolean;
+  isVoting: boolean;
   isUploadingFiles: { [questionId: string]: boolean };
   error: string | null;
   totalPages: { [questionId: string]: number };
@@ -49,7 +60,9 @@ const initialState: RepliesState = {
   totalPages: {},
   isFetchingReplies: false,
   isCreatingReply: false,
+  isEditingReply: false,
   isDeletingReply: false,
+  isVoting: false,
   isUploadingFiles: {},
   error: null,
   uploadedFiles: {},
@@ -146,13 +159,13 @@ export const removeReply = createAsyncThunk<
   }
 >('replies/removeReply', async ({ groupId, questionId, replyId }, { dispatch, rejectWithValue }) => {
   try {
-    await deleteReply({ groupId, questionId, replyId });
+    const response = await deleteReply({ groupId, questionId, replyId });
 
     // Update the reply count in the question
     dispatch(
       updateQuestionReplies({
         questionId,
-        replies: -1 // Decrease the reply count by 1
+        replies: response.data.result.reply_count
       })
     );
 
@@ -162,6 +175,56 @@ export const removeReply = createAsyncThunk<
     };
   } catch (err: any) {
     return rejectWithValue(err.response?.data || 'Failed to delete reply');
+  }
+});
+
+export const voteOnReply = createAsyncThunk(
+  'questions/voteOnReply',
+  async (
+    {
+      groupId,
+      questionId,
+      replyId,
+      type
+    }: {
+      groupId: string;
+      questionId: string;
+      replyId: string;
+      type: VoteType;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      await voteReply({ groupId, questionId, replyId, type });
+      return { questionId, replyId, type };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to vote on question');
+    }
+  }
+);
+
+export const updateReply = createAsyncThunk<
+  {
+    questionId: string;
+    replyId: string;
+    updatedReply: IReply;
+  },
+  {
+    groupId: string;
+    questionId: string;
+    replyId: string;
+    body: EditReplyRequestBody;
+  }
+>('replies/updateReply', async ({ groupId, questionId, replyId, body }, { rejectWithValue }) => {
+  try {
+    const response = await editReply({ groupId, questionId, replyId, body });
+    return {
+      questionId,
+      replyId,
+      updatedReply: response.data.result
+    };
+  } catch (err: any) {
+    return rejectWithValue(err.response?.data || 'Failed to edit reply');
   }
 });
 
@@ -199,6 +262,50 @@ const repliesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // vote on reply
+      .addCase(voteOnReply.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(voteOnReply.fulfilled, (state, action) => {
+        const { questionId, replyId, type } = action.payload;
+
+        if (state.data[questionId]) {
+          state.data[questionId] = state.data[questionId].map((reply) => {
+            if (reply._id === replyId) {
+              if (reply.user_vote === type) {
+                // Nếu đã vote loại này trước đó, thì hủy vote
+                if (type === VoteType.Upvote) {
+                  reply.upvotes -= 1;
+                } else {
+                  reply.downvotes -= 1;
+                }
+                reply.user_vote = null;
+              } else {
+                // Nếu đổi vote (hoặc vote mới)
+                if (reply.user_vote === VoteType.Upvote) {
+                  reply.upvotes -= 1;
+                } else if (reply.user_vote === VoteType.Downvote) {
+                  reply.downvotes -= 1;
+                }
+
+                if (type === VoteType.Upvote) {
+                  reply.upvotes += 1;
+                } else {
+                  reply.downvotes += 1;
+                }
+                reply.user_vote = type;
+              }
+            }
+            return reply;
+          });
+        }
+        state.isVoting = false;
+      })
+      .addCase(voteOnReply.rejected, (state, action) => {
+        state.isVoting = false;
+        state.error = action.payload as string;
+      })
       .addCase(fetchReplies.pending, (state) => {
         state.isFetchingReplies = true;
         state.error = null;
@@ -287,6 +394,27 @@ const repliesSlice = createSlice({
       })
       .addCase(removeReply.rejected, (state, action) => {
         state.isDeletingReply = false;
+        state.error = action.payload as string;
+      })
+      // Edit reply
+      .addCase(updateReply.pending, (state) => {
+        state.isEditingReply = true;
+        state.error = null;
+      })
+      .addCase(updateReply.fulfilled, (state, action) => {
+        const { questionId, replyId, updatedReply } = action.payload;
+
+        // Update the reply in the state
+        if (state.data[questionId]) {
+          state.data[questionId] = state.data[questionId].map((reply) =>
+            reply._id === replyId ? updatedReply : reply
+          );
+        }
+
+        state.isEditingReply = false;
+      })
+      .addCase(updateReply.rejected, (state, action) => {
+        state.isEditingReply = false;
         state.error = action.payload as string;
       })
       // Upload file

@@ -15,7 +15,6 @@ interface FileUploadPreviewProps {
 }
 
 const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({ files, onRemove, className = '' }) => {
-  console.log(files)
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -37,7 +36,7 @@ const FileUploadPreview: React.FC<FileUploadPreviewProps> = ({ files, onRemove, 
 
   return (
     <ScrollArea className={`${className}`}>
-      <div className='space-y-4 max-h-[150px]'>
+      <div className='space-y-4'>
         {files?.some((file) => file?.type?.startsWith('image/')) && (
           <div className='grid grid-cols-2 md:grid-cols-4 gap-3 my-2'>
             {files.map(

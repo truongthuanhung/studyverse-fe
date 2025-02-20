@@ -7,7 +7,8 @@ import {
   ThumbsDown,
   MessageCircleMore,
   Repeat2,
-  Maximize2
+  Maximize2,
+  Upload
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ReactQuill from 'react-quill';
@@ -22,10 +23,20 @@ import Reply from '@/components/common/Reply';
 import { VoteType } from '@/types/enums';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
-import { addReply, fetchReplies } from '@/store/slices/repliesSlice';
-import { useParams } from 'react-router-dom';
+import {
+  addReply,
+  addUploadedFiles,
+  fetchReplies,
+  removeUploadedFile,
+  resetReplyFiles,
+  uploadReplyFiles
+} from '@/store/slices/repliesSlice';
+import { useNavigate, useParams } from 'react-router-dom';
 import { CreateReplyRequestBody } from '@/services/replies.services';
 import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/hooks/use-toast';
+import { MAX_FILES } from '@/constants/constants';
+import FileUploadPreview from '@/components/common/FileUploadPreview';
 
 interface QuestionDialogProps {
   question: IQuestion;
@@ -34,32 +45,132 @@ interface QuestionDialogProps {
   handleVote: (voteType: VoteType) => void;
 }
 
+interface UploadedFile extends File {
+  preview?: string;
+}
+
 const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, userVote, initialImageIndex = 0 }) => {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(initialImageIndex);
   const [convertedText, setConvertedText] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const quillRef = useRef<ReactQuill | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
   const replies = useSelector((state: RootState) => state.replies.data[question._id] || []);
   const currentPage = useSelector((state: RootState) => state.replies.currentPage[question._id] || 0);
   const hasMore = useSelector((state: RootState) => state.replies.hasMore[question._id] || false);
-  const { isFetchingReplies, isCreatingReply } = useSelector((state: RootState) => state.replies);
+  const { isFetchingReplies, isCreatingReply, isUploadingFiles } = useSelector((state: RootState) => state.replies);
+  const uploadedFiles = useSelector((state: RootState) => state.replies.uploadedFiles[question._id] || []);
+  const uploadedUrls = useSelector((state: RootState) => state.replies.uploadedUrls[question._id] || []);
 
   const { groupId } = useParams();
+  const { toast } = useToast();
+
+  const [mentions, setMentions] = useState<any[]>([]);
+  const { admins, members } = useSelector((state: RootState) => state.studyGroup);
+  const navigate = useNavigate();
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files);
+    if (uploadedFiles.length + newFiles.length > MAX_FILES) {
+      alert(`Maximum ${MAX_FILES} files allowed`);
+      return;
+    }
+
+    // Tạo preview và đặt trạng thái ban đầu là 'pending'
+    const processedFiles: UploadedFile[] = newFiles.map((file) => ({
+      ...file,
+      size: file.size,
+      type: file.type,
+      name: file.name,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+      status: 'pending'
+    }));
+
+    dispatch(addUploadedFiles({ questionId: question._id as string, files: processedFiles }));
+    const formData = new FormData();
+    newFiles.forEach((file) => formData.append('files', file));
+
+    try {
+      await dispatch(uploadReplyFiles({ questionId: question._id as string, formData })).unwrap();
+    } catch (error) {
+      alert(error);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFileRemove = (index: number) => {
+    dispatch(
+      removeUploadedFile({
+        questionId: question._id,
+        index
+      })
+    );
+  };
+
+  const cleanContent = (htmlContent: string): string => {
+    let cleanedContent = htmlContent.trim();
+    cleanedContent = cleanedContent.replace(/^\s*<br\s*\/?>|<br\s*\/?>\s*$/g, '');
+    return cleanedContent;
+  };
+
+  const onReply = async () => {
+    console.log(convertedText);
+    const sanitizedContent = cleanContent(convertedText);
+    const payload: CreateReplyRequestBody = {
+      content: sanitizedContent,
+      parent_id: null,
+      medias: uploadedUrls
+    };
+
+    try {
+      await dispatch(
+        addReply({
+          groupId: groupId as string,
+          questionId: question._id,
+          body: payload
+        })
+      ).unwrap();
+
+      setConvertedText('');
+      dispatch(resetReplyFiles({ questionId: question._id }));
+      toast({ description: 'Reply created successfully' });
+    } catch (err) {
+      toast({
+        description: 'Failed to create reply',
+        variant: 'destructive'
+      });
+    }
+  };
 
   const loadMoreReplies = () => {
-    if (hasMore) {
+    if (hasMore && !isFetchingReplies) {
       dispatch(
-        fetchReplies({ groupId: groupId as string, questionId: question._id, page: currentPage + 1, limit: 10 })
+        fetchReplies({
+          groupId: groupId as string,
+          questionId: question._id,
+          page: currentPage + 1,
+          limit: 10
+        })
       );
     }
   };
 
   useEffect(() => {
     if (currentPage === 0) {
-      dispatch(fetchReplies({ groupId: groupId as string, questionId: question._id }));
+      dispatch(
+        fetchReplies({
+          groupId: groupId as string,
+          questionId: question._id
+        })
+      );
     }
-  }, [dispatch, question._id, currentPage]);
+  }, [question._id, currentPage]);
 
   const { mediaFiles, rawFiles } = React.useMemo(() => {
     const getMediaType = (url: string) => {
@@ -89,35 +200,10 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, u
     setCurrentMediaIndex((prevIndex) => (prevIndex === 0 ? mediaFiles.length - 1 : prevIndex - 1));
   };
 
-  const cleanContent = (htmlContent: string): string => {
-    // Loại bỏ khoảng trắng và xuống dòng thừa ở phía trước và sau
-    let cleanedContent = htmlContent.trim();
-
-    // Loại bỏ khoảng trắng hoặc thẻ <br /> không cần thiết ở đầu và cuối nội dung HTML
-    cleanedContent = cleanedContent.replace(/^\s*<br\s*\/?>|<br\s*\/?>\s*$/g, '');
-
-    return cleanedContent;
-  };
-
-  const onReply = async () => {
-    const sanitizedContent = cleanContent(convertedText);
-    const payload: CreateReplyRequestBody = {
-      content: sanitizedContent,
-      parent_id: null
-    };
-
-    try {
-      await dispatch(addReply({ groupId: groupId as string, questionId: question._id, body: payload }));
-      setConvertedText('');
-    } catch (err) {
-      console.error('Failed to create reply:', err);
-    }
-  };
-
   return (
-    <div className='flex w-full bg-white  shadow-lg overflow-hidden'>
-      <div className='grow-[2] relative bg-gray-100'>
-        {mediaFiles.length > 0 && (
+    <div className='flex w-full bg-white overflow-hidden'>
+      {mediaFiles.length > 0 && (
+        <div className='w-3/5 relative bg-gray-100'>
           <div className='relative w-full h-[100vh] flex items-center justify-center'>
             {mediaFiles.map((media, index) => {
               const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(
@@ -157,10 +243,11 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, u
               </>
             )}
           </div>
-        )}
-      </div>
-
-      <ScrollArea className='grow-1 border-l p-4 flex flex-col bg-white h-screen'>
+        </div>
+      )}
+      <ScrollArea
+        className={`${mediaFiles.length > 0 ? 'w-2/5' : 'w-full'} border-l p-4 flex flex-col bg-white h-screen`}
+      >
         <div className='flex gap-2 items-center'>
           <Avatar className='w-[48px] h-[48px] cursor-pointer'>
             <AvatarImage src={question.user_info.avatar || 'https://github.com/shadcn.png'} />
@@ -185,8 +272,28 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, u
         </div>
 
         <div>
-          {question.title && <h2 className='text-lg font-semibold mb-2'>{question.title}</h2>}
-          <div className='text-sm text-gray-700' dangerouslySetInnerHTML={{ __html: question.content }} />
+          {question.title && <h2 className='text-lg font-semibold'>{question.title}</h2>}
+          <div
+            className='text-sm text-gray-700'
+            dangerouslySetInnerHTML={{ __html: question.content }}
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              const mentionSpan = target.closest('.mention[data-id]') as HTMLElement;
+
+              if (mentionSpan) {
+                const userId = mentionSpan.getAttribute('data-id');
+                if (userId) {
+                  // Navigate to user profile
+                  // Replace with your actual navigation method
+
+                  console.log('Navigate to user profile:', userId);
+                  navigate(`/${userId}`);
+                  // Example with React Router:
+                  // navigate(`/profile/${userId}`);
+                }
+              }
+            }}
+          />
         </div>
 
         <div className='flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
@@ -224,10 +331,35 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, u
           </div>
         </div>
         <div className='flex-grow flex flex-col'>
-          <Editor ref={quillRef} value={convertedText} onChange={setConvertedText} placeholder='Write your reply' />
-          <div className='mt-2 flex justify-end'>
+          <div className='border rounded-lg'>
+            <Editor
+              ref={quillRef}
+              value={convertedText}
+              mentions={mentions}
+              onChange={setConvertedText}
+              setMentions={setMentions}
+              mention_users={[...admins.map((admin) => admin.user_info), ...members.map((member) => member.user_info)]}
+              placeholder='Write your reply'
+            />
+          </div>
+          {/* Media Upload Section */}
+          <input type='file' ref={fileInputRef} className='hidden' multiple onChange={handleFileUpload} />
+
+          <FileUploadPreview files={uploadedFiles} onRemove={handleFileRemove} />
+          <div className='mt-2 flex justify-between items-center'>
             <Button
-              disabled={isCreatingReply}
+              variant='ghost'
+              size='icon'
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingFiles[question._id]}
+            >
+              <Upload size={20} />
+            </Button>
+
+            <Button
+              disabled={
+                isCreatingReply || isUploadingFiles[question._id] || (!convertedText && uploadedUrls.length === 0)
+              }
               onClick={onReply}
               className='rounded-[20px] bg-sky-500 hover:bg-sky-600 text-white'
             >
@@ -235,7 +367,7 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, u
                 <Spinner size='small' />
               ) : (
                 <>
-                  <Send />
+                  <Send className='mr-2' />
                   Send
                 </>
               )}

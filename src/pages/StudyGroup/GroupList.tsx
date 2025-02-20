@@ -4,7 +4,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { SearchIcon } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { GroupItem } from '@/layouts/components/common';
 import GroupGridItem from './components/GroupGridItem';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -55,9 +54,9 @@ const GroupList = () => {
           </Button>
         </div>
         <div className='px-4'>
-          <Separator className='my-4'></Separator>
+          <Separator className='my-4' />
         </div>
-        <div className='px-4'>
+        {/* <div className='px-4'>
           <h3 className='font-bold text-lg'>Groups you manage</h3>
           <div className='flex flex-col mx-[-16px] mt-1'>
             <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
@@ -72,7 +71,7 @@ const GroupList = () => {
             <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
             <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
           </div>
-        </div>
+        </div> */}
       </ScrollArea>
       <ScrollArea className='flex-1 p-8 bg-slate-100'>
         <h3 className='font-semibold mb-4'>All groups you've joined</h3>

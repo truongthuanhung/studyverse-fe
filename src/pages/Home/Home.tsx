@@ -169,7 +169,7 @@ const Home = memo(() => {
       className='lg:max-w-3xl mx-auto pt-4 h-[calc(100vh-60px)] bg-[#F3F4F8] overflow-y-auto custom-scrollbar'
     >
       {/* Create Post Card */}
-      <div className='bg-white rounded-lg shadow-md p-4 flex gap-2 w-full md:w-[600px] mx-auto'>
+      <div className='bg-white rounded-lg shadow-md p-4 flex gap-2 w-full md:w-[580px] mx-auto'>
         <Avatar className='h-[40px] w-[40px]'>
           <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
           <AvatarFallback>CN</AvatarFallback>

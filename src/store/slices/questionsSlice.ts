@@ -1,7 +1,7 @@
 import { uploadFiles } from '@/services/medias.services';
-import { createQuestion, getQuestionsByGroupId } from '@/services/questions.services';
+import { createQuestion, deleteQuestion, getQuestionById, getQuestionsByGroupId } from '@/services/questions.services';
 import { voteQuestion } from '@/services/votes.services';
-import { VoteType } from '@/types/enums';
+import { StudyGroupRole, VoteType } from '@/types/enums';
 import { IQuestion } from '@/types/question';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 
@@ -21,6 +21,7 @@ interface QuestionsState {
   isFetchingQuestions: boolean;
   isUploadingFiles: boolean;
   isCreatingQuestion: boolean;
+  isDeletingQuestion: boolean;
   isVoting: boolean;
   error: string | null;
   content: string;
@@ -36,6 +37,7 @@ const initialState: QuestionsState = {
   isFetchingQuestions: false,
   isUploadingFiles: false,
   isCreatingQuestion: false,
+  isDeletingQuestion: false,
   isVoting: false,
   error: null,
   content: '',
@@ -73,7 +75,7 @@ export const fetchQuestions = createAsyncThunk(
   'questions/fetchQuestions',
   async ({ groupId, page = 1, limit = 10 }: { groupId: string; page: number; limit: number }, { rejectWithValue }) => {
     try {
-      const response = await getQuestionsByGroupId(groupId, { page, limit });
+      const response = await getQuestionsByGroupId(groupId, { page, limit, status: 1 });
       return {
         questions: response.data.result.questions,
         page,
@@ -85,14 +87,50 @@ export const fetchQuestions = createAsyncThunk(
   }
 );
 
-export const createNewQuestion = createAsyncThunk(
-  'questions/createQuestion',
-  async ({ groupId, body }: { groupId: string; body: any }, { rejectWithValue }) => {
+export const fetchQuestionById = createAsyncThunk(
+  'questions/fetchQuestionById',
+  async ({ groupId, questionId }: { groupId: string; questionId: string }, { rejectWithValue }) => {
     try {
-      const response = await createQuestion(groupId, body);
+      const response = await getQuestionById({ groupId, questionId });
       return response.data.result;
     } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch question');
+    }
+  }
+);
+
+export const createNewQuestion = createAsyncThunk(
+  'questions/createQuestion',
+  async ({ groupId, body, role }: { groupId: string; body: any; role: StudyGroupRole }, { rejectWithValue }) => {
+    try {
+      const response = await createQuestion(groupId, body);
+      return {
+        result: response.data.result,
+        role
+      };
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create question');
+    }
+  }
+);
+
+export const removeQuestion = createAsyncThunk(
+  'questions/removeQuestion',
+  async (
+    {
+      groupId,
+      questionId
+    }: {
+      groupId: string;
+      questionId: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      await deleteQuestion(groupId, questionId);
+      return questionId;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete question');
     }
   }
 );
@@ -141,6 +179,7 @@ const questionsSlice = createSlice({
         URL.revokeObjectURL(file.preview); // Free memory for object URLs
       }
       state.uploadedFiles = state.uploadedFiles.filter((_, i) => i !== index);
+      state.uploadedUrls = state.uploadedUrls.filter((_, i) => i !== index);
     },
     updateQuestionReplies(state, action: PayloadAction<{ questionId: string; replies: number }>) {
       const { questionId, replies } = action.payload;
@@ -152,17 +191,45 @@ const questionsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Create post
+      // Create question
       .addCase(createNewQuestion.pending, (state) => {
         state.isCreatingQuestion = true;
         state.error = null;
       })
-      .addCase(createNewQuestion.fulfilled, (state, action: PayloadAction<IQuestion>) => {
+      .addCase(createNewQuestion.fulfilled, (state, action) => {
         state.isCreatingQuestion = false;
-        state.data = [action.payload, ...state.data]; // Thêm post mới vào đầu mảng
+        if (action.payload.role === StudyGroupRole.Admin) {
+          state.data = [action.payload.result, ...state.data];
+        }
       })
       .addCase(createNewQuestion.rejected, (state, action: PayloadAction<any>) => {
         state.isCreatingQuestion = false;
+        state.error = action.payload as string;
+      })
+      // Delete question
+      .addCase(removeQuestion.pending, (state) => {
+        state.isDeletingQuestion = true;
+        state.error = null;
+      })
+      .addCase(removeQuestion.fulfilled, (state, action) => {
+        state.data = state.data.filter((question) => question._id !== action.payload);
+        state.isDeletingQuestion = false;
+      })
+      .addCase(removeQuestion.rejected, (state, action) => {
+        state.error = action.payload as string;
+        state.isDeletingQuestion = false;
+      })
+      // Fetch single question
+      .addCase(fetchQuestionById.pending, (state) => {
+        state.isFetchingQuestions = true;
+        state.error = null;
+      })
+      .addCase(fetchQuestionById.fulfilled, (state, action) => {
+        state.isFetchingQuestions = false;
+        state.data = [action.payload];
+      })
+      .addCase(fetchQuestionById.rejected, (state, action) => {
+        state.isFetchingQuestions = false;
         state.error = action.payload as string;
       })
       // Fetch questions

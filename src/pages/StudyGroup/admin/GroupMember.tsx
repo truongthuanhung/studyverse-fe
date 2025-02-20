@@ -4,22 +4,11 @@ import { Input } from '@/components/ui/input'; // Shadcn Input component
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
-import { fetchStudyGroupAdmins, fetchStudyGroupMembers } from '@/store/slices/studyGroupSlice';
 import GroupMemberItemSkeleton from '@/components/common/GroupMemberItemSkeleton';
 
 const GroupMember = () => {
   const { groupId } = useParams();
-  const dispatch = useDispatch<AppDispatch>();
-
   const { admins, members, isFetchingMembers } = useSelector((state: RootState) => state.studyGroup);
-
-  useEffect(() => {
-    if (groupId) {
-      dispatch(fetchStudyGroupAdmins(groupId));
-      dispatch(fetchStudyGroupMembers(groupId));
-    }
-  }, [dispatch, groupId]);
-
   const [search, setSearch] = useState('');
 
   // Lọc danh sách Admins và Members theo từ khóa tìm kiếm

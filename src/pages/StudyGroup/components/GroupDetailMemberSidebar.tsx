@@ -52,7 +52,7 @@ const GroupDetailMemberSidebar = () => {
         <div
           onClick={() => handleNavigation(`/groups/${groupId}/members`)}
           className={`${
-            slug === 'member' ? 'text-sky-500 bg-accent' : 'hover:bg-accent'
+            slug === 'members' ? 'text-sky-500 bg-accent' : 'hover:bg-accent'
           } flex gap-4 items-center cursor-pointer px-4 py-3`}
         >
           <PeopleIcon />
