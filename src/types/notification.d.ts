@@ -9,6 +9,7 @@ interface INotification {
   content: string;
   status: NotificationStatus;
   created_at: string;
+  target_url?: string;
   actor: {
     name: string;
     username: string;

@@ -5,3 +5,4 @@ export { default as studyGroupReducer } from './studyGroupSlice';
 export { default as questionsReducer } from './questionsSlice';
 export { default as repliesReducer } from './repliesSlice';
 export { default as notificationsSlice } from './notificationsSlice';
+export { default as relationshipSlice } from './relationshipSlice';

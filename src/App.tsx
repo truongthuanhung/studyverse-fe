@@ -15,7 +15,8 @@ import {
   GroupMember,
   GroupRequest,
   GroupSettings,
-  CreateQuestion
+  CreateQuestion,
+  Relationship
 } from './pages';
 import SubLayout from './layouts/SubLayout';
 import { memo } from 'react';
@@ -47,6 +48,7 @@ const App = memo(() => {
           </Route>
           <Route element={<SubLayout />}>
             <Route element={<PrivateRoutes />}>
+              <Route path='/relationships' element={<Relationship />} />
               <Route path='/conversations/t/:userId' element={<NewConversation />} />
               <Route path='/conversations/:conversationId' element={<Conversation />} />
               <Route path='/conversations' element={<Conversation />} />

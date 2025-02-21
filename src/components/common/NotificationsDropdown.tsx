@@ -1,4 +1,6 @@
-import React from 'react';
+import { useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store/store';
 import { Bell, Check, MessageSquare, User, Bell as BellIcon, BookOpen, BadgeAlert, Ellipsis } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -6,19 +8,61 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { getRelativeTime } from '@/utils/date';
-import { INotification } from '@/types/notification';
 import { NotificationStatus, NotificationType } from '@/types/enums';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/store/store';
-import { markAllNotificationsAsRead } from '@/store/slices/notificationsSlice';
+import {
+  markAllNotificationsAsRead,
+  readNotification,
+  fetchNotifications,
+  fetchMoreNotifications
+} from '@/store/slices/notificationsSlice';
 
-interface NotificationsDropdownProps {
-  notifications: INotification[];
-}
+const NotificationsDropdown = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ notifications = [] }) => {
+  const {
+    data: notifications,
+    isFetchingNotifications,
+    hasMore,
+    currentPage
+  } = useSelector((state: RootState) => state.notifications);
+
+  useEffect(() => {
+    dispatch(fetchNotifications({ page: 1, limit: 10 }));
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        if (firstEntry.isIntersecting && hasMore && !isFetchingNotifications) {
+          dispatch(
+            fetchMoreNotifications({
+              page: currentPage + 1,
+              limit: 10
+            })
+          );
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    const currentTarget = scrollRef.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, isFetchingNotifications, currentPage]);
+
   const getIcon = (type: NotificationType) => {
     switch (type) {
       case NotificationType.Message:
@@ -34,11 +78,8 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ notificat
     }
   };
 
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const dispatch = useDispatch<AppDispatch>();
-
   const unreadCount = notifications.filter((notification) => notification.status === NotificationStatus.Unread).length;
+
   const handleReadAll = async () => {
     try {
       await dispatch(markAllNotificationsAsRead()).unwrap();
@@ -75,10 +116,13 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ notificat
             {notifications.map((notification) => (
               <div
                 key={notification._id}
-                onClick={() => {
-                  if (notification.type === NotificationType.Group) {
-                    navigate('');
+                onClick={async () => {
+                  try {
+                    await dispatch(readNotification(notification._id)).unwrap();
+                  } catch (err) {
+                    console.error(err);
                   }
+                  navigate(notification.target_url || '');
                 }}
               >
                 <div
@@ -122,11 +166,19 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ notificat
                 <Separator />
               </div>
             ))}
+            {/* Loading indicator and intersection observer target */}
+            <div ref={scrollRef} className=''>
+              {isFetchingNotifications && (
+                <div className='flex justify-center'>
+                  <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-sky-500'></div>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className='flex flex-col items-center justify-center h-full py-8 text-gray-500'>
             <Bell className='h-12 w-12 text-gray-300 mb-2' />
-            <p>Không có thông báo nào</p>
+            <p>No notifications</p>
           </div>
         )}
       </ScrollArea>

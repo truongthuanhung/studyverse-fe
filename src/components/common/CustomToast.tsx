@@ -4,6 +4,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast, ToastOptions } from 'react-toastify';
 import { INotification } from '@/types/notification';
 import { getRelativeTime } from '@/utils/date';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/store/store';
+import { readNotification } from '@/store/slices/notificationsSlice';
 
 interface CustomToastProps {
   notification: INotification;
@@ -11,8 +15,23 @@ interface CustomToastProps {
 }
 
 const CustomToast: React.FC<CustomToastProps> = ({ notification, onClose }) => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const handleClickNotification = async () => {
+    try {
+      await dispatch(readNotification(notification._id)).unwrap();
+      if (notification.target_url) {
+        navigate(notification.target_url);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
   return (
-    <div className='bg-white rounded-lg shadow-lg p-4 max-w-sm w-full'>
+    <div
+      className='bg-white hover:bg-gray-50 rounded-lg shadow-lg p-4 max-w-sm w-full'
+      onClick={handleClickNotification}
+    >
       <div className='flex items-center justify-between mb-2'>
         <span className='font-semibold text-sm text-primary'>New notification</span>
         <button onClick={onClose} className='rounded-full p-1 hover:bg-gray-100'>
@@ -47,7 +66,7 @@ export const showNotification = (notification: INotification) => {
     pauseOnHover: true,
     draggable: true,
     closeButton: false,
-    className: '!p-0 !bg-transparent !shadow-none'
+    className: '!p-0 !bg-transparent !shadow'
   };
 
   toast(<CustomToast notification={notification} onClose={() => toast.dismiss()} />, toastOptions);

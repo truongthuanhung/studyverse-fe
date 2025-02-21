@@ -74,3 +74,15 @@ export const follow = (body: IFollowBody) => {
 export const unfollow = (body: IUnfollowBody) => {
   return http.post(`${baseUrl}/unfollow`, body);
 };
+
+export const getFriends = (page: number = 1, limit: number = 10) => {
+  return http.get(`${baseUrl}/friends?page=${page}&limit=${limit}`);
+};
+
+export const getFollowers = (page: number = 1, limit: number = 10) => {
+  return http.get(`${baseUrl}/followers?page=${page}&limit=${limit}`);
+};
+
+export const getFollowings = (page: number = 1, limit: number = 10) => {
+  return http.get(`${baseUrl}/followings?page=${page}&limit=${limit}`);
+};

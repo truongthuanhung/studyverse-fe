@@ -1,5 +1,3 @@
-import { getQuestionById } from '@/services/questions.services';
-import { IQuestion } from '@/types/question';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Question from './components/Question';
@@ -14,19 +12,23 @@ const GroupQuestionDetail = () => {
   const dispatch = useDispatch<AppDispatch>();
   useEffect(() => {
     dispatch(fetchQuestionById({ groupId: groupId as string, questionId: questionId as string }));
-  }, []);
+  }, [questionId, groupId]);
   return (
-    <div className='flex flex-col gap-4 py-4'>
+    <div className='py-4 bg-slate-100'>
       {isFetchingQuestions && data.length === 0 ? (
         Array(1)
           .fill(null)
-          .map((_, index) => <PostSkeleton key={index} />)
+          .map((_, index) => (
+            <div className='max-w-2xl mx-auto'>
+              <PostSkeleton key={index} />
+            </div>
+          ))
       ) : (
-        <>
+        <div className='max-w-2xl mx-auto'>
           {data.map((question) => (
             <Question key={question._id} question={question} />
           ))}
-        </>
+        </div>
       )}
     </div>
   );

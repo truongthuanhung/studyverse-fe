@@ -89,3 +89,11 @@ export interface IFollowBody {
 export interface IUnfollowBody {
   unfollowed_user_id: string;
 }
+
+interface IRelationship {
+  _id: string;
+  username: string;
+  name: string;
+  avatar: string;
+  created_at: string;
+}

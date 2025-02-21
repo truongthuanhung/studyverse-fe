@@ -8,3 +8,4 @@ export { default as GroupAnalytics } from '@/pages/StudyGroup/admin/GroupAnalyti
 export { default as GroupSettings } from '@/pages/StudyGroup/admin/GroupSettings';
 export { default as CreateGroup } from '@/pages/StudyGroup/admin/CreateGroup';
 export { default as CreateQuestion } from '@/pages/StudyGroup/GroupCreateQuestion';
+export { default as Relationship } from '@/pages/Connection/Relationship';

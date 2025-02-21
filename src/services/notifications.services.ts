@@ -35,3 +35,7 @@ export const markAllAsRead = () => {
 export const deleteNotification = (notificationId: string) => {
   return http.delete(`${baseUrl}/${notificationId}`);
 };
+
+export const readNotificationById = (notificationId: string) => {
+  return http.patch(`${baseUrl}/${notificationId}/read`);
+};

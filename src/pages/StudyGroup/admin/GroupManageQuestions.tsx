@@ -10,7 +10,7 @@ import { ClipboardList } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const EmptyState = ({ title, description }: { title: string; description: string }) => (
-  <div className='flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md w-full md:w-[580px] mx-auto mb-4'>
+  <div className='flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md w-full md:w-[680px] mx-auto mb-4'>
     <ClipboardList className='w-16 h-16 text-slate-400 mb-4' />
     <h3 className='text-xl font-semibold text-slate-900 mb-2'>{title}</h3>
     <p className='text-slate-600 text-center'>{description}</p>
@@ -149,7 +149,7 @@ const GroupManageQuestions = memo(() => {
     <div className='bg-slate-100 pt-4'>
       <Tabs defaultValue='pending' className='w-full'>
         <div className='flex items-center justify-center'>
-          <TabsList className='mb-4 w-full md:w-[580px] mx-auto'>
+          <TabsList className='mb-4 w-full md:w-[680px] mx-auto'>
             <TabsTrigger value='pending' className='flex-1'>
               Pending Questions
             </TabsTrigger>
@@ -159,7 +159,7 @@ const GroupManageQuestions = memo(() => {
           </TabsList>
         </div>
 
-        <TabsContent value='pending' className='flex flex-col gap-4'>
+        <TabsContent value='pending' className='flex flex-col gap-4 max-w-3xl mx-auto'>
           {isFetchingPendingQuestions && pendingQuestions.length === 0 ? (
             Array(3)
               .fill(null)
@@ -179,7 +179,7 @@ const GroupManageQuestions = memo(() => {
           )}
         </TabsContent>
 
-        <TabsContent value='rejected' className='flex flex-col gap-4'>
+        <TabsContent value='rejected' className='flex flex-col gap-4 max-w-3xl mx-auto'>
           {isFetchingRejectedQuestions && rejectedQuestions.length === 0 ? (
             Array(3)
               .fill(null)

@@ -1,4 +1,9 @@
-import { getNotifications, getUnreadNotificationsCount, markAllAsRead } from '@/services/notifications.services';
+import {
+  getNotifications,
+  getUnreadNotificationsCount,
+  markAllAsRead,
+  readNotificationById
+} from '@/services/notifications.services';
 import { NotificationStatus } from '@/types/enums';
 import { INotification } from '@/types/notification';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
@@ -73,6 +78,22 @@ export const markAllNotificationsAsRead = createAsyncThunk(
   }
 );
 
+export const readNotification = createAsyncThunk(
+  'notifications/readNotification',
+  async (notificationId: string, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await readNotificationById(notificationId);
+      dispatch(fetchUnreadCount());
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue('Failed to mark all notifications as read');
+    }
+  }
+);
+
 export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async (params: FetchNotificationsParams, { rejectWithValue }) => {
@@ -125,6 +146,25 @@ const notificationsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Add cases for readNotification
+      .addCase(readNotification.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(readNotification.fulfilled, (state, action) => {
+        const notificationId = action.meta.arg;
+        state.data = state.data.map((notification) =>
+          notification._id === notificationId ? { ...notification, status: NotificationStatus.Read } : notification
+        );
+
+        // Decrement unread count if notification was previously unread
+        const notification = state.data.find((n) => n._id === notificationId);
+        if (notification && notification.status === NotificationStatus.Unread) {
+          state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
+      })
+      .addCase(readNotification.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
       .addCase(markAllNotificationsAsRead.pending, (state) => {
         state.error = null;
       })
