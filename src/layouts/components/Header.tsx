@@ -210,27 +210,21 @@ const Header = memo(() => {
                 </span>
               )}
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div
-                  className={`relative w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
-                    '/notifications'
-                  )}`}
-                >
-                  <Bell size={22} />
-                  <p className='hidden md:block text-[12px] font-medium'>Notifications</p>
-                  {unreadCount > 0 && (
-                    <span className='absolute -top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
-                      {unreadCount > 99 ? 99 : unreadCount}
-                    </span>
-                  )}
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <NotificationsDropdown notifications={data} />
-              </DropdownMenuContent>
-            </DropdownMenu>
-
+            <NotificationsDropdown>
+              <div
+                className={`relative w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
+                  '/notifications'
+                )}`}
+              >
+                <Bell size={22} />
+                <p className='hidden md:block text-[12px] font-medium'>Notifications</p>
+                {unreadCount > 0 && (
+                  <span className='absolute -top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
+                    {unreadCount > 99 ? 99 : unreadCount}
+                  </span>
+                )}
+              </div>
+            </NotificationsDropdown>
             <div className='w-[40px] md:w-[80px] flex flex-col items-center justify-between cursor-pointer'>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

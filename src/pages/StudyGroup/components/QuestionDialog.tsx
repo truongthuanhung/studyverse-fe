@@ -19,7 +19,6 @@ import Editor from '@/components/common/Editor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFullTime, getRelativeTime } from '@/utils/date';
 import { Button } from '@/components/ui/button';
-import Reply from '@/components/common/Reply';
 import { VoteType } from '@/types/enums';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
@@ -37,39 +36,78 @@ import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/use-toast';
 import { MAX_FILES } from '@/constants/constants';
 import FileUploadPreview from '@/components/common/FileUploadPreview';
+import Reply from './Reply';
 
 interface QuestionDialogProps {
   question: IQuestion;
   initialImageIndex?: number;
   userVote: VoteType | null;
   handleVote: (voteType: VoteType) => void;
+  highlightedReplyId: string | null;
 }
 
 interface UploadedFile extends File {
   preview?: string;
 }
 
-const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, userVote, initialImageIndex = 0 }) => {
+const QuestionDialog: React.FC<QuestionDialogProps> = ({
+  question,
+  handleVote,
+  userVote,
+  initialImageIndex = 0,
+  highlightedReplyId
+}) => {
+  // Ref
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const highlightedReplyRef = useRef<HTMLDivElement>(null);
+  const quillRef = useRef<ReactQuill | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // States
   const [currentMediaIndex, setCurrentMediaIndex] = useState(initialImageIndex);
   const [convertedText, setConvertedText] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const quillRef = useRef<ReactQuill | null>(null);
+  const [mentions, setMentions] = useState<any[]>([]);
 
+  // Hooks
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const { groupId } = useParams();
+  const { toast } = useToast();
+
+  // Selectors
   const replies = useSelector((state: RootState) => state.replies.data[question._id] || []);
   const currentPage = useSelector((state: RootState) => state.replies.currentPage[question._id] || 0);
   const hasMore = useSelector((state: RootState) => state.replies.hasMore[question._id] || false);
   const { isFetchingReplies, isCreatingReply, isUploadingFiles } = useSelector((state: RootState) => state.replies);
   const uploadedFiles = useSelector((state: RootState) => state.replies.uploadedFiles[question._id] || []);
   const uploadedUrls = useSelector((state: RootState) => state.replies.uploadedUrls[question._id] || []);
-
-  const { groupId } = useParams();
-  const { toast } = useToast();
-
-  const [mentions, setMentions] = useState<any[]>([]);
   const { admins, members } = useSelector((state: RootState) => state.studyGroup);
-  const navigate = useNavigate();
 
+  // Effects
+  useEffect(() => {
+    if (highlightedReplyId && highlightedReplyRef.current && scrollAreaRef.current) {
+      const timeoutId = setTimeout(() => {
+        highlightedReplyRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [highlightedReplyId, replies]);
+
+  useEffect(() => {
+    if (currentPage === 0) {
+      dispatch(
+        fetchReplies({
+          groupId: groupId as string,
+          questionId: question._id
+        })
+      );
+    }
+  }, [question._id, currentPage]);
+
+  // Handlers
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
@@ -161,17 +199,6 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, u
     }
   };
 
-  useEffect(() => {
-    if (currentPage === 0) {
-      dispatch(
-        fetchReplies({
-          groupId: groupId as string,
-          questionId: question._id
-        })
-      );
-    }
-  }, [question._id, currentPage]);
-
   const { mediaFiles, rawFiles } = React.useMemo(() => {
     const getMediaType = (url: string) => {
       const extension = url.split('.').pop()?.toLowerCase() || '';
@@ -246,6 +273,7 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, u
         </div>
       )}
       <ScrollArea
+        ref={scrollAreaRef}
         className={`${mediaFiles.length > 0 ? 'w-2/5' : 'w-full'} border-l p-4 flex flex-col bg-white h-screen`}
       >
         <div className='flex gap-2 items-center'>
@@ -283,13 +311,7 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, u
               if (mentionSpan) {
                 const userId = mentionSpan.getAttribute('data-id');
                 if (userId) {
-                  // Navigate to user profile
-                  // Replace with your actual navigation method
-
-                  console.log('Navigate to user profile:', userId);
                   navigate(`/${userId}`);
-                  // Example with React Router:
-                  // navigate(`/profile/${userId}`);
                 }
               }
             }}
@@ -375,8 +397,16 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({ question, handleVote, u
           </div>
         </div>
         <div className='mt-4 flex flex-col gap-1'>
-          {replies.map((reply: any) => (
-            <Reply key={reply._id} reply={reply} isPending={false} question_owner_id={question.user_info._id} />
+          {replies.map((reply) => (
+            <div key={reply._id} ref={reply._id === highlightedReplyId ? highlightedReplyRef : null}>
+              <Reply
+                key={reply._id}
+                reply={reply}
+                isPending={false}
+                question_owner_id={question.user_info._id}
+                isHighlighted={reply._id === highlightedReplyId}
+              />
+            </div>
           ))}
           {hasMore && (
             <div className='flex gap-2 items-center py-3'>

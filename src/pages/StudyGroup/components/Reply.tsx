@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,7 +29,6 @@ import {
   ChevronRight,
   Loader2,
   File,
-  Download,
   ThumbsDown,
   Clock
 } from 'lucide-react';
@@ -39,31 +38,51 @@ import { IReply } from '@/types/question';
 import Editor from '@/components/common/Editor';
 import { downloadFile } from '@/utils/file';
 import { VoteType } from '@/types/enums';
-import { getRelativeTime } from '@/utils/date';
+import { getFullTime, getRelativeTime } from '@/utils/date';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ReplyProps {
   question_owner_id: string;
   reply: IReply;
   isPending?: boolean;
+  isHighlighted: boolean;
 }
 
-const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, question_owner_id }) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const profile = useSelector((state: RootState) => state.profile.user);
+const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted = false, question_owner_id }) => {
+  // States
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [userVote, setUserVote] = useState(reply.user_vote);
-  const [voteCount, setVoteCount] = useState(reply.upvotes - reply.downvotes);
+  const [isVisible, setIsVisible] = useState(isHighlighted);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(reply.content);
   const [mentions, setMentions] = useState<any[]>([]);
-  const { admins, members } = useSelector((state: RootState) => state.studyGroup);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Hooks
+  const dispatch = useDispatch<AppDispatch>();
   const { groupId } = useParams();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Selectors
+  const profile = useSelector((state: RootState) => state.profile.user);
+  const { admins, members } = useSelector((state: RootState) => state.studyGroup);
+
+  // Effects
+  useEffect(() => {
+    if (isHighlighted) {
+      setIsVisible(true);
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isHighlighted]);
+
+  // Handlers
   const handleDelete = async () => {
     try {
       await dispatch(removeReply({ groupId: groupId as string, questionId: reply.question_id, replyId: reply._id }));
@@ -153,6 +172,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, question_owner_
       setIsUpdating(false);
     }
   };
+  
   const { mediaFiles, rawFiles } = useMemo(() => {
     const getMediaType = (url: string) => {
       const extension = url.split('.').pop()?.toLowerCase() || '';
@@ -174,23 +194,40 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, question_owner_
   }, [reply.medias]);
 
   return (
-    <div className='flex gap-3 p-4 rounded-lg transition-colors'>
+    <div
+      className={`flex gap-3 p-4 rounded-lg transition-all duration-500 ${
+        isVisible ? 'bg-sky-50 border-l-4 border-sky-500 shadow-md' : 'bg-white hover:bg-gray-50'
+      }`}
+    >
       <Avatar className='w-10 h-10'>
         <AvatarImage src={reply.user_info.avatar} alt={reply.user_info.name} />
         <AvatarFallback className='bg-sky-100 text-sky-600'>{reply.user_info.name[0].toUpperCase()}</AvatarFallback>
       </Avatar>
       <div className='flex-1 space-y-2'>
-        <div className='flex items-start justify-between bg-[#f4f4f4] rounded-2xl px-3 py-2'>
+        <div
+          className={`flex items-start justify-between rounded-2xl px-3 py-2 border ${
+            isVisible ? 'bg-white' : 'bg-gray-100'
+          }`}
+        >
           <div className='space-y-1 w-full'>
             <div className='flex items-center gap-2'>
               <span className='font-semibold text-sm'>{reply.user_info.name}</span>
               {isPending ? (
                 <span className='text-sm bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full'>Posting...</span>
               ) : (
-                <div className='flex items-center text-sm gap-1 text-zinc-500'>
-                  <Clock size={14} />
-                  <span>{getRelativeTime(reply.created_at)}</span>
-                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className='flex items-center text-xs gap-1 text-zinc-500 cursor-pointer'>
+                        <Clock size={12} />
+                        <span>{getRelativeTime(reply.created_at)}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>{getFullTime(reply.created_at)}</span>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
 

@@ -28,40 +28,73 @@ import { QuestionStatus, StudyGroupRole, VoteType } from '@/types/enums';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { removeQuestion, voteOnQuestion } from '@/store/slices/questionsSlice';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { approveGroupQuestion, getGroupPendingCount, rejectGroupQuestion } from '@/store/slices/studyGroupSlice';
+import { fetchReply } from '@/store/slices/repliesSlice';
 
 interface QuestionProps {
   question: IQuestion;
 }
 
 const Question: React.FC<QuestionProps> = ({ question }) => {
-  const MAX_HEIGHT = 64;
+  // Refs
+  const contentRef = useRef<HTMLDivElement>(null);
+  
+  // States
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState<boolean>(false);
+  const [userVote, setUserVote] = useState(question.user_vote);
 
+  // Hooks
+  const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
+  const { groupId } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
+
+  // Variables
+  const MAX_HEIGHT = 64;
+  const replyId = searchParams.get('replyId');
+
+  // Selectors
+  const profile = useSelector((state: RootState) => state.profile.user);
+  const { role } = useSelector((state: RootState) => state.studyGroup);
+
+  // Effects
   useEffect(() => {
     if (contentRef.current) {
       setShouldShowReadMore(contentRef.current.scrollHeight > MAX_HEIGHT);
     }
   }, [question.content]);
 
-  const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+  useEffect(() => {
+    const getReply = async () => {
+      try {
+        if (replyId && groupId) {
+          await dispatch(
+            fetchReply({
+              groupId: groupId as string,
+              questionId: question._id,
+              replyId
+            })
+          ).unwrap();
+          setIsQuestionDialogOpen(true);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    getReply();
+  }, [replyId, groupId, question._id, location.key]);
 
-  const dispatch = useDispatch<AppDispatch>();
-  const [userVote, setUserVote] = useState(question.user_vote);
-
-  const { groupId } = useParams();
-  const navigate = useNavigate();
-
-  const profile = useSelector((state: RootState) => state.profile.user);
-  const { role } = useSelector((state: RootState) => state.studyGroup);
-
+  // Handlers
   const handleVote = (voteType: VoteType) => {
     if (userVote === voteType) {
       setUserVote(null);
@@ -149,6 +182,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
       });
     }
   };
+
   return (
     <div className='border rounded-xl w-full bg-white p-4 pb-0 backdrop-blur-md'>
       <div className='flex items-center justify-between tracking-tight'>
@@ -214,7 +248,6 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-
       <div className='flex flex-col'>
         {question.title && <h2 className='text-base md:text-lg font-semibold leading-tight'>{question.title}</h2>}
         <div
@@ -297,7 +330,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
               <p>Downvote</p>
             </div>
             {mediaFiles.length > 0 ? (
-              <Dialog>
+              <Dialog open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>
                 <DialogTrigger className='flex-1 outline-none'>
                   <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
                     <MessageCircleMore size={16} />
@@ -305,11 +338,16 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                   </div>
                 </DialogTrigger>
                 <DialogContent className='max-w-[90vw] md:max-w-[100vw] max-h-[100vh] p-0 border-none'>
-                  <QuestionDialog question={question} handleVote={handleVote} userVote={userVote} />
+                  <QuestionDialog
+                    highlightedReplyId={replyId}
+                    question={question}
+                    handleVote={handleVote}
+                    userVote={userVote}
+                  />
                 </DialogContent>
               </Dialog>
             ) : (
-              <Sheet>
+              <Sheet open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>
                 <SheetTrigger className='flex-1 outline-none'>
                   <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
                     <MessageCircleMore size={16} />
@@ -317,7 +355,12 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                   </div>
                 </SheetTrigger>
                 <SheetContent className='md:w-[580px] p-0 border-none'>
-                  <QuestionDialog question={question} handleVote={handleVote} userVote={userVote} />
+                  <QuestionDialog
+                    highlightedReplyId={replyId}
+                    question={question}
+                    handleVote={handleVote}
+                    userVote={userVote}
+                  />
                 </SheetContent>
               </Sheet>
             )}

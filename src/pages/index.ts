@@ -1,4 +1,5 @@
 export { default as Conversation } from '@/pages/Conversations/Conversation';
+export { default as NewConversation } from '@/pages/Conversations/NewConversation';
 export { default as GroupList } from '@/pages/StudyGroup/GroupList';
 export { default as GroupDetail } from '@/pages/StudyGroup/GroupDetail';
 export { default as GroupHome } from '@/pages/StudyGroup/GroupHome';
@@ -6,6 +7,11 @@ export { default as GroupRequest } from '@/pages/StudyGroup/admin/GroupRequest';
 export { default as GroupMember } from '@/pages/StudyGroup/admin/GroupMember';
 export { default as GroupAnalytics } from '@/pages/StudyGroup/admin/GroupAnalytics';
 export { default as GroupSettings } from '@/pages/StudyGroup/admin/GroupSettings';
+export { default as GroupManageQuestions } from '@/pages/StudyGroup/admin/GroupManageQuestions';
+export { default as GroupQuestionDetail } from '@/pages/StudyGroup/GroupQuestionDetail';
 export { default as CreateGroup } from '@/pages/StudyGroup/admin/CreateGroup';
 export { default as CreateQuestion } from '@/pages/StudyGroup/GroupCreateQuestion';
 export { default as Relationship } from '@/pages/Connection/Relationship';
+export { default as UserProfile } from '@/pages/Profile/UserProfile';
+export { default as Profile } from '@/pages/Profile/Profile';
+export { default as NotFound } from '@/pages/NotFound/NotFound';

@@ -16,16 +16,16 @@ import {
   GroupRequest,
   GroupSettings,
   CreateQuestion,
-  Relationship
+  Relationship,
+  Profile,
+  UserProfile,
+  NotFound,
+  GroupQuestionDetail,
+  GroupManageQuestions,
+  NewConversation
 } from './pages';
 import SubLayout from './layouts/SubLayout';
 import { memo } from 'react';
-import NotFound from './pages/NotFound/NotFound';
-import NewConversation from './pages/Conversations/NewConversation';
-import UserProfile from './pages/Profile/UserProfile';
-import Profile from './pages/Profile/Profile';
-import GroupManageQuestions from './pages/StudyGroup/admin/GroupManageQuestions';
-import GroupQuestionDetail from './pages/StudyGroup/GroupQuestionDetail';
 import { ToastContainer } from 'react-toastify';
 
 const App = memo(() => {
