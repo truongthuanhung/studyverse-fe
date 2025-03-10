@@ -25,30 +25,46 @@ import {
 import NotFound from '../NotFound/NotFound';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import bg from '@/assets/images/mainLogo.jpeg';
+import { useSocket } from '@/contexts/SocketContext';
+import InviteUsersDialog from '@/components/common/InviteUsersDialog';
 
 const GroupDetail = () => {
+  // States
+  const [image, setImage] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editorSize, setEditorSize] = useState({ width: 0, height: 0 });
+  const [hasRequested, setHasRequested] = useState<boolean>(false);
+  const [isGroupExisted, setIsGroupExisted] = useState<boolean>(true);
+
+  // Refs
+  const editorRef = useRef<AvatarEditor>(null);
+  const coverPhotoRef = useRef<HTMLDivElement>(null);
+
+  // Selectors
+  const studyGroup = useSelector((state: RootState) => state.studyGroup);
+  const { isFetchingGroupInfo, isLoading } = useSelector((state: RootState) => state.studyGroup);
+
+  // Hooks
+  const { toast } = useToast();
   const { groupId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const [image, setImage] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const editorRef = useRef<AvatarEditor>(null);
-  const coverPhotoRef = useRef<HTMLDivElement>(null);
-  const [editorSize, setEditorSize] = useState({ width: 0, height: 0 });
-  const studyGroup = useSelector((state: RootState) => state.studyGroup);
-  const { isFetchingGroupInfo, isLoading } = useSelector((state: RootState) => state.studyGroup);
-  const [hasRequested, setHasRequested] = useState<boolean>(false);
-  const [isGroupExisted, setIsGroupExisted] = useState<boolean>(true);
+  const { socket } = useSocket();
 
-  const { toast } = useToast();
-
+  // Effects
   useEffect(() => {
     if (location.pathname === `/groups/${groupId}`) {
       navigate(`/groups/${groupId}/home`);
     }
   }, [groupId]);
+
+  useEffect(() => {
+    if (groupId && studyGroup.role === StudyGroupRole.Admin) {
+      socket.emit('group_admins', groupId);
+    }
+  }, [socket, groupId, studyGroup.role]);
 
   useEffect(() => {
     if (coverPhotoRef.current) {
@@ -84,6 +100,7 @@ const GroupDetail = () => {
     };
   }, [groupId]);
 
+  // Handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -255,13 +272,17 @@ const GroupDetail = () => {
                       <div className='flex items-center gap-2 text-zinc-500 font-medium'>
                         <PersonFilledIcon />
                         <Link to={`/groups/${groupId}/members`} className='text-sm cursor-pointer'>
-                          {studyGroup?.info?.members || 0} members
+                          {studyGroup?.info?.member_count || 0} members
                         </Link>
                       </div>
                     </div>
                     <div className='flex justify-between md:gap-4 items-center'>
                       {studyGroup.role !== StudyGroupRole.Guest ? (
-                        <Button className='rounded-[20px] text-white bg-sky-500 hover:bg-sky-600'>Add member</Button>
+                        <InviteUsersDialog groupId={groupId as string}>
+                          <Button className='rounded-[20px] text-white bg-sky-500 hover:bg-sky-600'>
+                            Invite friends
+                          </Button>
+                        </InviteUsersDialog>
                       ) : (
                         <Button
                           className={`px-4 rounded-[20px] text-white ${

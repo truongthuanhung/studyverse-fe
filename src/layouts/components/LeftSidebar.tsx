@@ -1,104 +1,149 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, PeopleIcon, SidebarBookIcon, ViewIcon } from '@/assets/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Users, BookOpen, Calendar, Eye, User, UserPlus, UserCheck } from 'lucide-react';
 import MainLogo from '@/assets/images/mainLogo.jpeg';
 import { GroupItem } from './common';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
-import { useEffect, useState } from 'react';
-import { getFollowStats } from '@/services/user.services';
 
 const LeftSidebar = () => {
   const profile = useSelector((state: RootState) => state.profile.user);
-  const [followStats, setFollowStats] = useState({
-    followers: 0,
-    followings: 0,
-    friends: 0
-  });
-  useEffect(() => {
-    const fetchFollowStats = async () => {
-      try {
-        const response = await getFollowStats();
-        setFollowStats(response.data.result);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchFollowStats();
-  }, []);
+
   return (
-    <ScrollArea className='h-[calc(100vh-60px)] border-r hidden lg:block w-full bg-white'>
-      <div className='w-full px-[16px] py-[24px]'>
-        <div className='flex items-center gap-[12px]'>
-          <Avatar className='w-[50px] h-[50px]'>
-            <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
-            <AvatarFallback>CN</AvatarFallback>
+    <ScrollArea className='h-[calc(100vh-60px)] border-r hidden lg:block w-full bg-white p-4'>
+      <div>
+        {/* Profile Section */}
+        <div className='flex items-center gap-3'>
+          <Avatar className='h-12 w-12 border-2 border-primary/10'>
+            <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} alt={profile?.name} />
+            <AvatarFallback>{profile?.name?.substring(0, 2) || 'CN'}</AvatarFallback>
           </Avatar>
-          <div className='flex flex-col justify-between'>
-            <p className='font-semibold text-[14px]'>{profile?.name || ''}</p>
-            <p className='text-zinc-500 font-medium text-[14px]'>{`@${profile?.role}`}</p>
+          <div className='flex flex-col'>
+            <p className='font-semibold'>{profile?.name || ''}</p>
+            <p className='text-muted-foreground text-sm'>@{profile?.role}</p>
           </div>
         </div>
-        <div className='mt-[16px] flex gap-[24px] py-[8px] items-center font-bold'>
-          <PeopleIcon />
-          <p>Connections</p>
-        </div>
-        <div className='flex flex-col pl-[48px] gap-[8px]'>
-          <div className='flex items-center justify-between text-[14px] font-medium'>
-            <p className='text-zinc-500'>Friends</p>
-            <p className='text-sky-500'>{followStats.friends}</p>
+
+        <Separator className='mt-4' />
+
+        {/* Connections Section */}
+        <div className='mt-4'>
+          <div className='flex items-center gap-2 font-medium'>
+            <Users size={18} className='text-primary' />
+            <span>Connections</span>
           </div>
-          <div className='flex items-center justify-between text-[14px] font-medium'>
-            <p className='text-zinc-500'>Followers</p>
-            <p className='text-sky-500'>{followStats.followers}</p>
-          </div>
-          <div className='flex items-center justify-between text-[14px] font-medium'>
-            <p className='text-zinc-500'>Following</p>
-            <p className='text-sky-500'>{followStats.followings}</p>
-          </div>
-        </div>
-        <div className='flex gap-[24px] py-[12px] items-center font-bold'>
-          <SidebarBookIcon />
-          <p>Study groups</p>
-        </div>
-        <div className='flex flex-col mx-[-16px]'>
-          <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
-          <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
-          <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
-        </div>
-        <div className='flex gap-[24px] py-[8px] items-center font-bold'>
-          <CalendarIcon />
-          <p>Meeting schedule</p>
-        </div>
-        <div className='flex flex-col pl-[48px] gap-[8px]'>
-          <div className='flex items-center justify-between text-[14px] font-medium'>
-            <p className='text-zinc-500'>Completed</p>
-            <p className='text-sky-500'>3</p>
-          </div>
-          <div className='flex items-center justify-between text-[14px] font-medium'>
-            <p className='text-zinc-500'>Confirmed</p>
-            <p className='text-sky-500'>2</p>
-          </div>
-          <div className='flex items-center justify-between text-[14px] font-medium'>
-            <p className='text-zinc-500'>Pending</p>
-            <p className='text-sky-500'>2</p>
+
+          <div className='ml-6 mt-3'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-2'>
+                <User size={14} className='text-muted-foreground' />
+                <span className='text-muted-foreground text-sm'>Friends</span>
+              </div>
+              <Badge variant='outline' className='text-sky-500 bg-sky-50'>
+                {profile?.friends || 0}
+              </Badge>
+            </div>
+
+            <div className='flex items-center justify-between mt-2'>
+              <div className='flex items-center gap-2'>
+                <UserCheck size={14} className='text-muted-foreground' />
+                <span className='text-muted-foreground text-sm'>Followers</span>
+              </div>
+              <Badge variant='outline' className='text-sky-500 bg-sky-50'>
+                {profile?.followers || 0}
+              </Badge>
+            </div>
+
+            <div className='flex items-center justify-between mt-2'>
+              <div className='flex items-center gap-2'>
+                <UserPlus size={14} className='text-muted-foreground' />
+                <span className='text-muted-foreground text-sm'>Following</span>
+              </div>
+              <Badge variant='outline' className='text-sky-500 bg-sky-50'>
+                {profile?.followings || 0}
+              </Badge>
+            </div>
           </div>
         </div>
-        <div className='flex gap-[24px] py-[12px] items-center font-medium text-[14px] cursor-pointer hover:bg-accent px-[16px] mx-[-16px]'>
-          <ViewIcon />
-          <p>View all schedule</p>
+
+        <Separator className='mt-4' />
+
+        {/* Study Groups Section */}
+        <div className='mt-4'>
+          <div className='flex items-center gap-2 font-medium'>
+            <BookOpen size={18} className='text-primary' />
+            <span>Study groups</span>
+          </div>
+
+          <div className='mt-3'>
+            <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
+            <div className='mt-1'>
+              <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
+            </div>
+            <div className='mt-1'>
+              <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
+            </div>
+          </div>
         </div>
-        <div className='mt-[16px] flex flex-col text-[12px] text-zinc-500 gap-[8px]'>
-          <p className='flex gap-[4px] items-center font-medium'>
-            <img src={MainLogo} alt='' className='block h-[60px]' />© 2024 StudyVerse Corp.
-          </p>
-          <div className='flex flex-wrap justify-center items-center font-medium'>
-            <p className='mx-2 my-1 cursor-pointer'>Terms of Service</p>
-            <p className='mx-2 my-1 cursor-pointer'>Privacy Policy</p>
-            <p className='mx-2 my-1 cursor-pointer'>Warranty</p>
-            <p className='mx-2 my-1 cursor-pointer'>Terms of Sale</p>
-            <p className='mx-2 my-1 cursor-pointer'>Cookie Policy</p>
-            <p className='mx-2 my-1 cursor-pointer'>Help Center</p>
+
+        <Separator className='mt-4' />
+
+        {/* Meeting Schedule Section */}
+        <div className='mt-4'>
+          <div className='flex items-center gap-2 font-medium'>
+            <Calendar size={18} className='text-primary' />
+            <span>Meeting schedule</span>
+          </div>
+
+          <div className='ml-6 mt-2'>
+            <div className='flex items-center justify-between'>
+              <span className='text-muted-foreground text-sm'>Completed</span>
+              <Badge variant='outline' className='text-sky-500 bg-sky-50'>
+                3
+              </Badge>
+            </div>
+
+            <div className='flex items-center justify-between mt-2'>
+              <span className='text-muted-foreground text-sm'>Confirmed</span>
+              <Badge variant='outline' className='text-sky-500 bg-sky-50'>
+                2
+              </Badge>
+            </div>
+
+            <div className='flex items-center justify-between mt-2'>
+              <span className='text-muted-foreground text-sm'>Pending</span>
+              <Badge variant='outline' className='text-sky-500 bg-sky-50'>
+                2
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        <Button variant='ghost' className='w-full justify-start gap-2 mt-4'>
+          <Eye size={16} />
+          <span className='text-sm'>View all schedule</span>
+        </Button>
+
+        <Separator className='mt-4' />
+
+        {/* Footer Section */}
+        <div className='mt-4'>
+          <div className='flex items-center justify-center gap-2 text-xs text-muted-foreground'>
+            <img src={MainLogo} alt='StudyVerse Logo' className='h-12' />
+            <span>© 2024 StudyVerse Corp.</span>
+          </div>
+
+          <div className='flex flex-wrap justify-center text-xs text-muted-foreground mt-4'>
+            {['Terms of Service', 'Privacy Policy', 'Warranty', 'Terms of Sale', 'Cookie Policy', 'Help Center'].map(
+              (item) => (
+                <button key={item} className='px-2 py-1 hover:text-primary transition-colors'>
+                  {item}
+                </button>
+              )
+            )}
           </div>
         </div>
       </div>

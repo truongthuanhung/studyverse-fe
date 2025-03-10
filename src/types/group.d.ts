@@ -8,7 +8,8 @@ interface StudyGroup {
   description: string;
   cover_photo: string;
   role: StudyGroupRole;
-  members: number;
+  member_count: number;
+  joined_at: string;
   created_at: string;
   updated_at: string;
   hasRequested?: boolean;

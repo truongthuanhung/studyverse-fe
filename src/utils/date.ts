@@ -113,3 +113,26 @@ export const MMDDYYYYConvert = (dateString: string) => {
 
   return new Intl.DateTimeFormat('en-US', options).format(date);
 };
+
+export const formatDateGMT7 = (isoString: string) => {
+  const date = new Date(isoString);
+  const gmt7Date = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
+  ];
+  const month = months[gmt7Date.getUTCMonth()];
+  const day = gmt7Date.getUTCDate();
+  const year = gmt7Date.getUTCFullYear();
+  return `${month} ${day}, ${year}`;
+}

@@ -12,10 +12,11 @@ import { Clock5, FileQuestion, Globe, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StudyGroupPrivacy } from '@/types/enums';
+import { formatDateGMT7 } from '@/utils/date';
 
 const EmptyQuestions = ({ onCreateClick }: { onCreateClick: () => void }) => {
   return (
-    <div className='flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md w-full md:w-[580px] mx-auto mt-4'>
+    <div className='flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md w-full'>
       <FileQuestion className='w-16 h-16 text-slate-400 mb-4' />
       <h3 className='text-xl font-semibold text-slate-900 mb-2'>No questions yet</h3>
       <p className='text-slate-600 text-center mb-4'>Be the first to start a discussion in this group!</p>
@@ -151,7 +152,7 @@ const GroupHome = memo(() => {
                   <div className='flex flex-col'>
                     <p className='font-semibold'>History</p>
                     <p className='text-sm text-zinc-500'>
-                      Study group created on {studyGroup.info?.created_at as string}
+                      Study group created on {formatDateGMT7(studyGroup.info?.created_at as string)}
                     </p>
                   </div>
                 </div>

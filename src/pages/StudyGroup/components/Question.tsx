@@ -19,7 +19,24 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFullTime, getRelativeTime } from '@/utils/date';
-import { Check, Ellipsis, MessageCircleMore, Repeat2, ThumbsDown, ThumbsUp, X } from 'lucide-react';
+import {
+  Award,
+  BookOpen,
+  CalendarIcon,
+  Check,
+  Dot,
+  Ellipsis,
+  GraduationCap,
+  Lightbulb,
+  MessageCircleMore,
+  Repeat2,
+  Shield,
+  Star,
+  ThumbsDown,
+  ThumbsUp,
+  Trophy,
+  X
+} from 'lucide-react';
 import MediaGallery from './MediaGallery';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import QuestionDialog from './QuestionDialog';
@@ -28,40 +45,74 @@ import { QuestionStatus, StudyGroupRole, VoteType } from '@/types/enums';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { removeQuestion, voteOnQuestion } from '@/store/slices/questionsSlice';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { approveGroupQuestion, getGroupPendingCount, rejectGroupQuestion } from '@/store/slices/studyGroupSlice';
+import { fetchReply } from '@/store/slices/repliesSlice';
+import GroupUserHoverCard from '@/components/common/GroupUserHoverCard';
+import { Badge } from '@/components/ui/badge';
 
 interface QuestionProps {
   question: IQuestion;
 }
 
 const Question: React.FC<QuestionProps> = ({ question }) => {
-  const MAX_HEIGHT = 64;
+  // Refs
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // States
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState<boolean>(false);
+  const [userVote, setUserVote] = useState(question.user_vote);
 
+  // Hooks
+  const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
+  const { groupId } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
+  // Variables
+  const MAX_HEIGHT = 120;
+  const replyId = searchParams.get('replyId');
+
+  // Selectors
+  const profile = useSelector((state: RootState) => state.profile.user);
+  const { role } = useSelector((state: RootState) => state.studyGroup);
+
+  // Effects
   useEffect(() => {
     if (contentRef.current) {
       setShouldShowReadMore(contentRef.current.scrollHeight > MAX_HEIGHT);
     }
   }, [question.content]);
 
-  const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+  useEffect(() => {
+    const getReply = async () => {
+      try {
+        if (replyId && groupId) {
+          await dispatch(
+            fetchReply({
+              groupId: groupId as string,
+              questionId: question._id,
+              replyId
+            })
+          ).unwrap();
+          setIsQuestionDialogOpen(true);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    getReply();
+  }, [replyId, groupId, question._id, location.key]);
 
-  const dispatch = useDispatch<AppDispatch>();
-  const [userVote, setUserVote] = useState(question.user_vote);
-
-  const { groupId } = useParams();
-  const navigate = useNavigate();
-
-  const profile = useSelector((state: RootState) => state.profile.user);
-  const { role } = useSelector((state: RootState) => state.studyGroup);
-
+  // Handlers
   const handleVote = (voteType: VoteType) => {
     if (userVote === voteType) {
       setUserVote(null);
@@ -125,6 +176,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
       }
     } catch (err) {
       console.error(err);
+      navigate(0); // chữa cháy
       toast({
         description: 'Failed to approve question',
         variant: 'destructive'
@@ -143,43 +195,130 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
       }
     } catch (err) {
       console.error(err);
+      navigate(0); // chữa cháy
       toast({
         description: 'Failed to approve question',
         variant: 'destructive'
       });
     }
   };
+
+  const badgeConfig: Record<string, { icon: React.ReactNode; color: string }> = {
+    'New Learner': {
+      icon: <BookOpen size={12} />,
+      color: 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+    },
+    'Active Contributor': {
+      icon: <Star size={12} />,
+      color: 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+    },
+    'Topic Expert': {
+      icon: <Lightbulb size={12} />,
+      color: 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
+    },
+    'Community Leader': {
+      icon: <Trophy size={12} />,
+      color: 'bg-purple-100 text-purple-800 hover:bg-purple-200'
+    },
+    'Academic Excellence': {
+      icon: <GraduationCap size={12} />,
+      color: 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+    },
+    // Default for any other badge
+    default: {
+      icon: <Award size={12} />,
+      color: 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+    }
+  };
+
   return (
     <div className='border rounded-xl w-full bg-white p-4 pb-0 backdrop-blur-md'>
       <div className='flex items-center justify-between tracking-tight'>
         <div className='flex gap-2 items-center'>
-          <Avatar className='w-[48px] h-[48px] cursor-pointer'>
-            <AvatarImage src={question.user_info.avatar || 'https://github.com/shadcn.png'} />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
+          <GroupUserHoverCard user={question.user_info} groupId={question.group_id}>
+            <Avatar className='w-[48px] h-[48px] cursor-pointer'>
+              <AvatarImage src={question.user_info.avatar || 'https://github.com/shadcn.png'} />
+              <AvatarFallback>
+                {question.user_info.name.charAt(0)}
+                {question.user_info.name.split(' ').pop()?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+          </GroupUserHoverCard>
           <div className='flex flex-col'>
-            <p className='font-semibold cursor-pointer'>{question.user_info.name}</p>
-            <p className='text-zinc-500 text-xs'>{`@${question.user_info.username}`}</p>
-            <p className='text-zinc-500 text-xs'>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className='cursor-pointer'>
-                      {question.status === QuestionStatus.Pending || question.status === QuestionStatus.Rejected
-                        ? getRelativeTime(question.created_at)
-                        : getRelativeTime(question.approved_at as string)}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <span>
-                      {question.status === QuestionStatus.Pending || question.status === QuestionStatus.Rejected
-                        ? getFullTime(question.created_at)
-                        : getFullTime(question.approved_at as string)}
-                    </span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </p>
+            <div className='flex items-center gap-4'>
+              <p className='font-semibold cursor-pointer'>{question.user_info.name}</p>
+              <div className='flex items-center gap-1'>
+                {question.user_info.role === StudyGroupRole.Admin && (
+                  <Badge className='bg-red-100 text-red-800 hover:bg-red-200 px-2 py-0.5 text-xs font-medium gap-1'>
+                    <Shield size={12} />
+                    Admin
+                  </Badge>
+                )}
+
+                {question.user_info.badges && question.user_info.badges.length > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className='flex gap-1 items-center'>
+                          {question.user_info.badges.slice(0, 2).map((badge) => {
+                            const config = badgeConfig[badge.badge_name] || badgeConfig.default;
+                            return (
+                              <Badge
+                                key={badge._id}
+                                className={`px-2 py-0.5 text-xs font-medium ${config.color} gap-1 cursor-pointer`}
+                                variant='outline'
+                              >
+                                {config.icon}
+                                {badge.badge_name}
+                              </Badge>
+                            );
+                          })}
+                          {question.user_info.badges.length > 2 && (
+                            <Badge className='bg-gray-100 text-gray-800 px-2 py-0.5 text-xs font-medium hover:bg-gray-200'>
+                              +{question.user_info.badges.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className='max-w-xs'>
+                        <div className='flex flex-col gap-1'>
+                          {question.user_info.badges.map((badge) => (
+                            <div key={badge._id} className='flex items-center gap-2'>
+                              <div className='text-sm font-medium'>{badge.badge_name}</div>
+                              <div className='text-xs text-gray-500'>{badge.badge_description}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </div>
+            <div className='text-zinc-500 text-sm flex items-center gap-x-0.5'>
+              <p>{`@${question.user_info.username}`}</p>
+              <Dot size={18} />
+              <p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className='cursor-pointer'>
+                        {question.status === QuestionStatus.Pending || question.status === QuestionStatus.Rejected
+                          ? getRelativeTime(question.created_at)
+                          : getRelativeTime(question.approved_at as string)}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>
+                        {question.status === QuestionStatus.Pending || question.status === QuestionStatus.Rejected
+                          ? getFullTime(question.created_at)
+                          : getFullTime(question.approved_at as string)}
+                      </span>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </p>
+            </div>
           </div>
         </div>
         <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -214,13 +353,12 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-
       <div className='flex flex-col'>
         {question.title && <h2 className='text-base md:text-lg font-semibold leading-tight'>{question.title}</h2>}
         <div
           ref={contentRef}
           className={`whitespace-pre-line relative text-sm  ${
-            !isExpanded && shouldShowReadMore ? 'max-h-[64px] overflow-hidden' : ''
+            !isExpanded && shouldShowReadMore ? 'max-h-[120px] overflow-hidden' : ''
           }`}
           style={{
             maskImage:
@@ -297,7 +435,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
               <p>Downvote</p>
             </div>
             {mediaFiles.length > 0 ? (
-              <Dialog>
+              <Dialog open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>
                 <DialogTrigger className='flex-1 outline-none'>
                   <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
                     <MessageCircleMore size={16} />
@@ -305,11 +443,16 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                   </div>
                 </DialogTrigger>
                 <DialogContent className='max-w-[90vw] md:max-w-[100vw] max-h-[100vh] p-0 border-none'>
-                  <QuestionDialog question={question} handleVote={handleVote} userVote={userVote} />
+                  <QuestionDialog
+                    highlightedReplyId={replyId}
+                    question={question}
+                    handleVote={handleVote}
+                    userVote={userVote}
+                  />
                 </DialogContent>
               </Dialog>
             ) : (
-              <Sheet>
+              <Sheet open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>
                 <SheetTrigger className='flex-1 outline-none'>
                   <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
                     <MessageCircleMore size={16} />
@@ -317,7 +460,12 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                   </div>
                 </SheetTrigger>
                 <SheetContent className='md:w-[580px] p-0 border-none'>
-                  <QuestionDialog question={question} handleVote={handleVote} userVote={userVote} />
+                  <QuestionDialog
+                    highlightedReplyId={replyId}
+                    question={question}
+                    handleVote={handleVote}
+                    userVote={userVote}
+                  />
                 </SheetContent>
               </Sheet>
             )}

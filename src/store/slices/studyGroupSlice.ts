@@ -11,7 +11,11 @@ import {
   getStudyGroupAdmins,
   removeMember,
   demoteMember,
-  promoteMember
+  promoteMember,
+  getStudyGroupJoinRequestsCount,
+  getUserStats,
+  getFriendsToInvite,
+  inviteFriends
 } from '@/services/study_groups.services';
 import { QuestionStatus, StudyGroupRole } from '@/types/enums';
 import { IJoinRequest, IMember, StudyGroup } from '@/types/group';
@@ -29,14 +33,26 @@ interface StudyGroupState {
   isLoading: boolean;
   isFetchingGroupInfo: boolean;
   isFetchingMembers: boolean;
+  isFetchingFriends: boolean;
   error: string | null;
   isFetchingPendingQuestions: boolean;
   isFetchingRejectedQuestions: boolean;
+  isInvitingFriends: boolean;
   hasMorePending: boolean;
   hasMoreRejected: boolean;
   pendingCurrentPage: number;
   rejectedCurrentPage: number;
   pendingCount: number;
+  joinRequestsCount: number;
+  userStats: { [userId: string]: any };
+  friendsToInvite: {
+    _id: string;
+    name: string;
+    username: string;
+    avatar: string;
+  }[];
+  hasMoreFriends: boolean;
+  friendsCurrentPage: number;
 }
 
 const initialState: StudyGroupState = {
@@ -52,13 +68,62 @@ const initialState: StudyGroupState = {
   isFetchingMembers: false,
   isFetchingPendingQuestions: false,
   isFetchingRejectedQuestions: false,
+  isFetchingFriends: false,
+  isInvitingFriends: false,
   hasMorePending: true,
   hasMoreRejected: true,
-  pendingCurrentPage: 1,
-  rejectedCurrentPage: 1,
+  pendingCurrentPage: 0,
+  rejectedCurrentPage: 0,
   error: null,
-  pendingCount: 0
+  pendingCount: 0,
+  joinRequestsCount: 0,
+  userStats: {},
+  friendsToInvite: [],
+  hasMoreFriends: false,
+  friendsCurrentPage: 0
 };
+
+export const inviteFriendsToJoinGroup = createAsyncThunk(
+  'group/inviteFriendsToJoinGroup',
+  async ({ groupId, invitedUserIds }: { groupId: string; invitedUserIds: string[] }, { rejectWithValue }) => {
+    try {
+      const response = await inviteFriends(groupId, { invited_user_ids: invitedUserIds });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to invite friends');
+    }
+  }
+);
+
+export const fetchFriendsToInvite = createAsyncThunk(
+  'group/fetchFriendsToInvite',
+  async (
+    { groupId, page = 1, limit = 10 }: { groupId: string; page?: number; limit?: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await getFriendsToInvite(groupId, { page, limit });
+      return {
+        friends: response.data.result.friends,
+        pagination: response.data.result.pagination
+      };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch friends to invite');
+    }
+  }
+);
+
+export const getGroupUserStats = createAsyncThunk(
+  'group/getUserStats',
+  async ({ groupId, userId }: { groupId: string; userId: string }, { rejectWithValue }) => {
+    try {
+      const response = await getUserStats(groupId, userId);
+      return { userId, stats: response.data.result };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user stats');
+    }
+  }
+);
 
 export const approveGroupQuestion = createAsyncThunk(
   'group/approveQuestion',
@@ -263,7 +328,19 @@ export const getGroupPendingCount = createAsyncThunk(
       const response = await getPendingCount(groupId);
       return response.data.result;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch group details');
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch group pending questions count');
+    }
+  }
+);
+
+export const getGroupJoinRequestsCount = createAsyncThunk(
+  'group/getGroupJoinRequestsCount',
+  async (groupId: string, { rejectWithValue }) => {
+    try {
+      const response = await getStudyGroupJoinRequestsCount(groupId);
+      return response.data.result;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch group join requests count');
     }
   }
 );
@@ -280,6 +357,67 @@ const groupSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Invite friends to group
+      .addCase(inviteFriendsToJoinGroup.pending, (state) => {
+        state.isInvitingFriends = true;
+        state.error = null;
+      })
+      .addCase(inviteFriendsToJoinGroup.fulfilled, (state, action) => {
+        state.isInvitingFriends = false;
+      })
+      .addCase(inviteFriendsToJoinGroup.rejected, (state, action) => {
+        state.isInvitingFriends = false;
+        state.error = action.payload as string;
+      })
+      // Fetch friends to invite
+      .addCase(fetchFriendsToInvite.pending, (state) => {
+        state.isFetchingFriends = true;
+        state.error = null;
+      })
+      .addCase(fetchFriendsToInvite.fulfilled, (state, action) => {
+        state.isFetchingFriends = false;
+        const { friends, pagination } = action.payload;
+        if (pagination.page === 1) {
+          state.friendsToInvite = friends;
+        } else {
+          state.friendsToInvite = [...state.friendsToInvite, ...friends];
+        }
+        state.friendsCurrentPage = action.payload.pagination.page;
+        state.hasMoreFriends = state.friendsCurrentPage < action.payload.pagination.totalPages;
+      })
+      .addCase(fetchFriendsToInvite.rejected, (state, action) => {
+        state.isFetchingFriends = false;
+        state.error = action.payload as string;
+      })
+      // User stats
+      .addCase(getGroupUserStats.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getGroupUserStats.fulfilled, (state, action: PayloadAction<{ userId: string; stats: any }>) => {
+        state.isLoading = false;
+        state.userStats = {
+          ...state.userStats,
+          [action.payload.userId]: action.payload.stats
+        };
+      })
+      .addCase(getGroupUserStats.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Get join requests count
+      .addCase(getGroupJoinRequestsCount.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getGroupJoinRequestsCount.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.joinRequestsCount = action.payload.total;
+      })
+      .addCase(getGroupJoinRequestsCount.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
       // Get pending count
       .addCase(getGroupPendingCount.pending, (state) => {
         state.isLoading = true;
@@ -380,6 +518,7 @@ const groupSlice = createSlice({
       .addCase(fetchGroupById.fulfilled, (state, action: PayloadAction<StudyGroup>) => {
         state.isFetchingGroupInfo = false;
         state.info = action.payload;
+        console.log(state.info)
         state.role = action.payload.role;
       })
       .addCase(fetchGroupById.rejected, (state, action) => {
@@ -427,7 +566,7 @@ const groupSlice = createSlice({
 
           // Tăng số lượng thành viên nếu thông tin nhóm tồn tại
           if (state.info) {
-            state.info.members += 1;
+            state.info.member_count += 1;
           }
         }
       )
@@ -550,7 +689,7 @@ const groupSlice = createSlice({
         state.admins = state.admins.filter((a) => a.user_info._id !== action.payload.userId);
         // Giảm số lượng thành viên nếu group info tồn tại
         if (state.info) {
-          state.info.members -= 1;
+          state.info.member_count -= 1;
         }
       })
       .addCase(removeGroupMember.rejected, (state, action) => {

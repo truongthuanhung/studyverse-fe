@@ -3,9 +3,9 @@ import PostSkeleton from '@/components/common/PostSkeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { fetchMyPosts, fetchUserPosts } from '@/store/slices/postSlice';
+import { fetchUserPosts } from '@/store/slices/postSlice';
 import { AppDispatch, RootState } from '@/store/store';
-import { Camera, Edit, EllipsisVertical, Plus, Send } from 'lucide-react';
+import { Camera, Edit, EllipsisVertical } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -44,9 +44,9 @@ const Profile = () => {
   const { posts, isFetching: isPostsLoading, hasMore } = useSelector((state: RootState) => state.posts);
   const dispatch = useDispatch<AppDispatch>();
 
-  const [isModalOpen, setIsModalOpen] = useState(false); // State để điều khiển modal
-  const [selectedImage, setSelectedImage] = useState<File | null>(null); // State lưu ảnh được chọn
-  const [editorRef, setEditorRef] = useState<AvatarEditor | null>(null); // Ref để lấy dữ liệu từ editor
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [editorRef, setEditorRef] = useState<AvatarEditor | null>(null);
 
   const [isUploading, setIsUploading] = useState(false);
   const [open, setOpen] = useState(false);

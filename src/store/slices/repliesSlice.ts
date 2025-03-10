@@ -6,7 +6,8 @@ import {
   deleteReply,
   editReply,
   EditReplyRequestBody,
-  getRepliesByQuestionId
+  getRepliesByQuestionId,
+  getReplyById
 } from '@/services/replies.services';
 import { updateQuestionReplies } from './questionsSlice';
 import { uploadFiles } from '@/services/medias.services';
@@ -83,6 +84,30 @@ export const uploadReplyFiles = createAsyncThunk(
     }
   }
 );
+
+// Fetch reply by id
+
+export const fetchReply = createAsyncThunk<
+  {
+    questionId: string;
+    reply: IReply;
+  },
+  {
+    groupId: string;
+    questionId: string;
+    replyId: string;
+  }
+>('replies/getReply', async ({ groupId, questionId, replyId }, { rejectWithValue }) => {
+  try {
+    const response = await getReplyById({ groupId, questionId, replyId });
+    return {
+      questionId,
+      reply: response.data.result
+    };
+  } catch (err: any) {
+    return rejectWithValue(err.response?.data || 'Failed to fetch reply');
+  }
+});
 
 // Async action to fetch replies by questionId
 export const fetchReplies = createAsyncThunk<
@@ -304,6 +329,35 @@ const repliesSlice = createSlice({
       })
       .addCase(voteOnReply.rejected, (state, action) => {
         state.isVoting = false;
+        state.error = action.payload as string;
+      })
+      .addCase(fetchReply.pending, (state) => {
+        state.isFetchingReplies = true;
+        state.error = null;
+      })
+      .addCase(fetchReply.fulfilled, (state, action) => {
+        const { questionId, reply } = action.payload;
+
+        // Initialize the array if it doesn't exist
+        if (!state.data[questionId]) {
+          state.data[questionId] = [];
+        }
+
+        // Check if reply already exists
+        const existingReplyIndex = state.data[questionId].findIndex((r) => r._id === reply._id);
+
+        if (existingReplyIndex !== -1) {
+          // Update existing reply
+          state.data[questionId][existingReplyIndex] = reply;
+        } else {
+          // Add new reply to the beginning of the list
+          state.data[questionId].unshift(reply);
+        }
+
+        state.isFetchingReplies = false;
+      })
+      .addCase(fetchReply.rejected, (state, action) => {
+        state.isFetchingReplies = false;
         state.error = action.payload as string;
       })
       .addCase(fetchReplies.pending, (state) => {

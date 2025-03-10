@@ -1,4 +1,6 @@
-import React from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store/store';
 import { Bell, Check, MessageSquare, User, Bell as BellIcon, BookOpen, BadgeAlert, Ellipsis } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -6,19 +8,67 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { getRelativeTime } from '@/utils/date';
-import { INotification } from '@/types/notification';
 import { NotificationStatus, NotificationType } from '@/types/enums';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/store/store';
-import { markAllNotificationsAsRead } from '@/store/slices/notificationsSlice';
+import {
+  markAllNotificationsAsRead,
+  readNotification,
+  fetchNotifications,
+  fetchMoreNotifications
+} from '@/store/slices/notificationsSlice';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 interface NotificationsDropdownProps {
-  notifications: INotification[];
+  children?: ReactNode;
 }
 
-const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ notifications = [] }) => {
+const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children }) => {
+  const [open, setOpen] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const {
+    data: notifications,
+    isFetchingNotifications,
+    hasMore,
+    currentPage
+  } = useSelector((state: RootState) => state.notifications);
+
+  useEffect(() => {
+    dispatch(fetchNotifications({ page: 1, limit: 10 }));
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        if (firstEntry.isIntersecting && hasMore && !isFetchingNotifications) {
+          dispatch(
+            fetchMoreNotifications({
+              page: currentPage + 1,
+              limit: 10
+            })
+          );
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    const currentTarget = scrollRef.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, isFetchingNotifications, currentPage]);
+
   const getIcon = (type: NotificationType) => {
     switch (type) {
       case NotificationType.Message:
@@ -34,11 +84,8 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ notificat
     }
   };
 
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const dispatch = useDispatch<AppDispatch>();
-
   const unreadCount = notifications.filter((notification) => notification.status === NotificationStatus.Unread).length;
+
   const handleReadAll = async () => {
     try {
       await dispatch(markAllNotificationsAsRead()).unwrap();
@@ -51,94 +98,109 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ notificat
     }
   };
 
+  const handleNotificationClick = async (notification: any) => {
+    try {
+      await dispatch(readNotification(notification._id)).unwrap();
+      setOpen(false); // Đóng dropdown
+      navigate(notification.target_url || '');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
-    <div className='w-[400px] p-0 rounded-md bg-white'>
-      <div className='flex items-center justify-between p-2'>
-        <h3 className='text-lg font-semibold'>Notifications</h3>
-        {unreadCount > 0 && (
-          <Button
-            variant='ghost'
-            className='h-8 px-2 text-sky-500 hover:text-sky-600 hover:bg-sky-50'
-            onClick={handleReadAll}
-          >
-            <Check className='mr-1 h-4 w-4' />
-            Mark all as read
-          </Button>
-        )}
-      </div>
-
-      <Separator />
-
-      <ScrollArea className='h-[380px]'>
-        {notifications.length > 0 ? (
-          <div>
-            {notifications.map((notification) => (
-              <div
-                key={notification._id}
-                onClick={() => {
-                  if (notification.type === NotificationType.Group) {
-                    navigate('');
-                  }
-                }}
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <div className='w-[400px] p-0 rounded-md bg-white'>
+          <div className='flex items-center justify-between p-2'>
+            <h3 className='text-lg font-semibold'>Notifications</h3>
+            {unreadCount > 0 && (
+              <Button
+                variant='ghost'
+                className='h-8 px-2 text-sky-500 hover:text-sky-600 hover:bg-sky-50'
+                onClick={handleReadAll}
               >
-                <div
-                  className={cn(
-                    'flex p-4 gap-3 hover:bg-slate-50 cursor-pointer transition-colors',
-                    notification.status === NotificationStatus.Unread && 'bg-sky-50'
-                  )}
-                >
-                  <div className='shrink-0'>
-                    <Avatar className='h-10 w-10'>
-                      <AvatarImage src={notification.actor.avatar} alt={notification.actor.name} />
-                      <AvatarFallback>{notification.actor.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </div>
-                  <div className='flex-1 space-y-1'>
-                    <div className='flex items-start justify-between'>
-                      <p className='text-sm text-gray-600'>
-                        <span className='font-semibold text-sky-600'>{notification.actor.name}</span>{' '}
-                        {notification.content}
-                      </p>
-                      <Button variant='outline' className='rounded-full h-8 w-8'>
-                        <Ellipsis />
-                      </Button>
-                    </div>
-                    <div className='flex items-center justify-between'>
-                      <div className='flex items-center gap-2'>
-                        {getIcon(notification.type)}
-                        <span className='text-xs text-gray-500'>{notification.actor.username}</span>
+                <Check className='mr-1 h-4 w-4' />
+                Mark all as read
+              </Button>
+            )}
+          </div>
+
+          <Separator />
+
+          <ScrollArea className='h-[380px]'>
+            {notifications.length > 0 ? (
+              <div>
+                {notifications.map((notification) => (
+                  <div key={notification._id} onClick={() => handleNotificationClick(notification)}>
+                    <div
+                      className={cn(
+                        'flex p-4 gap-3 hover:bg-slate-50 cursor-pointer transition-colors',
+                        notification.status === NotificationStatus.Unread && 'bg-sky-50'
+                      )}
+                    >
+                      <div className='shrink-0'>
+                        <Avatar className='h-10 w-10'>
+                          <AvatarImage src={notification.actor.avatar} alt={notification.actor.name} />
+                          <AvatarFallback>{notification.actor.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
                       </div>
-                      <span className='text-xs text-gray-500 whitespace-nowrap ml-2'>
-                        {getRelativeTime(notification.created_at)}
-                      </span>
+                      <div className='flex-1 space-y-1'>
+                        <div className='flex items-start justify-between'>
+                          <p className='text-sm text-gray-600'>
+                            <span className='font-semibold text-sky-600'>{notification.actor.name}</span>{' '}
+                            {notification.content}
+                          </p>
+                          <Button variant='outline' className='rounded-full h-8 w-8'>
+                            <Ellipsis />
+                          </Button>
+                        </div>
+                        <div className='flex items-center justify-between'>
+                          <div className='flex items-center gap-2'>
+                            {getIcon(notification.type)}
+                            <span className='text-xs text-gray-500'>{notification.group?.name || ''}</span>
+                          </div>
+                          <span className='text-xs text-gray-500 whitespace-nowrap ml-2'>
+                            {getRelativeTime(notification.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                      {notification.status === NotificationStatus.Unread && (
+                        <div className='shrink-0 self-center'>
+                          <div className='h-2 w-2 rounded-full bg-sky-500'></div>
+                        </div>
+                      )}
                     </div>
+                    <Separator />
                   </div>
-                  {notification.status === NotificationStatus.Unread && (
-                    <div className='shrink-0 self-center'>
-                      <div className='h-2 w-2 rounded-full bg-sky-500'></div>
+                ))}
+                <div ref={scrollRef} className=''>
+                  {isFetchingNotifications && (
+                    <div className='flex justify-center'>
+                      <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-sky-500'></div>
                     </div>
                   )}
                 </div>
-                <Separator />
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className='flex flex-col items-center justify-center h-full py-8 text-gray-500'>
-            <Bell className='h-12 w-12 text-gray-300 mb-2' />
-            <p>Không có thông báo nào</p>
-          </div>
-        )}
-      </ScrollArea>
+            ) : (
+              <div className='flex flex-col items-center justify-center h-full py-8 text-gray-500'>
+                <Bell className='h-12 w-12 text-gray-300 mb-2' />
+                <p>No notifications</p>
+              </div>
+            )}
+          </ScrollArea>
 
-      <Separator />
+          <Separator />
 
-      <div className='p-2'>
-        <Button variant='ghost' className='w-full justify-center text-sky-500 hover:text-sky-600 hover:bg-sky-50'>
-          View all notifications
-        </Button>
-      </div>
-    </div>
+          <div className='p-2'>
+            <Button variant='ghost' className='w-full justify-center text-sky-500 hover:text-sky-600 hover:bg-sky-50'>
+              View all notifications
+            </Button>
+          </div>
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

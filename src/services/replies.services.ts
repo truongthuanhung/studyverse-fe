@@ -66,3 +66,15 @@ export const editReply = ({
 }) => {
   return http.patch(`/study-groups/${groupId}/questions/${questionId}/replies/${replyId}`, body);
 };
+
+export const getReplyById = ({
+  groupId,
+  questionId,
+  replyId
+}: {
+  groupId: string;
+  questionId: string;
+  replyId: string;
+}) => {
+  return http.get(`/study-groups/${groupId}/questions/${questionId}/replies/${replyId}`);
+};

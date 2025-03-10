@@ -18,7 +18,7 @@ const UserProfile = () => {
   const { username } = useParams();
   const dispatch = useDispatch<AppDispatch>();
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null); // Tham chiếu đến vùng cuộn
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const firstPostRef = useRef<HTMLDivElement>(null);
 
   const profile = useSelector((state: RootState) => state.profile.user);
@@ -35,6 +35,31 @@ const UserProfile = () => {
 
   const { toast } = useToast();
 
+  const fetchUserProfile = async () => {
+    if (username === profile?.username) {
+      navigate('/me');
+    }
+    if (!username) return;
+    //setIsLoading(true);
+    setPage(1); // Reset page when username changes
+
+    try {
+      const response = await getUserProfile(username);
+      setUserProfile(response.data.result);
+      setIsFollowing(response.data?.result?.isFollowed ? true : false);
+      setIsUserValid(true);
+      dispatch(
+        fetchUserPosts({
+          userId: response.data.result._id,
+          page: 1,
+          limit: 5
+        })
+      );
+    } catch (error) {
+      setIsUserValid(false);
+    }
+  };
+
   const handleFollow = async () => {
     if (isProcessing) return;
     setIsProcessing(true);
@@ -42,21 +67,23 @@ const UserProfile = () => {
     try {
       if (isFollowing) {
         await unfollow({ unfollowed_user_id: userProfile._id });
-        setUserProfile((prev: any) => ({
-          ...prev,
-          followers: prev.followers - 1,
-          isFollowed: false
-        }));
+        // setUserProfile((prev: any) => ({
+        //   ...prev,
+        //   followers: prev.followers - 1,
+        //   isFollowed: false
+        // }));
+        await fetchUserProfile();
         toast({
           description: 'Unfollowed successfully'
         });
       } else {
         await follow({ followed_user_id: userProfile._id });
-        setUserProfile((prev: any) => ({
-          ...prev,
-          followers: prev.followers + 1,
-          isFollowed: true
-        }));
+        // setUserProfile((prev: any) => ({
+        //   ...prev,
+        //   followers: prev.followers + 1,
+        //   isFollowed: true
+        // }));
+        await fetchUserProfile();
         toast({
           description: 'Followed successfully'
         });
@@ -127,33 +154,6 @@ const UserProfile = () => {
   }, [hasMore, isPostsLoading, page, userProfile?._id, dispatch]);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (username === profile?.username) {
-        navigate('/me');
-      }
-      if (!username) return;
-      setIsLoading(true);
-      setPage(1); // Reset page when username changes
-
-      try {
-        const response = await getUserProfile(username);
-        setUserProfile(response.data.result);
-        setIsFollowing(response.data?.result?.isFollowed ? true : false);
-        setIsUserValid(true);
-        dispatch(
-          fetchUserPosts({
-            userId: response.data.result._id,
-            page: 1,
-            limit: 5
-          })
-        );
-      } catch (error) {
-        setIsUserValid(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchUserProfile();
   }, [dispatch, username]);
 

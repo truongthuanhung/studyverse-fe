@@ -6,8 +6,12 @@ import {
   studyGroupReducer,
   questionsReducer,
   repliesReducer,
-  notificationsSlice
+  notificationsReducer,
+  relationshipReducer,
+  studyGroupsListReducer,
+  invitationsReducer
 } from './slices';
+import { studyGroupApi } from './apis/studyGroupApi';
 
 const store = configureStore({
   reducer: {
@@ -17,8 +21,13 @@ const store = configureStore({
     studyGroup: studyGroupReducer,
     questions: questionsReducer,
     replies: repliesReducer,
-    notifications: notificationsSlice
-  }
+    notifications: notificationsReducer,
+    relationship: relationshipReducer,
+    studyGroupsList: studyGroupsListReducer,
+    invitations: invitationsReducer,
+    [studyGroupApi.reducerPath]: studyGroupApi.reducer // Add API reducer
+  },
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(studyGroupApi.middleware) // Add API middleware
 });
 
 export type RootState = ReturnType<typeof store.getState>;
