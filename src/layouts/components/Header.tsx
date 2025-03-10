@@ -23,24 +23,29 @@ import { setUser, clearUser } from '@/store/slices/profileSlice';
 import { memo } from 'react';
 import NotificationsDropdown from '@/components/common/NotificationsDropdown';
 import { addNotification, fetchNotifications, fetchUnreadCount } from '@/store/slices/notificationsSlice';
-import { Bell, BookOpen, Home, MessageCircleMore, UsersRound } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Bell, BookOpen, Home, Mail, MessageCircleMore, UsersRound } from 'lucide-react';
 import { INotification } from '@/types/notification';
-import { toast as toastify } from 'react-toastify';
 import { showNotification } from '@/components/common/CustomToast';
 
 const Header = memo(() => {
+  // States
   const [isActive, setIsActive] = useState<boolean>(false);
   const [unread, setUnread] = useState<number>(0);
+
+  // Refs
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Hooks
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { data } = useSelector((state: RootState) => state.notifications);
-  const profile = useSelector((state: RootState) => state.profile.user);
   const { socket } = useSocket();
+
+  // Selectors
+  const profile = useSelector((state: RootState) => state.profile.user);
   const { unreadCount } = useSelector((state: RootState) => state.notifications);
 
+  // Handlers
   const isActivePath = (path: string) => {
     if (path === '/groups' || path === '/conversations') {
       return location.pathname.startsWith(path);
@@ -96,6 +101,8 @@ const Header = memo(() => {
       navigate('/login');
     }
   };
+
+  // Effects
 
   useEffect(() => {
     if (isActive && inputRef.current) {
@@ -188,7 +195,7 @@ const Header = memo(() => {
               <p className='hidden md:block text-[12px] font-medium'>Community</p>
             </div>
             <div
-              onClick={() => navigate('/groups')}
+              onClick={() => navigate('/groups/my-groups')}
               className={`w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
                 '/groups'
               )}`}
@@ -204,6 +211,20 @@ const Header = memo(() => {
             >
               <MessageCircleMore size={22} />
               <p className='hidden md:block text-[12px] font-medium'>Messages</p>
+              {unread > 0 && (
+                <span className='absolute -top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
+                  {unread > 99 ? 99 : unread}
+                </span>
+              )}
+            </div>
+            <div
+              onClick={() => navigate('/invitations')}
+              className={`relative w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
+                '/invitations'
+              )}`}
+            >
+              <Mail size={22} />
+              <p className='hidden md:block text-[12px] font-medium'>Invitations</p>
               {unread > 0 && (
                 <span className='absolute -top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
                   {unread > 99 ? 99 : unread}

@@ -159,7 +159,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
                         <div className='flex items-center justify-between'>
                           <div className='flex items-center gap-2'>
                             {getIcon(notification.type)}
-                            <span className='text-xs text-gray-500'>{notification.actor.username}</span>
+                            <span className='text-xs text-gray-500'>{notification.group?.name || ''}</span>
                           </div>
                           <span className='text-xs text-gray-500 whitespace-nowrap ml-2'>
                             {getRelativeTime(notification.created_at)}

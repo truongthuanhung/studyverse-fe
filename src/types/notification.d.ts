@@ -8,11 +8,15 @@ interface INotification {
   type: NotificationType;
   content: string;
   status: NotificationStatus;
+  group_id?: string;
   created_at: string;
   target_url?: string;
   actor: {
     name: string;
     username: string;
     avatar: string;
+  };
+  group?: {
+    name: string;
   };
 }

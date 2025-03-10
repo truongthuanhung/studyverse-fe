@@ -25,51 +25,80 @@ import {
   NewConversation
 } from './pages';
 import SubLayout from './layouts/SubLayout';
-import { memo } from 'react';
+import { memo, Suspense, lazy } from 'react';
 import { ToastContainer } from 'react-toastify';
+import { GroupsListLayout } from './layouts';
+import GroupDiscover from './pages/StudyGroup/GroupDiscover';
+import Invitations from './pages/Invitations/Invitations';
+
+// Loading component for Suspense fallback
+const Loading = () => <div className='flex items-center justify-center h-screen'>Loading...</div>;
 
 const App = memo(() => {
   return (
     <Router>
       <div className='App'>
-        <Routes>
-          <Route element={<PublicRoutes />}>
-            <Route path='/login' element={<Login />} />
-            <Route path='/register' element={<Register />} />
-            <Route path='/forgot-password' element={<ForgotPassword />}></Route>
-            <Route path='/reset-password' element={<ResetPassword />}></Route>
-            <Route path='/verify-account' element={<VerifyAccount />}></Route>
-            <Route path='/oauth' element={<OAuth />}></Route>
-          </Route>
-          <Route element={<MainLayout />}>
-            <Route element={<PrivateRoutes />}>
-              <Route path='/' element={<Home />} />
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            {/* Public routes with layout persistence */}
+            <Route element={<PublicRoutes />}>
+              <Route path='/login' element={<Login />} />
+              <Route path='/register' element={<Register />} />
+              <Route path='/forgot-password' element={<ForgotPassword />} />
+              <Route path='/reset-password' element={<ResetPassword />} />
+              <Route path='/verify-account' element={<VerifyAccount />} />
+              <Route path='/oauth' element={<OAuth />} />
             </Route>
-          </Route>
-          <Route element={<SubLayout />}>
-            <Route element={<PrivateRoutes />}>
-              <Route path='/relationships' element={<Relationship />} />
-              <Route path='/conversations/t/:userId' element={<NewConversation />} />
-              <Route path='/conversations/:conversationId' element={<Conversation />} />
-              <Route path='/conversations' element={<Conversation />} />
-              <Route path='/groups/create' element={<CreateGroup />}></Route>
-              <Route path='/groups/:groupId' element={<GroupDetail />}>
-                <Route path='questions/:questionId' element={<GroupQuestionDetail />} />
-                <Route path='home' element={<GroupHome />} />
-                <Route path='requests' element={<GroupRequest />} />
-                <Route path='members' element={<GroupMember />} />
-                <Route path='analytics' element={<GroupAnalytics />} />
-                <Route path='settings' element={<GroupSettings />} />
-                <Route path='manage-questions' element={<GroupManageQuestions />} />
-                <Route path='create-question' element={<CreateQuestion />} />
+
+            {/* Main layout with private routes */}
+            <Route element={<MainLayout />}>
+              <Route element={<PrivateRoutes />}>
+                <Route path='/' element={<Home />} />
               </Route>
-              <Route path='/groups' element={<GroupList />} />
-              <Route path='/me' element={<Profile />} />
-              <Route path='/:username' element={<UserProfile />} />
             </Route>
-          </Route>
-          <Route path='*' element={<NotFound />} />
-        </Routes>
+
+            {/* Sub layout with private routes - using index pattern for nested routes */}
+            <Route element={<SubLayout />}>
+              <Route element={<PrivateRoutes />}>
+                <Route path='/relationships' element={<Relationship />} />
+                <Route path='/conversations'>
+                  {/* Index route to prevent unmounting when switching between conversation views */}
+                  <Route index element={<Conversation />} />
+                  <Route path='t/:userId' element={<NewConversation />} />
+                  <Route path=':conversationId' element={<Conversation />} />
+                </Route>
+
+                {/* Group sections */}
+                <Route path='/groups'>
+                  <Route path='create' element={<CreateGroup />} />
+                  <Route element={<GroupsListLayout />}>
+                    <Route path='my-groups' element={<GroupList />} />
+                    <Route path='discover' element={<GroupDiscover />} />
+                  </Route>
+
+                  {/* Group detail section with more organized nested routes */}
+                  <Route path=':groupId' element={<GroupDetail />}>
+                    <Route index element={<GroupHome />} /> {/* Default route when just visiting /groups/:groupId */}
+                    <Route path='home' element={<GroupHome />} />
+                    <Route path='requests' element={<GroupRequest />} />
+                    <Route path='members' element={<GroupMember />} />
+                    <Route path='analytics' element={<GroupAnalytics />} />
+                    <Route path='settings' element={<GroupSettings />} />
+                    <Route path='manage-questions' element={<GroupManageQuestions />} />
+                    <Route path='create-question' element={<CreateQuestion />} />
+                    <Route path='questions/:questionId' element={<GroupQuestionDetail />} />
+                  </Route>
+                </Route>
+
+                <Route path='/me' element={<Profile />} />
+                <Route path='/invitations' element={<Invitations />} />
+                <Route path='/:username' element={<UserProfile />} />
+              </Route>
+            </Route>
+
+            <Route path='*' element={<NotFound />} />
+          </Routes>
+        </Suspense>
         <Toaster />
       </div>
       <ToastContainer position='bottom-left' />

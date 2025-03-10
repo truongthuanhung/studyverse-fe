@@ -24,15 +24,12 @@ function Conversation() {
 
   const fetchMessages = async (conversationId: string) => {
     try {
-      //setIsLoadingConversation(true);
       const response = await getConversationMessages(conversationId);
       console.log(response.data);
       setConversation({ ...response.data.result, messages: response.data.result.messages.reverse() });
     } catch (err) {
       console.log(err);
       //navigate('/404');
-    } finally {
-      //setIsLoadingConversation(false);
     }
   };
 

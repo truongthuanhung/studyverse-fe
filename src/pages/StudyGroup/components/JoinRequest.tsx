@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store/store';
-import { acceptGroupJoinRequest, declineGroupJoinRequest } from '@/store/slices/studyGroupSlice';
+import {
+  acceptGroupJoinRequest,
+  declineGroupJoinRequest,
+  getGroupJoinRequestsCount
+} from '@/store/slices/studyGroupSlice';
 
 const formatTime = (time: string) => {
   const now = new Date();
@@ -24,19 +28,53 @@ interface JoinRequestProps {
   name: string;
   avatar: string;
   time: string;
+  isHighlighted?: boolean;
 }
 
-const JoinRequest: React.FC<JoinRequestProps> = ({ groupId, joinRequestId, username, name, avatar, time }) => {
+const JoinRequest: React.FC<JoinRequestProps> = ({
+  groupId,
+  joinRequestId,
+  username,
+  name,
+  avatar,
+  time,
+  isHighlighted = false
+}) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
   const [isAccepting, setIsAccepting] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Reset isVisible whenever isHighlighted changes
+  useEffect(() => {
+    // Clear any existing timers when component updates
+    let timer: NodeJS.Timeout;
+
+    // Set isVisible based on new isHighlighted value
+    setIsVisible(isHighlighted);
+
+    // Only set timer if highlighted
+    if (isHighlighted) {
+      timer = setTimeout(() => {
+        setIsVisible(false);
+      }, 3000);
+    }
+
+    // Cleanup function will run when:
+    // 1. Component unmounts
+    // 2. Any dependency changes (isHighlighted or joinRequestId changes)
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isHighlighted, joinRequestId]); // Add joinRequestId as dependency
 
   const handleAccept = async () => {
     setIsAccepting(true);
     try {
       await dispatch(acceptGroupJoinRequest({ groupId, joinRequestId })).unwrap();
+      await dispatch(getGroupJoinRequestsCount(groupId)).unwrap();
     } catch (error) {
       console.error('Failed to accept join request:', error);
     } finally {
@@ -48,15 +86,18 @@ const JoinRequest: React.FC<JoinRequestProps> = ({ groupId, joinRequestId, usern
     setIsDeclining(true);
     try {
       await dispatch(declineGroupJoinRequest({ groupId, joinRequestId })).unwrap();
-    } catch (error) {
-      console.error('Failed to decline join request:', error);
+      await dispatch(getGroupJoinRequestsCount(groupId)).unwrap();
     } finally {
       setIsDeclining(false);
     }
   };
 
   return (
-    <div className='flex items-center justify-between px-4 py-3 border bg-white rounded-xl shadow-sm'>
+    <div
+      className={`flex items-center justify-between px-4 py-3 border rounded-xl transition-all duration-500 ${
+        isVisible ? 'bg-sky-50 border-l-4 border-sky-500 shadow-md' : 'bg-white hover:bg-gray-50'
+      }`}
+    >
       {/* User Avatar and Information */}
       <div className='flex items-center gap-4'>
         <Avatar
