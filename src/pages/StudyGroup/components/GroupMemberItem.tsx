@@ -1,11 +1,19 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { demoteGroupMember, promoteGroupMember, removeGroupMember } from '@/store/slices/studyGroupSlice';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Shield, UserMinus, UserPlus } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 const formatJoinTime = (joinDate: string) => {
   const now = new Date();
@@ -17,12 +25,12 @@ const formatJoinTime = (joinDate: string) => {
   const diffInYears = Math.floor(diffInDays / 365);
 
   if (diffInDays < 30) {
-    return `Join about ${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    return `Joined ${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
   }
   if (diffInMonths < 12) {
-    return `Join about ${diffInMonths} month${diffInMonths > 1 ? 's' : ''} ago`;
+    return `Joined ${diffInMonths} month${diffInMonths > 1 ? 's' : ''} ago`;
   }
-  return `Join about ${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
+  return `Joined ${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
 };
 
 interface GroupMemberItemProps {
@@ -47,17 +55,20 @@ const GroupMemberItem: React.FC<GroupMemberItemProps> = ({
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
-  const _id = useSelector((state: RootState) => state.profile.user?._id);
+  const currentUserId = useSelector((state: RootState) => state.profile.user?._id);
   const navigate = useNavigate();
 
   const handlePromote = async () => {
     try {
       await dispatch(promoteGroupMember({ groupId, userId })).unwrap();
       toast({
-        description: 'Promote successfully'
+        title: 'Success',
+        description: `${name} has been promoted to admin`,
+        variant: 'default'
       });
     } catch (error) {
       toast({
+        title: 'Error',
         description: error as string,
         variant: 'destructive'
       });
@@ -68,10 +79,13 @@ const GroupMemberItem: React.FC<GroupMemberItemProps> = ({
     try {
       await dispatch(demoteGroupMember({ groupId, userId })).unwrap();
       toast({
-        description: 'Demote successfully'
+        title: 'Success',
+        description: `${name} has been demoted from admin`,
+        variant: 'default'
       });
     } catch (error) {
       toast({
+        title: 'Error',
         description: error as string,
         variant: 'destructive'
       });
@@ -82,50 +96,96 @@ const GroupMemberItem: React.FC<GroupMemberItemProps> = ({
     try {
       await dispatch(removeGroupMember({ groupId, userId })).unwrap();
       toast({
-        description: 'Remove member successfully'
+        title: 'Success',
+        description: `${name} has been removed from the group`,
+        variant: 'default'
       });
     } catch (error) {
       toast({
+        title: 'Error',
         description: error as string,
         variant: 'destructive'
       });
     }
   };
 
+  const isSelf = currentUserId === userId;
+
   return (
-    <div className='flex items-center justify-between px-4 py-3 border bg-white rounded-xl shadow-sm'>
-      {/* User Avatar and Information */}
-      <div className='flex items-center gap-4'>
-        <Avatar className='w-12 h-12 cursor-pointer' onClick={() => navigate(`/${username}`)}>
+    <div
+      className={cn(
+        'flex items-center justify-between p-4 rounded-lg border bg-white transition-all duration-200',
+        isAdmin ? 'bg-blue-50 border-blue-100' : ''
+      )}
+    >
+      <div className='flex items-center gap-3'>
+        <Avatar className='h-12 w-12 cursor-pointer border-2 shadow-sm' onClick={() => navigate(`/${username}`)}>
           <AvatarImage src={avatar} alt={name} />
-          <AvatarFallback>{name[0]}</AvatarFallback>
+          <AvatarFallback className='bg-primary/10 text-primary'>{name[0]}</AvatarFallback>
         </Avatar>
+
         <div>
-          <p className='text-sm font-semibold cursor-pointer' onClick={() => navigate(`/${username}`)}>
-            {name}
-          </p>
-          <p className='text-xs text-gray-500'>{formatJoinTime(joinDate)}</p>
+          <div className='flex items-center gap-2'>
+            <p className='font-medium hover:underline cursor-pointer' onClick={() => navigate(`/${username}`)}>
+              {name}
+            </p>
+            {isAdmin && <Shield className='h-4 w-4 text-blue-500' />}
+          </div>
+          <p className='text-xs text-muted-foreground'>{formatJoinTime(joinDate)}</p>
         </div>
       </div>
 
-      {/* Action Buttons */}
-      {_id === userId ? (
-        <></>
-      ) : (
+      {!isSelf && (
         <div className='flex gap-2'>
-          <Button
-            className='bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'
-            onClick={isAdmin ? handleDemote : handlePromote}
-          >
-            {isAdmin ? 'Demote' : 'Promote'}
-          </Button>
-          <Button
-            variant='outline'
-            className='text-gray-500 border-gray-300 hover:bg-gray-100 rounded-[20px]'
-            onClick={handleRemove}
-          >
-            Remove
-          </Button>
+          <div className='hidden sm:flex gap-2'>
+            <Button
+              size='sm'
+              variant={isAdmin ? 'outline' : 'default'}
+              className={isAdmin ? 'border-blue-200 text-blue-600' : ''}
+              onClick={isAdmin ? handleDemote : handlePromote}
+            >
+              {isAdmin ? 'Demote' : 'Promote'}
+            </Button>
+
+            <Button
+              size='sm'
+              variant='outline'
+              className='border-destructive/50 text-destructive hover:bg-destructive/10'
+              onClick={handleRemove}
+            >
+              Remove
+            </Button>
+          </div>
+
+          {/* Mobile dropdown menu */}
+          <div className='sm:hidden'>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant='outline' size='sm'>
+                  Actions
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end'>
+                <DropdownMenuItem onClick={isAdmin ? handleDemote : handlePromote}>
+                  {isAdmin ? (
+                    <>
+                      <Shield className='mr-2 h-4 w-4' />
+                      Demote from admin
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className='mr-2 h-4 w-4' />
+                      Promote to admin
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleRemove} className='text-destructive focus:text-destructive'>
+                  <UserMinus className='mr-2 h-4 w-4' />
+                  Remove from group
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       )}
     </div>

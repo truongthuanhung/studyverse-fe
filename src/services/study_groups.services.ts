@@ -94,3 +94,7 @@ export const getFriendsToInvite = (groupId: string, params: { page?: number | st
 export const inviteFriends = (groupId: string, body: { invited_user_ids: string[] }) => {
   return http.post(`${baseUrl}/${groupId}/invite-friends`, body);
 };
+
+export const searchTagsByGroup = (groupId: string, query: string) => {
+  return http.get(`${baseUrl}/${groupId}/tags?q=${query}`);
+};
