@@ -25,7 +25,7 @@ interface IQuestion {
   status: QuestionStatus;
   user_id: string;
   group_id: string;
-  tags: string[];
+  tags: any[];
   medias: string[];
   mentions: string[];
   approved_at: string | null;

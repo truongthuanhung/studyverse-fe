@@ -8,7 +8,8 @@ import {
   MessageCircleMore,
   Repeat2,
   Maximize2,
-  Upload
+  Upload,
+  Hash
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ReactQuill from 'react-quill';
@@ -37,6 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { MAX_FILES } from '@/constants/constants';
 import FileUploadPreview from '@/components/common/FileUploadPreview';
 import Reply from './Reply';
+import { Badge } from '@/components/ui/badge';
 
 interface QuestionDialogProps {
   question: IQuestion;
@@ -67,6 +69,7 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
   const [currentMediaIndex, setCurrentMediaIndex] = useState(initialImageIndex);
   const [convertedText, setConvertedText] = useState('');
   const [mentions, setMentions] = useState<any[]>([]);
+  const [showAllTags, setShowAllTags] = useState(false);
 
   // Hooks
   const dispatch = useDispatch<AppDispatch>();
@@ -227,6 +230,33 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
     setCurrentMediaIndex((prevIndex) => (prevIndex === 0 ? mediaFiles.length - 1 : prevIndex - 1));
   };
 
+  // Generate a deterministic pastel color based on tag name
+  const getTagColor = (tagName: string) => {
+    // Simple hash function for the tag name
+    let hash = 0;
+    for (let i = 0; i < tagName.length; i++) {
+      hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // List of pastel color pairs (background and text)
+    const colorPairs = [
+      { bg: 'bg-blue-50', text: 'text-blue-700' },
+      { bg: 'bg-green-50', text: 'text-green-700' },
+      { bg: 'bg-purple-50', text: 'text-purple-700' },
+      { bg: 'bg-pink-50', text: 'text-pink-700' },
+      { bg: 'bg-yellow-50', text: 'text-yellow-700' },
+      { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+      { bg: 'bg-red-50', text: 'text-red-700' },
+      { bg: 'bg-orange-50', text: 'text-orange-700' },
+      { bg: 'bg-teal-50', text: 'text-teal-700' },
+      { bg: 'bg-cyan-50', text: 'text-cyan-700' }
+    ];
+
+    // Use the hash to select a color pair
+    const colorIndex = Math.abs(hash) % colorPairs.length;
+    return colorPairs[colorIndex];
+  };
+
   return (
     <div className='flex w-full bg-white overflow-hidden'>
       {mediaFiles.length > 0 && (
@@ -317,6 +347,42 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
             }}
           />
         </div>
+
+        {question.tags && question.tags.length > 0 && (
+          <div className='flex flex-wrap gap-2 mt-3 mb-2'>
+            {(showAllTags ? question.tags : question.tags.slice(0, 3)).map((tag) => {
+              const { bg, text } = getTagColor(tag.name);
+              return (
+                <Badge
+                  key={tag._id}
+                  className={`${bg} ${text} hover:bg-opacity-80 px-3 py-1 text-xs font-medium cursor-pointer gap-1 transition-all`}
+                  variant='outline'
+                >
+                  <Hash size={12} />
+                  {tag.name}
+                </Badge>
+              );
+            })}
+            {!showAllTags && question.tags.length > 3 && (
+              <Badge
+                className='bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 text-xs font-medium cursor-pointer'
+                variant='outline'
+                onClick={() => setShowAllTags(true)}
+              >
+                +{question.tags.length - 3} more
+              </Badge>
+            )}
+            {showAllTags && question.tags.length > 3 && (
+              <Badge
+                className='bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 text-xs font-medium cursor-pointer'
+                variant='outline'
+                onClick={() => setShowAllTags(false)}
+              >
+                Show less
+              </Badge>
+            )}
+          </div>
+        )}
 
         <div className='flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
           <p className='cursor-pointer'>{question.upvotes - question.downvotes} votes</p>

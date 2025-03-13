@@ -27,6 +27,7 @@ import {
   Dot,
   Ellipsis,
   GraduationCap,
+  Hash,
   Lightbulb,
   MessageCircleMore,
   Repeat2,
@@ -68,6 +69,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState<boolean>(false);
   const [userVote, setUserVote] = useState(question.user_vote);
+  const [showAllTags, setShowAllTags] = useState(false);
 
   // Hooks
   const dispatch = useDispatch<AppDispatch>();
@@ -231,6 +233,33 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
     }
   };
 
+  // Generate a deterministic pastel color based on tag name
+  const getTagColor = (tagName: string) => {
+    // Simple hash function for the tag name
+    let hash = 0;
+    for (let i = 0; i < tagName.length; i++) {
+      hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // List of pastel color pairs (background and text)
+    const colorPairs = [
+      { bg: 'bg-blue-50', text: 'text-blue-700' },
+      { bg: 'bg-green-50', text: 'text-green-700' },
+      { bg: 'bg-purple-50', text: 'text-purple-700' },
+      { bg: 'bg-pink-50', text: 'text-pink-700' },
+      { bg: 'bg-yellow-50', text: 'text-yellow-700' },
+      { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+      { bg: 'bg-red-50', text: 'text-red-700' },
+      { bg: 'bg-orange-50', text: 'text-orange-700' },
+      { bg: 'bg-teal-50', text: 'text-teal-700' },
+      { bg: 'bg-cyan-50', text: 'text-cyan-700' }
+    ];
+
+    // Use the hash to select a color pair
+    const colorIndex = Math.abs(hash) % colorPairs.length;
+    return colorPairs[colorIndex];
+  };
+
   return (
     <div className='border rounded-xl w-full bg-white p-4 pb-0 backdrop-blur-md'>
       <div className='flex items-center justify-between tracking-tight'>
@@ -390,6 +419,41 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
         )}
       </div>
       {question.medias.length > 0 && <MediaGallery medias={question.medias} />}
+      {question.tags && question.tags.length > 0 && (
+        <div className='flex flex-wrap gap-2 mt-3 mb-2'>
+          {(showAllTags ? question.tags : question.tags.slice(0, 3)).map((tag) => {
+            const { bg, text } = getTagColor(tag.name);
+            return (
+              <Badge
+                key={tag._id}
+                className={`${bg} ${text} hover:bg-opacity-80 px-3 py-1 text-xs font-medium cursor-pointer gap-1 transition-all`}
+                variant='outline'
+              >
+                <Hash size={12} />
+                {tag.name}
+              </Badge>
+            );
+          })}
+          {!showAllTags && question.tags.length > 3 && (
+            <Badge
+              className='bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 text-xs font-medium cursor-pointer'
+              variant='outline'
+              onClick={() => setShowAllTags(true)}
+            >
+              +{question.tags.length - 3} more
+            </Badge>
+          )}
+          {showAllTags && question.tags.length > 3 && (
+            <Badge
+              className='bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 text-xs font-medium cursor-pointer'
+              variant='outline'
+              onClick={() => setShowAllTags(false)}
+            >
+              Show less
+            </Badge>
+          )}
+        </div>
+      )}
       {question.status === 0 && role === StudyGroupRole.Admin ? (
         <div className='px-4 py-2 flex items-center gap-2 border-t'>
           <Button onClick={handleApproveQuestion} className='flex-1 bg-sky-500 hover:bg-sky-600 text-white gap-2'>
