@@ -53,6 +53,7 @@ import { approveGroupQuestion, getGroupPendingCount, rejectGroupQuestion } from 
 import { fetchReply } from '@/store/slices/repliesSlice';
 import GroupUserHoverCard from '@/components/common/GroupUserHoverCard';
 import { Badge } from '@/components/ui/badge';
+import { getTagColor } from '@/utils/tag';
 
 interface QuestionProps {
   question: IQuestion;
@@ -112,7 +113,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
       }
     };
     getReply();
-  }, [replyId, groupId, question._id, location.key]);
+  }, [replyId, groupId, question._id, location.key, location.search]);
 
   // Handlers
   const handleVote = (voteType: VoteType) => {
@@ -143,7 +144,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
   };
 
   const handleOpenDeleteDialog = () => {
-    setIsDropdownOpen(false); // Close dropdown when opening alert
+    setIsDropdownOpen(false);
     setIsDeleteDialogOpen(true);
   };
 
@@ -231,33 +232,6 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
       icon: <Award size={12} />,
       color: 'bg-gray-100 text-gray-800 hover:bg-gray-200'
     }
-  };
-
-  // Generate a deterministic pastel color based on tag name
-  const getTagColor = (tagName: string) => {
-    // Simple hash function for the tag name
-    let hash = 0;
-    for (let i = 0; i < tagName.length; i++) {
-      hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
-    }
-
-    // List of pastel color pairs (background and text)
-    const colorPairs = [
-      { bg: 'bg-blue-50', text: 'text-blue-700' },
-      { bg: 'bg-green-50', text: 'text-green-700' },
-      { bg: 'bg-purple-50', text: 'text-purple-700' },
-      { bg: 'bg-pink-50', text: 'text-pink-700' },
-      { bg: 'bg-yellow-50', text: 'text-yellow-700' },
-      { bg: 'bg-indigo-50', text: 'text-indigo-700' },
-      { bg: 'bg-red-50', text: 'text-red-700' },
-      { bg: 'bg-orange-50', text: 'text-orange-700' },
-      { bg: 'bg-teal-50', text: 'text-teal-700' },
-      { bg: 'bg-cyan-50', text: 'text-cyan-700' }
-    ];
-
-    // Use the hash to select a color pair
-    const colorIndex = Math.abs(hash) % colorPairs.length;
-    return colorPairs[colorIndex];
   };
 
   return (
@@ -428,6 +402,12 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                 key={tag._id}
                 className={`${bg} ${text} hover:bg-opacity-80 px-3 py-1 text-xs font-medium cursor-pointer gap-1 transition-all`}
                 variant='outline'
+                onClick={() => {
+                  navigate({
+                    pathname: location.pathname,
+                    search: `?tagId=${tag._id}`
+                  });
+                }}
               >
                 <Hash size={12} />
                 {tag.name}

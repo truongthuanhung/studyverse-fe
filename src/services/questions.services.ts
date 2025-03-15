@@ -1,14 +1,15 @@
 import http from './http';
 
-interface PagingParams {
+interface GetQuestionsParams {
   page?: number | string;
   limit?: number | string;
   status?: number;
+  tag_id?: string;
 }
 
 const baseUrl = '/study-groups';
 
-export const getQuestionsByGroupId = (groupId: string, params: PagingParams = {}) => {
+export const getQuestionsByGroupId = (groupId: string, params: GetQuestionsParams = {}) => {
   // Make a copy of params to avoid mutating the original object
   const queryParams = { ...params };
 

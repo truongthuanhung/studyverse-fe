@@ -73,9 +73,12 @@ export const voteOnQuestion = createAsyncThunk(
 
 export const fetchQuestions = createAsyncThunk(
   'questions/fetchQuestions',
-  async ({ groupId, page = 1, limit = 10 }: { groupId: string; page: number; limit: number }, { rejectWithValue }) => {
+  async (
+    { groupId, page = 1, limit = 10, tagId }: { groupId: string; page: number; limit: number; tagId?: string },
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await getQuestionsByGroupId(groupId, { page, limit, status: 1 });
+      const response = await getQuestionsByGroupId(groupId, { page, limit, status: 1, tag_id: tagId });
       return {
         questions: response.data.result.questions,
         page,
