@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { PersonFilledIcon } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Ban, Camera, Clock5, Globe, Lock, UserPlus } from 'lucide-react';
+import { Ban, Camera, Clock5, Globe, Lock, Search, Share, UserPlus } from 'lucide-react';
 import { StudyGroupPrivacy, StudyGroupRole } from '@/types/enums';
 import { Spinner } from '@/components/ui/spinner';
 import AvatarEditor from 'react-avatar-editor';
@@ -27,8 +27,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import bg from '@/assets/images/mainLogo.jpeg';
 import { useSocket } from '@/contexts/SocketContext';
 import InviteUsersDialog from '@/components/common/InviteUsersDialog';
+import GroupSearch from './components/GroupSearch';
 
 const GroupDetail = () => {
+  // Constants
+  const ROUTE_ACCESS = {
+    [StudyGroupRole.Admin]: [
+      'home',
+      'members',
+      'requests',
+      'settings',
+      'analytics',
+      'manage-questions',
+      'create-question',
+      'questions'
+    ],
+    [StudyGroupRole.Member]: ['home', 'members', 'analytics', 'create-question', 'questions'],
+    [StudyGroupRole.Guest]: ['home'] // Guest can only access home if public
+  };
+
   // States
   const [image, setImage] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -162,6 +179,37 @@ const GroupDetail = () => {
     setHasRequested(!hasRequested);
   };
 
+  const checkRouteAccess = () => {
+    const currentPath = location.pathname.split(`/groups/${groupId}/`)[1]?.split('/')[0] || 'home';
+
+    // For question detail route
+    if (currentPath.startsWith('questions')) {
+      return ROUTE_ACCESS[studyGroup.role]?.includes('questions');
+    }
+
+    const hasAccess = ROUTE_ACCESS[studyGroup.role]?.includes(currentPath);
+
+    // Special case for guests and public groups
+    if (
+      studyGroup.role === StudyGroupRole.Guest &&
+      currentPath === 'home' &&
+      studyGroup.info?.privacy === StudyGroupPrivacy.Public
+    ) {
+      return true;
+    }
+
+    return hasAccess;
+  };
+
+  // Check route access after group info is loaded
+  useEffect(() => {
+    if (!isFetchingGroupInfo && studyGroup.info) {
+      if (!checkRouteAccess()) {
+        navigate('/404');
+      }
+    }
+  }, [location.pathname, studyGroup.role, studyGroup.info, isFetchingGroupInfo]);
+
   if (!isGroupExisted) {
     return <NotFound />;
   }
@@ -280,6 +328,7 @@ const GroupDetail = () => {
                       {studyGroup.role !== StudyGroupRole.Guest ? (
                         <InviteUsersDialog groupId={groupId as string}>
                           <Button className='rounded-[20px] text-white bg-sky-500 hover:bg-sky-600'>
+                            <UserPlus size={16} className='mr-2' />
                             Invite friends
                           </Button>
                         </InviteUsersDialog>
@@ -294,21 +343,26 @@ const GroupDetail = () => {
                           {isLoading ? (
                             <Spinner size='small' className='mr-2' />
                           ) : hasRequested ? (
-                            <Ban className='mr-2' />
+                            <Ban size={16} className='mr-2' />
                           ) : (
-                            <UserPlus className='mr-2' />
+                            <UserPlus size={16} className='mr-2' />
                           )}
                           {hasRequested ? 'Cancel join request' : 'Request to join'}
                         </Button>
                       )}
 
                       <Button className='rounded-[20px]' variant='outline'>
+                        <Share size={16} className='mr-2' />
                         Share this group
                       </Button>
+
                       {studyGroup.role !== StudyGroupRole.Guest && (
-                        <Button className='rounded-[20px]' variant='outline'>
-                          Search
-                        </Button>
+                        <GroupSearch groupId={groupId as string}>
+                          <Button className='rounded-[20px]' variant='outline'>
+                            <Search size={16} className='mr-2' />
+                            Search
+                          </Button>
+                        </GroupSearch>
                       )}
                     </div>
                   </div>
@@ -316,7 +370,7 @@ const GroupDetail = () => {
               </div>
             </div>
             <>
-              {studyGroup.role !== StudyGroupRole.Guest ? (
+              {studyGroup.role !== StudyGroupRole.Guest || studyGroup.info?.privacy === StudyGroupPrivacy.Public ? (
                 <Outlet />
               ) : (
                 <div className='py-10'>

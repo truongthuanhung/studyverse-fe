@@ -8,3 +8,4 @@ export { default as notificationsReducer } from './notificationsSlice';
 export { default as relationshipReducer } from './relationshipSlice';
 export { default as studyGroupsListReducer } from './studyGroupsListSlice';
 export { default as invitationsReducer } from './invitationsSlice';
+export { default as searchReducer } from './searchSlice';

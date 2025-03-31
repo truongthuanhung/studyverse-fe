@@ -5,7 +5,7 @@ import { EllipsisVertical, Plus, Send, UserMinus } from 'lucide-react';
 import { Post } from '@/components';
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUserPosts } from '@/store/slices/postSlice';
+import { fetchUserPosts, resetPostState } from '@/store/slices/postSlice';
 import NotFound from '../NotFound/NotFound';
 import { Spinner } from '@/components/ui/spinner';
 import PostSkeleton from '@/components/common/PostSkeleton';
@@ -27,8 +27,7 @@ const UserProfile = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isUserValid, setIsUserValid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const { posts, isFetching: isPostsLoading, hasMore } = useSelector((state: RootState) => state.posts);
+  const { posts, isFetching: isPostsLoading, hasMore, currentPage } = useSelector((state: RootState) => state.posts);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -38,16 +37,19 @@ const UserProfile = () => {
   const fetchUserProfile = async () => {
     if (username === profile?.username) {
       navigate('/me');
+      return;
     }
     if (!username) return;
-    //setIsLoading(true);
-    setPage(1); // Reset page when username changes
 
     try {
+      // Reset posts state before fetching new user profile
+      dispatch(resetPostState());
+
       const response = await getUserProfile(username);
       setUserProfile(response.data.result);
       setIsFollowing(response.data?.result?.isFollowed ? true : false);
       setIsUserValid(true);
+
       dispatch(
         fetchUserPosts({
           userId: response.data.result._id,
@@ -67,39 +69,29 @@ const UserProfile = () => {
     try {
       if (isFollowing) {
         await unfollow({ unfollowed_user_id: userProfile._id });
-        // setUserProfile((prev: any) => ({
-        //   ...prev,
-        //   followers: prev.followers - 1,
-        //   isFollowed: false
-        // }));
         await fetchUserProfile();
         toast({
           description: 'Unfollowed successfully'
         });
       } else {
         await follow({ followed_user_id: userProfile._id });
-        // setUserProfile((prev: any) => ({
-        //   ...prev,
-        //   followers: prev.followers + 1,
-        //   isFollowed: true
-        // }));
         await fetchUserProfile();
         toast({
           description: 'Followed successfully'
         });
       }
       setIsFollowing(!isFollowing);
-      if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-      }
 
+      // Scroll to top
       if (scrollAreaRef.current) {
         const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
         if (viewport) {
-          viewport.scrollTo({ top: 0, behavior: 'smooth' }); // Cuộn lên đầu
+          viewport.scrollTo({ top: 0, behavior: 'smooth' });
         }
       }
-      setPage(1);
+
+      // Reset posts and fetch first page
+      dispatch(resetPostState());
       dispatch(
         fetchUserPosts({
           userId: userProfile._id,
@@ -125,14 +117,10 @@ const UserProfile = () => {
           dispatch(
             fetchUserPosts({
               userId: userProfile._id,
-              page: page + 1,
+              page: currentPage + 1,
               limit: 5
             })
-          ).then((action) => {
-            if (action.meta.requestStatus === 'fulfilled') {
-              setPage((prev) => prev + 1);
-            }
-          });
+          );
         }
       },
       {
@@ -151,10 +139,15 @@ const UserProfile = () => {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, isPostsLoading, page, userProfile?._id, dispatch]);
+  }, [hasMore, isPostsLoading, currentPage, userProfile?._id, dispatch]);
 
   useEffect(() => {
     fetchUserProfile();
+
+    // Cleanup function to reset post state when component unmounts
+    return () => {
+      dispatch(resetPostState());
+    };
   }, [dispatch, username]);
 
   if (!isUserValid) return <NotFound />;
@@ -231,7 +224,7 @@ const UserProfile = () => {
               {posts.map((post, index) => (
                 <div
                   key={post._id}
-                  ref={index === 0 ? firstPostRef : undefined} // Gắn ref vào bài viết đầu tiên
+                  ref={index === 0 ? firstPostRef : undefined} // Attach ref to first post
                 >
                   <Post post={post} />
                 </div>

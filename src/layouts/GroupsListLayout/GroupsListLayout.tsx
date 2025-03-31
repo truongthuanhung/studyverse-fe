@@ -16,8 +16,8 @@ const GroupsListLayout = () => {
     const fetchGroups = async () => {
       try {
         await Promise.all([
-          dispatch(getJoinedGroups({ page: 1, limit: 9 })).unwrap(),
-          dispatch(getRecommededGroups({ page: 1, limit: 9 })).unwrap()
+          dispatch(getJoinedGroups({ page: 1, limit: 9 })).unwrap()
+          //dispatch(getRecommededGroups({ page: 1, limit: 9 })).unwrap()
         ]);
       } catch (err) {
         console.error(err);

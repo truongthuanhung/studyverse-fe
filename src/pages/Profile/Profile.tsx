@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { fetchUserPosts } from '@/store/slices/postSlice';
 import { AppDispatch, RootState } from '@/store/store';
-import { Camera, Edit, EllipsisVertical } from 'lucide-react';
+import { Camera, Edit, EllipsisVertical, MapPin, Globe, User2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -17,6 +17,8 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import AvatarEditor from 'react-avatar-editor';
 import { uploadFiles } from '@/services/medias.services';
 import { updateMe } from '@/services/user.services';
@@ -47,6 +49,7 @@ const Profile = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [editorRef, setEditorRef] = useState<AvatarEditor | null>(null);
+  const [editorScale, setEditorScale] = useState(1.2);
 
   const [isUploading, setIsUploading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -56,7 +59,7 @@ const Profile = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     reset
   } = useForm<ProfileFormData>({
     defaultValues: {
@@ -77,23 +80,28 @@ const Profile = () => {
         website: data.website,
         username: data.username
       });
+
       toast({
-        description: 'Edit profile successfully'
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully',
+        variant: 'default'
       });
+
       dispatch(
         setUser({
           ...response.data.result
         } as any)
       );
+      setOpen(false);
     } catch (err) {
       console.log(err);
       toast({
-        description: 'Failed to edit profile',
+        title: 'Update failed',
+        description: 'Failed to update your profile',
         variant: 'destructive'
       });
       reset();
     }
-    setOpen(false);
   };
 
   const handleDialogOpen = (open: boolean) => {
@@ -105,8 +113,8 @@ const Profile = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedImage(e.target.files[0]); // Lưu ảnh được chọn vào state
-      setIsModalOpen(true); // Mở modal
+      setSelectedImage(e.target.files[0]);
+      setIsModalOpen(true);
     }
   };
 
@@ -119,16 +127,22 @@ const Profile = () => {
       formData.append('files', file);
 
       try {
-        setIsUploading(true); // Start upload state
+        setIsUploading(true);
         const response = await uploadFiles(formData);
         const uploadedUrl = response?.data?.urls[0]?.url;
 
         if (uploadedUrl) {
-          console.log('Image uploaded successfully:', uploadedUrl);
           try {
-            const body = { avatar: uploadedUrl }; // Payload to update user
-            const res = await updateMe(body); // API call to update user
-            dispatch(setUser(res.data.result)); // Update Redux state with the new user data
+            const body = { avatar: uploadedUrl };
+            const res = await updateMe(body);
+
+            toast({
+              title: 'Avatar updated',
+              description: 'Your avatar has been updated successfully',
+              variant: 'default'
+            });
+
+            dispatch(setUser(res.data.result));
             dispatch(
               fetchUserPosts({
                 userId: profile?._id,
@@ -139,7 +153,8 @@ const Profile = () => {
           } catch (editError) {
             console.error('Failed to update user avatar:', editError);
             toast({
-              description: 'Failed to update user avatar',
+              title: 'Update failed',
+              description: 'Failed to update your avatar',
               variant: 'destructive'
             });
           }
@@ -147,12 +162,13 @@ const Profile = () => {
       } catch (error) {
         console.error('Failed to upload image:', error);
         toast({
+          title: 'Upload failed',
           description: 'Failed to upload image',
           variant: 'destructive'
         });
       } finally {
-        setIsUploading(false); // End upload state
-        setIsModalOpen(false); // Close modal
+        setIsUploading(false);
+        setIsModalOpen(false);
       }
     }
   };
@@ -191,198 +207,250 @@ const Profile = () => {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, isPostsLoading, page, dispatch]);
+  }, [hasMore, isPostsLoading, page, dispatch, profile?._id]);
 
   useEffect(() => {
-    dispatch(
-      fetchUserPosts({
-        userId: profile?._id,
-        page: 1,
-        limit: 5
-      })
+    if (profile?._id) {
+      dispatch(
+        fetchUserPosts({
+          userId: profile._id,
+          page: 1,
+          limit: 5
+        })
+      );
+    }
+  }, [dispatch, profile?._id]);
+
+  if (!profile) {
+    return (
+      <div className='flex items-center justify-center h-screen'>
+        <Spinner size='large' />
+      </div>
     );
-  }, [dispatch]);
+  }
 
   return (
-    <div className='flex'>
-      <div className='w-1/3 pl-8 pt-8'>
-        <div className='relative inline-block'>
-          <Avatar className='w-[132px] h-[132px]'>
-            <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
-          <div className='absolute bottom-0 right-0 bg-black/50 p-2 rounded-full cursor-pointer'>
-            <label htmlFor='file-upload' className='cursor-pointer'>
-              <Camera className='text-white w-5 h-5' />
-            </label>
-            <input id='file-upload' type='file' accept='image/*' className='hidden' onChange={handleFileChange} />
+    <div className='flex flex-col md:flex-row gap-6 p-4 max-w-7xl mx-auto'>
+      {/* Profile Card */}
+      <Card className='md:w-1/3 lg:w-1/4 h-fit'>
+        <CardHeader className='relative pb-0'>
+          <div className='absolute top-4 right-4 z-10'>
+            <div className='flex gap-2'>
+              <Button size='sm' variant='outline' className='rounded-full h-8 w-8 p-0'>
+                <EllipsisVertical className='h-4 w-4' />
+              </Button>
+            </div>
           </div>
-        </div>
-        <h2 className='text-2xl font-semibold mt-2'>{profile?.name || 'Unknown User'}</h2>
-        <div className='flex flex-col gap-1 text-sm'>
-          <p className='text-zinc-500'>@{profile?.username || 'unknown'}</p>
-          <p>{profile?.bio || 'No bio available'}</p>
-          <p>
-            Address: <span className='text-zinc-500'>{profile?.location || 'N/A'}</span>
-          </p>
-        </div>
-        <div className='flex gap-2 mt-4'>
-          {/* <Button className='px-4 rounded-[20px] text-white bg-sky-500 hover:bg-sky-600'>
-            <Plus />
-            Follow
-          </Button> */}
+
+          <div className='flex flex-col items-center'>
+            <div className='relative inline-block mb-4'>
+              <Avatar className='w-24 h-24 border-4 border-background'>
+                <AvatarImage src={profile?.avatar || '/placeholder-avatar.png'} alt={profile?.name} />
+                <AvatarFallback>{profile?.name?.charAt(0) || 'U'}</AvatarFallback>
+              </Avatar>
+              <div className='absolute bottom-0 right-0 bg-black/50 p-1.5 rounded-full cursor-pointer'>
+                <label htmlFor='avatar-upload' className='cursor-pointer'>
+                  <Camera className='text-white w-4 h-4' />
+                </label>
+                <input id='avatar-upload' type='file' accept='image/*' className='hidden' onChange={handleFileChange} />
+              </div>
+            </div>
+
+            <h2 className='text-xl font-semibold'>{profile?.name || 'Unknown User'}</h2>
+            <p className='text-sm text-muted-foreground'>@{profile?.username || 'unknown'}</p>
+          </div>
+        </CardHeader>
+
+        <CardContent className='pt-4'>
+          {profile?.bio && <p className='text-sm mb-4'>{profile.bio}</p>}
+
+          <div className='space-y-2 mb-4'>
+            {profile?.location && (
+              <div className='flex items-center text-sm text-muted-foreground'>
+                <MapPin className='h-4 w-4 mr-2' />
+                <span>{profile.location}</span>
+              </div>
+            )}
+
+            {profile?.website && (
+              <div className='flex items-center text-sm text-muted-foreground'>
+                <Globe className='h-4 w-4 mr-2' />
+                <a
+                  href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                  className='text-primary hover:underline'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  {profile.website.replace(/^https?:\/\//, '')}
+                </a>
+              </div>
+            )}
+
+            <div className='flex items-center text-sm text-muted-foreground'>
+              <User2 className='h-4 w-4 mr-2' />
+              <span>Joined {new Date().toLocaleDateString()}</span>
+            </div>
+          </div>
+
+          <div className='grid grid-cols-3 gap-4 text-center my-4'>
+            <div className='flex flex-col'>
+              <span className='font-semibold text-primary'>{profile?.friends || 0}</span>
+              <span className='text-xs text-muted-foreground'>Friends</span>
+            </div>
+            <div className='flex flex-col'>
+              <span className='font-semibold text-primary'>{profile?.followings || 0}</span>
+              <span className='text-xs text-muted-foreground'>Following</span>
+            </div>
+            <div className='flex flex-col'>
+              <span className='font-semibold text-primary'>{profile?.followers || 0}</span>
+              <span className='text-xs text-muted-foreground'>Followers</span>
+            </div>
+          </div>
+
+          <Separator className='my-4' />
+
           <Dialog open={open} onOpenChange={handleDialogOpen}>
             <DialogTrigger asChild>
-              <Button className='rounded-[20px]' variant='outline'>
-                <Edit />
+              <Button className='w-full rounded-full' variant='default'>
+                <Edit className='mr-2 h-4 w-4' />
                 Edit profile
               </Button>
             </DialogTrigger>
-            <DialogContent className='sm:max-w-[425px] outline-none'>
+            <DialogContent className='sm:max-w-md'>
               <form onSubmit={handleSubmit(onSubmit)}>
                 <DialogHeader>
                   <DialogTitle>Edit profile</DialogTitle>
-                  <DialogDescription>Make changes to your profile here. Click save when you're done.</DialogDescription>
+                  <DialogDescription>Make changes to your profile here.</DialogDescription>
                 </DialogHeader>
                 <div className='grid gap-4 py-4'>
-                  <div className='grid grid-cols-4 items-center gap-4'>
-                    <Label htmlFor='name' className='text-right'>
-                      Name
-                    </Label>
-                    <div className='col-span-3'>
-                      <Input
-                        id='name'
-                        {...register('name', {
-                          required: 'Name is required',
-                          minLength: {
-                            value: 2,
-                            message: 'Name must be at least 2 characters'
-                          }
-                        })}
-                      />
-                      {errors.name && <p className='text-sm text-red-500 mt-1'>{errors.name.message}</p>}
-                    </div>
+                  <div className='grid gap-2'>
+                    <Label htmlFor='name'>Name</Label>
+                    <Input
+                      id='name'
+                      {...register('name', {
+                        required: 'Name is required',
+                        minLength: {
+                          value: 2,
+                          message: 'Name must be at least 2 characters'
+                        }
+                      })}
+                    />
+                    {errors.name && <p className='text-sm text-destructive'>{errors.name.message}</p>}
                   </div>
-                  <div className='grid grid-cols-4 items-center gap-4'>
-                    <Label htmlFor='username' className='text-right'>
-                      Username
-                    </Label>
-                    <div className='col-span-3'>
-                      <Input
-                        id='username'
-                        {...register('username', {
-                          required: 'Username is required',
-                          pattern: {
-                            value: /^[a-zA-Z0-9_]+$/,
-                            message: 'Username can only contain letters, numbers and underscore'
-                          }
-                        })}
-                      />
-                      {errors.username && <p className='text-sm text-red-500 mt-1'>{errors.username.message}</p>}
-                    </div>
+
+                  <div className='grid gap-2'>
+                    <Label htmlFor='username'>Username</Label>
+                    <Input
+                      id='username'
+                      {...register('username', {
+                        required: 'Username is required',
+                        pattern: {
+                          value: /^[a-zA-Z0-9_]+$/,
+                          message: 'Username can only contain letters, numbers and underscore'
+                        }
+                      })}
+                    />
+                    {errors.username && <p className='text-sm text-destructive'>{errors.username.message}</p>}
                   </div>
-                  <div className='grid grid-cols-4 items-center gap-4'>
-                    <Label htmlFor='bio' className='text-right'>
-                      Bio
-                    </Label>
-                    <div className='col-span-3'>
-                      <Textarea
-                        id='bio'
-                        {...register('bio', {
-                          maxLength: {
-                            value: 160,
-                            message: 'Bio must not exceed 160 characters'
-                          }
-                        })}
-                      />
-                      {errors.bio && <p className='text-sm text-red-500 mt-1'>{errors.bio.message}</p>}
-                    </div>
+
+                  <div className='grid gap-2'>
+                    <Label htmlFor='bio'>Bio</Label>
+                    <Textarea
+                      id='bio'
+                      className='resize-none'
+                      {...register('bio', {
+                        maxLength: {
+                          value: 160,
+                          message: 'Bio must not exceed 160 characters'
+                        }
+                      })}
+                    />
+                    {errors.bio && <p className='text-sm text-destructive'>{errors.bio.message}</p>}
                   </div>
-                  <div className='grid grid-cols-4 items-center gap-4'>
-                    <Label htmlFor='location' className='text-right'>
-                      Location
-                    </Label>
-                    <div className='col-span-3'>
-                      <Input
-                        id='location'
-                        {...register('location', {
-                          maxLength: {
-                            value: 50,
-                            message: 'Location must not exceed 50 characters'
-                          }
-                        })}
-                      />
-                      {errors.location && <p className='text-sm text-red-500 mt-1'>{errors.location.message}</p>}
-                    </div>
+
+                  <div className='grid gap-2'>
+                    <Label htmlFor='location'>Location</Label>
+                    <Input
+                      id='location'
+                      {...register('location', {
+                        maxLength: {
+                          value: 50,
+                          message: 'Location must not exceed 50 characters'
+                        }
+                      })}
+                    />
+                    {errors.location && <p className='text-sm text-destructive'>{errors.location.message}</p>}
                   </div>
-                  <div className='grid grid-cols-4 items-center gap-4'>
-                    <Label htmlFor='website' className='text-right'>
-                      Website
-                    </Label>
-                    <div className='col-span-3'>
-                      <Input
-                        id='website'
-                        {...register('website', {
-                          pattern: {
-                            value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
-                            message: 'Please enter a valid website URL'
-                          }
-                        })}
-                      />
-                      {errors.website && <p className='text-sm text-red-500 mt-1'>{errors.website.message}</p>}
-                    </div>
+
+                  <div className='grid gap-2'>
+                    <Label htmlFor='website'>Website</Label>
+                    <Input
+                      id='website'
+                      {...register('website', {
+                        pattern: {
+                          value: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
+                          message: 'Please enter a valid website URL'
+                        }
+                      })}
+                    />
+                    {errors.website && <p className='text-sm text-destructive'>{errors.website.message}</p>}
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type='submit'>Save changes</Button>
+                  <Button type='submit' disabled={isSubmitting}>
+                    {isSubmitting ? <Spinner size='small' /> : 'Save changes'}
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
-          <Button className='rounded-full h-9 w-9' variant='outline'>
-            <EllipsisVertical />
-          </Button>
-        </div>
-        <div className='flex items-center gap-4 text-sm mt-4'>
-          <p>
-            <span className='font-bold text-sky-500'>{profile?.friends || 0}</span> Friends
-          </p>
-          <p>
-            <span className='font-bold text-sky-500'>{profile?.followings || 0}</span> Followings
-          </p>
-          <p>
-            <span className='font-bold text-sky-500'>{profile?.followers || 0}</span> Followers
-          </p>
-        </div>
-        <p className='text-pretty text-sm mt-4'>{'No description available.'}</p>
-      </div>
-      <ScrollArea className='flex-1 h-[calc(100vh-60px)] pt-8'>
-        <div className='flex flex-col gap-4 px-4'>
-          {isPostsLoading && posts.length === 0 ? (
-            Array(3)
-              .fill(null)
-              .map((_, index) => <PostSkeleton key={index} />)
-          ) : (
-            <>
-              {posts.map((post) => (
-                <Post key={post._id} post={post} />
-              ))}
-              {/* Loading indicator */}
-              <div ref={containerRef} className='h-auto flex items-center justify-center'>
-                {isPostsLoading && <PostSkeleton />}
+        </CardContent>
+      </Card>
+
+      {/* Posts Content Area */}
+      <div className='flex-1'>
+        <Card>
+          <CardHeader>
+            <h2 className='text-lg font-semibold'>Posts</h2>
+          </CardHeader>
+          <CardContent className='pt-0'>
+            <ScrollArea className='h-[calc(100vh-200px)]'>
+              <div className='flex flex-col gap-4 pr-4'>
+                {isPostsLoading && posts.length === 0 ? (
+                  Array(3)
+                    .fill(null)
+                    .map((_, index) => <PostSkeleton key={index} />)
+                ) : posts.length > 0 ? (
+                  <>
+                    {posts.map((post) => (
+                      <Post key={post._id} post={post} />
+                    ))}
+                    {/* Loading indicator */}
+                    <div ref={containerRef} className='h-auto flex items-center justify-center py-4'>
+                      {isPostsLoading && <Spinner />}
+                    </div>
+                  </>
+                ) : (
+                  <div className='text-center py-12'>
+                    <p className='text-muted-foreground'>No posts yet</p>
+                  </div>
+                )}
               </div>
-            </>
-          )}
-        </div>
-      </ScrollArea>
-      {/* Modal for Avatar Editor */}
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Avatar Editor Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className='max-w-md'>
+        <DialogContent className='sm:max-w-md'>
           <DialogHeader>
-            <DialogTitle>Edit Avatar</DialogTitle>
+            <DialogTitle>Edit Profile Picture</DialogTitle>
+            <DialogDescription>Adjust and crop your profile picture</DialogDescription>
           </DialogHeader>
-          <div className='flex justify-center'>
-            {selectedImage && (
+
+          {selectedImage && (
+            <div className='flex flex-col items-center gap-4'>
               <AvatarEditor
                 ref={(ref) => setEditorRef(ref)}
                 image={selectedImage}
@@ -390,20 +458,32 @@ const Profile = () => {
                 height={250}
                 border={50}
                 borderRadius={125}
-                scale={1.5} // Tăng giá trị scale để ảnh lấp đầy khung
+                scale={editorScale}
+                className='mx-auto'
               />
-            )}
-          </div>
+
+              <div className='w-full flex items-center gap-2'>
+                <span className='text-xs'>Zoom:</span>
+                <input
+                  type='range'
+                  min='1'
+                  max='3'
+                  step='0.1'
+                  value={editorScale}
+                  onChange={(e) => setEditorScale(parseFloat(e.target.value))}
+                  className='w-full'
+                />
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
-            <Button
-              onClick={handleSaveAvatar}
-              className='bg-sky-500 text-white hover:bg-sky-600 rounded-[20px]'
-              disabled={isUploading}
-            >
-              {isUploading ? <Spinner size='small' /> : 'Save changes'}
-            </Button>
             <Button variant='outline' onClick={() => setIsModalOpen(false)}>
               Cancel
+            </Button>
+            <Button onClick={handleSaveAvatar} disabled={isUploading}>
+              {isUploading ? <Spinner size='small' className='mr-2' /> : <></>}
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>

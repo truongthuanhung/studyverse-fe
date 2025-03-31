@@ -19,25 +19,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFullTime, getRelativeTime } from '@/utils/date';
-import {
-  Award,
-  BookOpen,
-  CalendarIcon,
-  Check,
-  Dot,
-  Ellipsis,
-  GraduationCap,
-  Hash,
-  Lightbulb,
-  MessageCircleMore,
-  Repeat2,
-  Shield,
-  Star,
-  ThumbsDown,
-  ThumbsUp,
-  Trophy,
-  X
-} from 'lucide-react';
+import { Check, Dot, Ellipsis, Hash, MessageCircleMore, Repeat2, Shield, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import MediaGallery from './MediaGallery';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import QuestionDialog from './QuestionDialog';
@@ -45,7 +27,7 @@ import { IQuestion } from '@/types/question';
 import { QuestionStatus, StudyGroupRole, VoteType } from '@/types/enums';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
-import { removeQuestion, voteOnQuestion } from '@/store/slices/questionsSlice';
+import { downvoteOnQuestion, removeQuestion, unvoteOnQuestion, upvoteOnQuestion } from '@/store/slices/questionsSlice';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -54,6 +36,7 @@ import { fetchReply } from '@/store/slices/repliesSlice';
 import GroupUserHoverCard from '@/components/common/GroupUserHoverCard';
 import { Badge } from '@/components/ui/badge';
 import { getTagColor } from '@/utils/tag';
+import { badgeConfig } from './Badge';
 
 interface QuestionProps {
   question: IQuestion;
@@ -118,11 +101,32 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
   // Handlers
   const handleVote = (voteType: VoteType) => {
     if (userVote === voteType) {
+      // If clicking the same button again, remove the vote
       setUserVote(null);
-      dispatch(voteOnQuestion({ groupId: groupId as string, questionId: question._id, type: voteType }));
+      dispatch(
+        unvoteOnQuestion({
+          groupId: groupId as string,
+          questionId: question._id
+        })
+      );
     } else {
+      // Set the new vote type
       setUserVote(voteType);
-      dispatch(voteOnQuestion({ groupId: groupId as string, questionId: question._id, type: voteType }));
+      if (voteType === VoteType.Upvote) {
+        dispatch(
+          upvoteOnQuestion({
+            groupId: groupId as string,
+            questionId: question._id
+          })
+        );
+      } else {
+        dispatch(
+          downvoteOnQuestion({
+            groupId: groupId as string,
+            questionId: question._id
+          })
+        );
+      }
     }
   };
 
@@ -206,37 +210,9 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
     }
   };
 
-  const badgeConfig: Record<string, { icon: React.ReactNode; color: string }> = {
-    'New Learner': {
-      icon: <BookOpen size={12} />,
-      color: 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-    },
-    'Active Contributor': {
-      icon: <Star size={12} />,
-      color: 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-    },
-    'Topic Expert': {
-      icon: <Lightbulb size={12} />,
-      color: 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
-    },
-    'Community Leader': {
-      icon: <Trophy size={12} />,
-      color: 'bg-purple-100 text-purple-800 hover:bg-purple-200'
-    },
-    'Academic Excellence': {
-      icon: <GraduationCap size={12} />,
-      color: 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-    },
-    // Default for any other badge
-    default: {
-      icon: <Award size={12} />,
-      color: 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-    }
-  };
-
   return (
-    <div className='border rounded-xl w-full bg-white p-4 pb-0 backdrop-blur-md'>
-      <div className='flex items-center justify-between tracking-tight'>
+    <div className='border rounded-xl w-full bg-white p-0 backdrop-blur-md'>
+      <div className='p-3 pb-0 flex items-center justify-between tracking-tight'>
         <div className='flex gap-2 items-center'>
           <GroupUserHoverCard user={question.user_info} groupId={question.group_id}>
             <Avatar className='w-[48px] h-[48px] cursor-pointer'>
@@ -257,14 +233,14 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                     Admin
                   </Badge>
                 )}
-
                 {question.user_info.badges && question.user_info.badges.length > 0 && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className='flex gap-1 items-center'>
                           {question.user_info.badges.slice(0, 2).map((badge) => {
-                            const config = badgeConfig[badge.badge_name] || badgeConfig.default;
+                            // Change this line - use badge.name instead of badge.badge_name
+                            const config = badgeConfig[badge.name] || badgeConfig.default;
                             return (
                               <Badge
                                 key={badge._id}
@@ -272,7 +248,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                                 variant='outline'
                               >
                                 {config.icon}
-                                {badge.badge_name}
+                                {badge.name}
                               </Badge>
                             );
                           })}
@@ -287,8 +263,9 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                         <div className='flex flex-col gap-1'>
                           {question.user_info.badges.map((badge) => (
                             <div key={badge._id} className='flex items-center gap-2'>
-                              <div className='text-sm font-medium'>{badge.badge_name}</div>
-                              <div className='text-xs text-gray-500'>{badge.badge_description}</div>
+                              {/* Change these lines to use badge.name and badge.description */}
+                              <div className='text-sm font-medium'>{badge.name}</div>
+                              <div className='text-xs text-gray-500'>{badge.description}</div>
                             </div>
                           ))}
                         </div>
@@ -356,7 +333,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-      <div className='flex flex-col'>
+      <div className='flex flex-col mt-2 pb-4 pt-1 px-3'>
         {question.title && <h2 className='text-base md:text-lg font-semibold leading-tight'>{question.title}</h2>}
         <div
           ref={contentRef}
@@ -392,7 +369,6 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
           </button>
         )}
       </div>
-      {question.medias.length > 0 && <MediaGallery medias={question.medias} />}
       {question.tags && question.tags.length > 0 && (
         <div className='flex flex-wrap gap-2 mt-3 mb-2'>
           {(showAllTags ? question.tags : question.tags.slice(0, 3)).map((tag) => {
@@ -434,6 +410,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
           )}
         </div>
       )}
+      {question.medias.length > 0 && <MediaGallery medias={question.medias} />}
       {question.status === 0 && role === StudyGroupRole.Admin ? (
         <div className='px-4 py-2 flex items-center gap-2 border-t'>
           <Button onClick={handleApproveQuestion} className='flex-1 bg-sky-500 hover:bg-sky-600 text-white gap-2'>
@@ -447,7 +424,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
         </div>
       ) : (
         <>
-          <div className='flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
+          <div className='px-3 py-2 flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
             <p className='cursor-pointer'>
               {question.upvotes - question.downvotes === 0
                 ? '0 votes'
@@ -456,7 +433,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                   } votes`}
             </p>
 
-            <p className='cursor-pointer'>{question.replies} replies</p>
+            <p className='cursor-pointer'>{question.reply_count} replies</p>
           </div>
           <div className='flex items-center gap-2 py-2 border-t px-2'>
             <div

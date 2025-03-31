@@ -9,7 +9,9 @@ import {
   Repeat2,
   Maximize2,
   Upload,
-  Hash
+  Hash,
+  Dot,
+  Shield
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ReactQuill from 'react-quill';
@@ -20,7 +22,7 @@ import Editor from '@/components/common/Editor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFullTime, getRelativeTime } from '@/utils/date';
 import { Button } from '@/components/ui/button';
-import { VoteType } from '@/types/enums';
+import { StudyGroupRole, VoteType } from '@/types/enums';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import {
@@ -39,6 +41,7 @@ import { MAX_FILES } from '@/constants/constants';
 import FileUploadPreview from '@/components/common/FileUploadPreview';
 import Reply from './Reply';
 import { Badge } from '@/components/ui/badge';
+import { badgeConfig } from './Badge';
 
 interface QuestionDialogProps {
   question: IQuestion;
@@ -180,7 +183,6 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
 
       setConvertedText('');
       dispatch(resetReplyFiles({ questionId: question._id }));
-      toast({ description: 'Reply created successfully' });
     } catch (err) {
       toast({
         description: 'Failed to create reply',
@@ -312,20 +314,72 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
           <div className='flex flex-col'>
-            <p className='font-semibold cursor-pointer'>{question.user_info.name}</p>
-            <p className='text-zinc-500 text-xs'>{`@${question.user_info.username}`}</p>
-            <p className='text-zinc-500 text-xs'>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className='cursor-pointer'>{getRelativeTime(question.created_at)}</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <span>{getFullTime(question.created_at)}</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </p>
+            <div className='flex items-center gap-4'>
+              <p className='font-semibold cursor-pointer'>{question.user_info.name}</p>
+              <div className='flex items-center gap-1'>
+                {question.user_info.role === StudyGroupRole.Admin && (
+                  <Badge className='bg-red-100 text-red-800 hover:bg-red-200 px-2 py-0.5 text-xs font-medium gap-1'>
+                    <Shield size={12} />
+                    Admin
+                  </Badge>
+                )}
+
+                {question.user_info.badges && question.user_info.badges.length > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className='flex gap-1 items-center'>
+                          {question.user_info.badges.slice(0, 2).map((badge) => {
+                            const config = badgeConfig[badge.name] || badgeConfig.default;
+                            return (
+                              <Badge
+                                key={badge._id}
+                                className={`${config.color} px-2 py-0.5 text-xs font-medium gap-1 cursor-pointer`}
+                                variant='outline'
+                              >
+                                {config.icon}
+                                {badge.name}
+                              </Badge>
+                            );
+                          })}
+                          {question.user_info.badges.length > 2 && (
+                            <Badge className='bg-gray-100 text-gray-800 px-2 py-0.5 text-xs font-medium hover:bg-gray-200'>
+                              +{question.user_info.badges.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className='max-w-xs'>
+                        <div className='flex flex-col gap-1'>
+                          {question.user_info.badges.map((badge) => (
+                            <div key={badge._id} className='flex items-center gap-2'>
+                              <div className='text-sm font-medium'>{badge.name}</div>
+                              <div className='text-xs text-gray-500'>{badge.description}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </div>
+            <div className='text-zinc-500 text-sm flex items-center gap-x-0.5'>
+              <p>{`@${question.user_info.username}`}</p>
+              <Dot size={18} />
+              <p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className='cursor-pointer'>{getRelativeTime(question.created_at)}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>{getFullTime(question.created_at)}</span>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -385,8 +439,12 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
         )}
 
         <div className='flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
-          <p className='cursor-pointer'>{question.upvotes - question.downvotes} votes</p>
-          <p className='cursor-pointer'>{question.replies} replies</p>
+          <p className='cursor-pointer'>
+            {question.upvotes - question.downvotes === 0
+              ? '0 votes'
+              : `${question.upvotes - question.downvotes > 0 ? '+' : ''}${question.upvotes - question.downvotes} votes`}
+          </p>
+          <p className='cursor-pointer'>{question.reply_count} replies</p>
         </div>
 
         <div className='flex items-center gap-2 py-2 border-t px-2'>

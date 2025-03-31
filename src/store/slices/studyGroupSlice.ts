@@ -518,7 +518,6 @@ const groupSlice = createSlice({
       .addCase(fetchGroupById.fulfilled, (state, action: PayloadAction<StudyGroup>) => {
         state.isFetchingGroupInfo = false;
         state.info = action.payload;
-        console.log(state.info)
         state.role = action.payload.role;
       })
       .addCase(fetchGroupById.rejected, (state, action) => {

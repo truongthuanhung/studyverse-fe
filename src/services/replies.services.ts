@@ -78,3 +78,27 @@ export const getReplyById = ({
 }) => {
   return http.get(`/study-groups/${groupId}/questions/${questionId}/replies/${replyId}`);
 };
+
+export const approveReplyByQuestionOwner = ({
+  groupId,
+  questionId,
+  replyId
+}: {
+  groupId: string;
+  questionId: string;
+  replyId: string;
+}) => {
+  return http.put(`/study-groups/${groupId}/questions/${questionId}/replies/${replyId}/user-approve`);
+};
+
+export const approveReplyByTeacherAdmin = ({
+  groupId,
+  questionId,
+  replyId
+}: {
+  groupId: string;
+  questionId: string;
+  replyId: string;
+}) => {
+  return http.put(`/study-groups/${groupId}/questions/${questionId}/replies/${replyId}/teacher-approve`);
+};

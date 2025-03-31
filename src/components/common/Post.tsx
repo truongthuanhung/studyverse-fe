@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { PublishIcon, ReplyIcon, UpvoteIcon, ThreeDotsIcon } from '@/assets/icons';
+import { PublishIcon, ReplyIcon, UpvoteIcon } from '@/assets/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PostDialog from './PostDialog';
 import { ILike, IPost } from '@/types/post';
@@ -15,12 +15,15 @@ import { Separator } from '../ui/separator';
 import { useDispatch, useSelector } from 'react-redux';
 import { likePostAction, unlikePostAction } from '@/store/slices/postSlice';
 import { AppDispatch, RootState } from '@/store/store';
-import { useNavigate } from 'react-router-dom';
-import { Globe, Handshake, Lock, Users } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Ellipsis, Globe, Handshake, Lock, Users, Hash } from 'lucide-react';
 import { getFullTime, getRelativeTime } from '@/utils/date';
 import LikeItem from './LikeItem';
 import { getLikesByPostId } from '@/services/posts.services';
 import LikeItemSkeleton from './LikeItemSkeleton';
+import { MediaGallery } from '@/pages/StudyGroup/components';
+import { Badge } from '@/components/ui/badge';
+import { getTagColor } from '@/utils/tag';
 
 interface PostProps {
   post: IPost;
@@ -31,7 +34,6 @@ const Post: React.FC<PostProps> = ({ post }) => {
   const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const totalMedia = post.medias.length;
-  const extraMediaCount = totalMedia - 4;
   const dispatch = useDispatch<AppDispatch>();
 
   const [likes, setLikes] = useState<ILike[]>([]);
@@ -39,8 +41,10 @@ const Post: React.FC<PostProps> = ({ post }) => {
   const [page, setPage] = useState(1);
   const limit = 5;
   const [hasMore, setHasMore] = useState(true);
+  const [showAllTags, setShowAllTags] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const profile = useSelector((state: RootState) => state.profile.user);
   const navigateToProfile = () => {
@@ -111,53 +115,10 @@ const Post: React.FC<PostProps> = ({ post }) => {
     }
   }, [post.content]);
 
-  const renderMediaGallery = () => {
-    return (
-      <div className='grid gap-1'>
-        {/* Hiển thị ảnh đầu tiên (luôn hiển thị nếu có ít nhất 1 ảnh) */}
-        {totalMedia >= 1 && (
-          <Dialog>
-            <DialogTrigger>
-              <div className='relative overflow-hidden rounded-md h-64'>
-                <img src={post.medias[0]} alt='Gallery item 0' className='w-full h-full object-cover' />
-              </div>
-            </DialogTrigger>
-            <DialogContent className='max-w-[85vw] max-h-[90vh] px-0 pb-0 border-none'>
-              <PostDialog post={post} initialImageIndex={0} />
-            </DialogContent>
-          </Dialog>
-        )}
-        {/* Dòng thứ hai hiển thị tối đa 3 ảnh nếu có nhiều hơn 1 ảnh */}
-        {totalMedia > 1 && (
-          <div className='grid grid-cols-3 gap-1'>
-            {post.medias.slice(1, 4).map((src, index) => (
-              <Dialog key={index + 1}>
-                <DialogTrigger>
-                  <div className='relative overflow-hidden rounded-md h-24'>
-                    <img src={src} alt={`Gallery item ${index + 1}`} className='w-full h-full object-cover' />
-                    {/* Hiển thị dấu + nếu là ảnh cuối cùng và có ảnh dư */}
-                    {extraMediaCount > 0 && index === 2 && (
-                      <div className='absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-xl font-semibold'>
-                        +{extraMediaCount}
-                      </div>
-                    )}
-                  </div>
-                </DialogTrigger>
-                <DialogContent className='max-w-[85vw] max-h-[90vh] px-0 pb-0 border-none'>
-                  <PostDialog post={post} initialImageIndex={index + 1} />
-                </DialogContent>
-              </Dialog>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
-    <div className='border rounded-xl w-full bg-white px-4 pt-3'>
+    <div className='border rounded-xl w-full bg-white p-0 backdrop-blur-md'>
       {/* Header */}
-      <div className='flex items-center justify-between'>
+      <div className='p-3 pb-0 flex items-center justify-between tracking-tight'>
         <div className='flex gap-2 items-center'>
           <Avatar className='w-[48px] h-[48px] cursor-pointer' onClick={navigateToProfile}>
             <AvatarImage src={post.user_info.avatar || 'https://github.com/shadcn.png'} />
@@ -207,7 +168,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
         <DropdownMenu>
           <DropdownMenuTrigger className='outline-none border-none'>
             <div className='cursor-pointer text-zinc-500'>
-              <ThreeDotsIcon />
+              <Ellipsis />
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -219,7 +180,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
       </div>
 
       {/* Content with Read More functionality */}
-      <div className='flex flex-col mt-2'>
+      <div className='flex flex-col pb-4 pt-1 px-3'>
         <div
           ref={contentRef}
           className={`whitespace-pre-line relative ${
@@ -243,11 +204,54 @@ const Post: React.FC<PostProps> = ({ post }) => {
         )}
       </div>
 
+      {/* Tags Section - Added from Question Component */}
+      {post.tags && post.tags.length > 0 && (
+        <div className='flex flex-wrap gap-2 px-3 mt-1 mb-3'>
+          {(showAllTags ? post.tags : post.tags.slice(0, 3)).map((tag) => {
+            const { bg, text } = getTagColor(tag.name);
+            return (
+              <Badge
+                key={tag._id}
+                className={`${bg} ${text} hover:bg-opacity-80 px-3 py-1 text-xs font-medium cursor-pointer gap-1 transition-all`}
+                variant='outline'
+                onClick={() => {
+                  navigate({
+                    pathname: location.pathname,
+                    search: `?tagId=${tag._id}`
+                  });
+                }}
+              >
+                <Hash size={12} />
+                {tag.name}
+              </Badge>
+            );
+          })}
+          {!showAllTags && post.tags.length > 3 && (
+            <Badge
+              className='bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 text-xs font-medium cursor-pointer'
+              variant='outline'
+              onClick={() => setShowAllTags(true)}
+            >
+              +{post.tags.length - 3} more
+            </Badge>
+          )}
+          {showAllTags && post.tags.length > 3 && (
+            <Badge
+              className='bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 text-xs font-medium cursor-pointer'
+              variant='outline'
+              onClick={() => setShowAllTags(false)}
+            >
+              Show less
+            </Badge>
+          )}
+        </div>
+      )}
+
       {/* Media Gallery */}
-      {post.medias.length > 0 && <div className='p-4 pb-0'>{renderMediaGallery()}</div>}
+      {post.medias.length > 0 && <MediaGallery medias={post.medias} />}
 
       {/* Footer */}
-      <div className='flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
+      <div className='px-3 py-2 flex items-center gap-2 text-zinc-500 text-sm justify-end'>
         <Dialog onOpenChange={onOpenLikeDialog}>
           <DialogTrigger>
             <p className='cursor-pointer'>{post.like_count} likes</p>

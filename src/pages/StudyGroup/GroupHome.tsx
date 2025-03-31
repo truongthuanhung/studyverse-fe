@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useEffect, useRef, useState } from 'react';
 import { memo } from 'react';
 import CreateDialog from '@/components/common/CreateDialog';
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { fetchQuestions } from '@/store/slices/questionsSlice';
 import PostSkeleton from '@/components/common/PostSkeleton';
 import { Clock5, FileQuestion, Globe, Hash, Lock, MessageSquare } from 'lucide-react';
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StudyGroupPrivacy } from '@/types/enums';
 import { formatDateGMT7 } from '@/utils/date';
-import { getTagById, getTagInGroup } from '@/services/tags.services';
+import { getTagInGroup } from '@/services/tags.services';
 import { getTagColor } from '@/utils/tag';
 import { Badge } from '@/components/ui/badge';
 
@@ -98,7 +98,7 @@ const GroupHome = memo(() => {
         }
       },
       {
-        threshold: 0.5
+        threshold: 0.1
       }
     );
 
@@ -169,12 +169,12 @@ const GroupHome = memo(() => {
                   <Question key={question._id} question={question} />
                 ))}
                 {/* Loading indicator */}
-                <div ref={containerRef} className='flex flex-col gap-4 items-center justify-center'>
+                <div ref={containerRef} className='h-10 w-full'>
+                  {/* Thêm chiều cao cụ thể */}
                   {isFetchingQuestions && (
-                    <>
-                      <PostSkeleton />
-                      <PostSkeleton />
-                    </>
+                    <div className='flex justify-center'>
+                      <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-500'></div>
+                    </div>
                   )}
                 </div>
               </>
@@ -191,7 +191,9 @@ const GroupHome = memo(() => {
               <>
                 {studyGroup.info?.privacy === StudyGroupPrivacy.Private ? (
                   <div className='flex items-center gap-3'>
-                    <Lock />
+                    <div className='flex-shrink-0'>
+                      <Lock className='w-5 h-5' />
+                    </div>
                     <div className='flex flex-col'>
                       <p className='font-semibold'>Private</p>
                       <p className='text-sm text-zinc-500'>
@@ -201,15 +203,19 @@ const GroupHome = memo(() => {
                   </div>
                 ) : (
                   <div className='flex items-center gap-3'>
-                    <Globe />
+                    <div className='flex-shrink-0'>
+                      <Globe className='w-5 h-5' />
+                    </div>
                     <div className='flex flex-col'>
                       <p className='font-semibold'>Public</p>
-                      <p className='text-sm text-gray-500'>Everyone can see who's in the group and what they post.</p>
+                      <p className='text-sm text-zinc-500'>Everyone can see who's in the group and what they post.</p>
                     </div>
                   </div>
                 )}
-                <div className='flex items-center gap-3 mt-2'>
-                  <Clock5 />
+                <div className='flex items-center gap-3'>
+                  <div className='flex-shrink-0'>
+                    <Clock5 className='w-5 h-5' />
+                  </div>
                   <div className='flex flex-col'>
                     <p className='font-semibold'>History</p>
                     <p className='text-sm text-zinc-500'>

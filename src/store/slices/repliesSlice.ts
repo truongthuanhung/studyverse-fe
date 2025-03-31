@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { IReply } from '@/types/question';
 import {
+  approveReplyByQuestionOwner,
   createReply,
   CreateReplyRequestBody,
   deleteReply,
@@ -9,20 +10,14 @@ import {
   getRepliesByQuestionId,
   getReplyById
 } from '@/services/replies.services';
-import { updateQuestionReplies } from './questionsSlice';
+import { addQuestionReply, removeQuestionReply, updateQuestionReplies } from './questionsSlice';
 import { uploadFiles } from '@/services/medias.services';
 import { VoteType } from '@/types/enums';
-import { voteReply } from '@/services/votes.services';
+import { downvoteReply, unvoteReply, upvoteReply, voteReply } from '@/services/votes.services';
 
 interface UploadedFile extends File {
   preview?: string;
   status?: 'pending' | 'uploading' | 'error' | 'success';
-}
-
-interface UploadedFileInfo {
-  url: string;
-  type: string;
-  originalName: string;
 }
 
 interface PendingReply {
@@ -158,9 +153,8 @@ export const addReply = createAsyncThunk<
   try {
     const response = await createReply({ groupId, questionId, body });
     dispatch(
-      updateQuestionReplies({
-        questionId,
-        replies: response.data.result.reply_count
+      addQuestionReply({
+        questionId
       })
     );
     return {
@@ -184,16 +178,13 @@ export const removeReply = createAsyncThunk<
   }
 >('replies/removeReply', async ({ groupId, questionId, replyId }, { dispatch, rejectWithValue }) => {
   try {
-    const response = await deleteReply({ groupId, questionId, replyId });
-
+    await deleteReply({ groupId, questionId, replyId });
     // Update the reply count in the question
     dispatch(
-      updateQuestionReplies({
-        questionId,
-        replies: response.data.result.reply_count
+      removeQuestionReply({
+        questionId
       })
     );
-
     return {
       questionId,
       replyId
@@ -224,6 +215,75 @@ export const voteOnReply = createAsyncThunk(
       return { questionId, replyId, type };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to vote on question');
+    }
+  }
+);
+
+export const upvoteOnReply = createAsyncThunk(
+  'replies/upvoteReply',
+  async (
+    {
+      groupId,
+      questionId,
+      replyId
+    }: {
+      groupId: string;
+      questionId: string;
+      replyId: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      await upvoteReply({ groupId, questionId, replyId });
+      return { questionId, replyId };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to upvote reply');
+    }
+  }
+);
+
+export const downvoteOnReply = createAsyncThunk(
+  'replies/downvoteReply',
+  async (
+    {
+      groupId,
+      questionId,
+      replyId
+    }: {
+      groupId: string;
+      questionId: string;
+      replyId: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      await downvoteReply({ groupId, questionId, replyId });
+      return { questionId, replyId };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to downvote reply');
+    }
+  }
+);
+
+export const unvoteOnReply = createAsyncThunk(
+  'replies/unvoteReply',
+  async (
+    {
+      groupId,
+      questionId,
+      replyId
+    }: {
+      groupId: string;
+      questionId: string;
+      replyId: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      await unvoteReply({ groupId, questionId, replyId });
+      return { questionId, replyId };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to unvote reply');
     }
   }
 );
@@ -287,6 +347,111 @@ const repliesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Upvote Reply
+      .addCase(upvoteOnReply.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(upvoteOnReply.fulfilled, (state, action) => {
+        const { questionId, replyId } = action.payload;
+
+        if (state.data[questionId]) {
+          state.data[questionId] = state.data[questionId].map((reply) => {
+            if (reply._id === replyId) {
+              // If already upvoted, do nothing (API handles this)
+              if (reply.user_vote === VoteType.Upvote) {
+                // State will be updated by the API response
+              }
+              // If previously downvoted, remove downvote and add upvote
+              else if (reply.user_vote === VoteType.Downvote) {
+                reply.downvotes -= 1;
+                reply.upvotes += 1;
+                reply.user_vote = VoteType.Upvote;
+              }
+              // If not voted before, add upvote
+              else {
+                reply.upvotes += 1;
+                reply.user_vote = VoteType.Upvote;
+              }
+            }
+            return reply;
+          });
+        }
+        state.isVoting = false;
+      })
+      .addCase(upvoteOnReply.rejected, (state, action) => {
+        state.isVoting = false;
+        state.error = action.payload as string;
+      })
+
+      // Downvote Reply
+      .addCase(downvoteOnReply.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(downvoteOnReply.fulfilled, (state, action) => {
+        const { questionId, replyId } = action.payload;
+
+        if (state.data[questionId]) {
+          state.data[questionId] = state.data[questionId].map((reply) => {
+            if (reply._id === replyId) {
+              // If already downvoted, do nothing (API handles this)
+              if (reply.user_vote === VoteType.Downvote) {
+                // State will be updated by the API response
+              }
+              // If previously upvoted, remove upvote and add downvote
+              else if (reply.user_vote === VoteType.Upvote) {
+                reply.upvotes -= 1;
+                reply.downvotes += 1;
+                reply.user_vote = VoteType.Downvote;
+              }
+              // If not voted before, add downvote
+              else {
+                reply.downvotes += 1;
+                reply.user_vote = VoteType.Downvote;
+              }
+            }
+            return reply;
+          });
+        }
+        state.isVoting = false;
+      })
+      .addCase(downvoteOnReply.rejected, (state, action) => {
+        state.isVoting = false;
+        state.error = action.payload as string;
+      })
+
+      // Unvote Reply
+      .addCase(unvoteOnReply.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(unvoteOnReply.fulfilled, (state, action) => {
+        const { questionId, replyId } = action.payload;
+
+        if (state.data[questionId]) {
+          state.data[questionId] = state.data[questionId].map((reply) => {
+            if (reply._id === replyId) {
+              // If previously upvoted, remove upvote
+              if (reply.user_vote === VoteType.Upvote) {
+                reply.upvotes -= 1;
+              }
+              // If previously downvoted, remove downvote
+              else if (reply.user_vote === VoteType.Downvote) {
+                reply.downvotes -= 1;
+              }
+              // Set user_vote to null
+              reply.user_vote = null;
+            }
+            return reply;
+          });
+        }
+        state.isVoting = false;
+      })
+      .addCase(unvoteOnReply.rejected, (state, action) => {
+        state.isVoting = false;
+        state.error = action.payload as string;
+      })
       // vote on reply
       .addCase(voteOnReply.pending, (state) => {
         state.isVoting = true;

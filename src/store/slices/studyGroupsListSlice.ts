@@ -101,7 +101,6 @@ const groupsListSlice = createSlice({
         state.isLoadingRecommendedGroups = false;
 
         const { study_groups, pagination } = action.payload;
-        console.log(study_groups);
 
         // If it's the first page, replace the array; otherwise, append
         if (pagination.page === 1) {

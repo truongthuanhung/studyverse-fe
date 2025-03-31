@@ -2,45 +2,59 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { CreatePostRequestBody, IPost } from '@/types/post';
 import { createPost, getMyPosts, getNewsFeed, getPostsByUserId, likePost, unlikePost } from '@/services/posts.services';
 import { PRIVACY_OPTIONS } from '@/constants/constants';
+import { uploadFiles } from '@/services/medias.services';
 
 interface UploadedFile extends File {
   preview?: string;
+  status?: 'pending' | 'uploading' | 'error' | 'success';
+}
+
+interface UploadedFileInfo {
+  url: string;
+  type: string;
+  originalName: string;
 }
 
 interface PostState {
   posts: IPost[];
   isLoading: boolean;
+  isCreatingPost: boolean;
   isFetching: boolean;
+  isUploadingFiles: boolean;
   error: string | null;
   content: string;
   privacy: string;
   likeLoading: boolean; // Loading state for like/unlike actions
   uploadedFiles: UploadedFile[];
-  uploadedUrls: string[]; // Array of URLs from server
+  uploadedUrls: UploadedFileInfo[]; // Array of URLs from server
   hasMore: boolean;
+  currentPage: number;
 }
 
 const initialState: PostState = {
   posts: [],
+  isCreatingPost: false,
   isLoading: false,
   isFetching: false,
+  isUploadingFiles: false,
   error: null,
   content: '',
   privacy: PRIVACY_OPTIONS[0].value,
   likeLoading: false,
   uploadedFiles: [],
   uploadedUrls: [],
-  hasMore: true
+  hasMore: true,
+  currentPage: 1
 };
 
 // Async action to fetch posts
 export const fetchPosts = createAsyncThunk(
   'posts/fetchPosts',
-  async ({ page = 1, limit = 5 }: { page: number; limit: number }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10 }: { page: number; limit: number }, { rejectWithValue }) => {
     try {
       const response = await getNewsFeed({ page, limit });
       return {
-        posts: response.data.result as IPost[],
+        posts: response.data.result.posts as IPost[],
         page,
         limit
       };
@@ -52,11 +66,11 @@ export const fetchPosts = createAsyncThunk(
 
 export const fetchUserPosts = createAsyncThunk(
   'posts/fetchUserPosts',
-  async ({ userId, page = 1, limit = 5 }: { userId: string; page: number; limit?: number }, { rejectWithValue }) => {
+  async ({ userId, page = 1, limit = 10 }: { userId: string; page: number; limit?: number }, { rejectWithValue }) => {
     try {
       const response = await getPostsByUserId(userId, { page, limit });
       return {
-        posts: response.data.result,
+        posts: response.data.result.posts,
         page,
         limit
       };
@@ -68,16 +82,28 @@ export const fetchUserPosts = createAsyncThunk(
 
 export const fetchMyPosts = createAsyncThunk(
   'posts/fetchMyPosts',
-  async ({ page = 1, limit = 5 }: { page: number; limit?: number }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10 }: { page: number; limit?: number }, { rejectWithValue }) => {
     try {
       const response = await getMyPosts({ page, limit });
       return {
-        posts: response.data.result,
+        posts: response.data.result.posts,
         page,
         limit
       };
     } catch (err: any) {
       return rejectWithValue(err.response?.data || 'Failed to fetch posts');
+    }
+  }
+);
+
+export const uploadPostFiles = createAsyncThunk(
+  'questions/uploadFiles',
+  async (formData: FormData, { rejectWithValue }) => {
+    try {
+      const response = await uploadFiles(formData);
+      return response.data.urls; // Giả sử API trả về danh sách URLs của ảnh đã upload
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Upload failed');
     }
   }
 );
@@ -142,14 +168,10 @@ const postSlice = createSlice({
       state.uploadedFiles = state.uploadedFiles.filter((_, i) => i !== index);
     },
     resetPostState(state) {
-      state.content = '';
-      state.privacy = PRIVACY_OPTIONS[0].value;
-      state.uploadedFiles.forEach((file) => {
-        if (file.preview) {
-          URL.revokeObjectURL(file.preview);
-        }
-      });
-      state.uploadedFiles = [];
+      state.content = initialState.content;
+      state.privacy = initialState.privacy;
+      state.uploadedFiles = initialState.uploadedFiles;
+      state.uploadedUrls = initialState.uploadedUrls;
     },
     updateCommentCount(state, action: PayloadAction<{ postId: string; commentCount: number }>) {
       const { postId, commentCount } = action.payload;
@@ -161,6 +183,30 @@ const postSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(uploadPostFiles.pending, (state) => {
+        state.isUploadingFiles = true;
+        state.uploadedFiles = state.uploadedFiles.map((file) =>
+          file.status === 'pending' ? { ...file, status: 'uploading' } : file
+        );
+        state.error = null;
+      })
+      .addCase(uploadPostFiles.fulfilled, (state, action: PayloadAction<UploadedFileInfo[]>) => {
+        state.isUploadingFiles = false;
+
+        // Cập nhật trạng thái thành 'success'
+        state.uploadedFiles = state.uploadedFiles.map((file, index) => ({
+          ...file,
+          status: 'success',
+          url: action.payload[index]?.url
+        }));
+
+        state.uploadedUrls = [...state.uploadedUrls, ...action.payload];
+      })
+      .addCase(uploadPostFiles.rejected, (state, action) => {
+        state.isUploadingFiles = false;
+        state.uploadedFiles = state.uploadedFiles.map((file) => ({ ...file, status: 'error' }));
+        state.error = action.payload as string;
+      })
       // Fetch news feed posts
       .addCase(fetchPosts.pending, (state) => {
         state.isFetching = true;
@@ -169,7 +215,6 @@ const postSlice = createSlice({
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.isFetching = false;
         const { posts, page, limit } = action.payload;
-        console.log({ posts, page, limit });
         if (page === 1) {
           // Replace posts for the first page
           state.posts = posts;
@@ -179,6 +224,7 @@ const postSlice = createSlice({
         }
 
         // Update `hasMore` based on whether we received fewer posts than requested
+        state.currentPage = page;
         state.hasMore = posts.length === limit;
       })
       .addCase(fetchPosts.rejected, (state, action) => {
@@ -206,6 +252,7 @@ const postSlice = createSlice({
 
         // Update hasMore based on whether we received fewer posts than requested
         state.hasMore = posts.length === action.payload.limit;
+        state.currentPage = page;
       })
       .addCase(fetchUserPosts.rejected, (state, action) => {
         state.isFetching = false;
@@ -241,15 +288,15 @@ const postSlice = createSlice({
 
       // Create post
       .addCase(createNewPost.pending, (state) => {
-        state.isLoading = true;
+        state.isCreatingPost = true;
         state.error = null;
       })
       .addCase(createNewPost.fulfilled, (state, action: PayloadAction<IPost>) => {
-        state.isLoading = false;
+        state.isCreatingPost = false;
         state.posts = [action.payload, ...state.posts]; // Thêm post mới vào đầu mảng
       })
       .addCase(createNewPost.rejected, (state, action: PayloadAction<any>) => {
-        state.isLoading = false;
+        state.isCreatingPost = false;
         state.error = action.payload as string;
       })
 

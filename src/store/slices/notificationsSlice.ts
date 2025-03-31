@@ -109,32 +109,6 @@ export const fetchNotifications = createAsyncThunk(
   }
 );
 
-// Thunk để tải thêm notifications (load more)
-export const fetchMoreNotifications = createAsyncThunk(
-  'notifications/fetchMoreNotifications',
-  async (params: FetchNotificationsParams, { rejectWithValue, getState }) => {
-    try {
-      const state = getState() as { notifications: NotificationsState };
-      const nextPage = state.notifications.currentPage + 1;
-
-      const response = await getNotifications({
-        ...params,
-        page: nextPage
-      });
-
-      return {
-        data: response.data as NotificationsResponse,
-        page: nextPage
-      };
-    } catch (error) {
-      if (error instanceof Error) {
-        return rejectWithValue(error.message);
-      }
-      return rejectWithValue('Failed to load more notifications');
-    }
-  }
-);
-
 const notificationsSlice = createSlice({
   name: 'notifications',
   initialState,
@@ -193,34 +167,22 @@ const notificationsSlice = createSlice({
       })
       .addCase(fetchNotifications.fulfilled, (state, action: PayloadAction<NotificationsResponse>) => {
         state.isFetchingNotifications = false;
-        state.data = action.payload.result.notifications;
-        state.currentPage = action.payload.result.pagination.page;
-        state.totalPages = action.payload.result.pagination.totalPages;
-        state.total = action.payload.result.pagination.total;
-        state.hasMore = state.currentPage < state.totalPages;
+
+        const { notifications, pagination } = action.payload.result;
+
+        if (pagination.page === 1) {
+          state.data = notifications;
+        } else {
+          state.data = [...state.data, ...notifications];
+        }
+
+        // Cập nhật đầy đủ thông tin pagination
+        state.currentPage = pagination.page;
+        state.totalPages = pagination.totalPages;
+        state.total = pagination.total;
+        state.hasMore = pagination.page < pagination.totalPages;
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
-        state.isFetchingNotifications = false;
-        state.error = action.payload as string;
-      })
-
-      // Xử lý fetchMoreNotifications
-      .addCase(fetchMoreNotifications.pending, (state) => {
-        state.isFetchingNotifications = true;
-        state.error = null;
-      })
-      .addCase(fetchMoreNotifications.fulfilled, (state, action) => {
-        state.isFetchingNotifications = false;
-
-        // Extract data and page from action payload
-        const { data, page } = action.payload;
-
-        // Append new notifications to existing data
-        state.data = [...state.data, ...data.result.notifications];
-        state.currentPage = page;
-        state.hasMore = page < data.result.pagination.totalPages;
-      })
-      .addCase(fetchMoreNotifications.rejected, (state, action) => {
         state.isFetchingNotifications = false;
         state.error = action.payload as string;
       });

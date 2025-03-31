@@ -30,16 +30,26 @@ import {
   Loader2,
   File,
   ThumbsDown,
-  Clock
+  Clock,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { AppDispatch, RootState } from '@/store/store';
-import { removeReply, updateReply, voteOnReply } from '@/store/slices/repliesSlice';
+import {
+  downvoteOnReply,
+  removeReply,
+  unvoteOnReply,
+  updateReply,
+  upvoteOnReply,
+  voteOnReply
+} from '@/store/slices/repliesSlice';
 import { IReply } from '@/types/question';
 import Editor from '@/components/common/Editor';
 import { downloadFile } from '@/utils/file';
 import { VoteType } from '@/types/enums';
 import { getFullTime, getRelativeTime } from '@/utils/date';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 interface ReplyProps {
   question_owner_id: string;
@@ -101,18 +111,36 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
   };
 
   const handleVote = (voteType: VoteType) => {
-    console.log(voteType);
-    console.log(userVote);
     if (userVote === voteType) {
+      // If clicking the same button again, remove the vote
       setUserVote(null);
       dispatch(
-        voteOnReply({ groupId: groupId as string, questionId: reply.question_id, replyId: reply._id, type: voteType })
+        unvoteOnReply({
+          groupId: groupId as string,
+          questionId: reply.question_id,
+          replyId: reply._id
+        })
       );
     } else {
+      // Set the new vote type
       setUserVote(voteType);
-      dispatch(
-        voteOnReply({ groupId: groupId as string, questionId: reply.question_id, replyId: reply._id, type: voteType })
-      );
+      if (voteType === VoteType.Upvote) {
+        dispatch(
+          upvoteOnReply({
+            groupId: groupId as string,
+            questionId: reply.question_id,
+            replyId: reply._id
+          })
+        );
+      } else {
+        dispatch(
+          downvoteOnReply({
+            groupId: groupId as string,
+            questionId: reply.question_id,
+            replyId: reply._id
+          })
+        );
+      }
     }
   };
 
@@ -172,7 +200,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
       setIsUpdating(false);
     }
   };
-  
+
   const { mediaFiles, rawFiles } = useMemo(() => {
     const getMediaType = (url: string) => {
       const extension = url.split('.').pop()?.toLowerCase() || '';
@@ -210,7 +238,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
           }`}
         >
           <div className='space-y-1 w-full'>
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-2 flex-wrap'>
               <span className='font-semibold text-sm'>{reply.user_info.name}</span>
               {isPending ? (
                 <span className='text-sm bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full'>Posting...</span>
@@ -228,6 +256,49 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+              )}
+
+              {/* Approval status badges */}
+              {(reply.approved_by_user || reply.approved_by_teacher) && (
+                <div className='flex items-center gap-2 ml-auto'>
+                  {reply.approved_by_user && (
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Badge
+                            variant='secondary'
+                            className='flex items-center gap-1 bg-green-100 text-green-800 hover:bg-green-200 border-green-300'
+                          >
+                            <CheckCircle2 className='w-3 h-3' />
+                            <span className='text-xs'>User</span>
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side='bottom'>
+                          <p className='text-xs'>Approved by user</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+
+                  {reply.approved_by_teacher && (
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Badge
+                            variant='secondary'
+                            className='flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-300'
+                          >
+                            <CheckCircle2 className='w-3 h-3' />
+                            <span className='text-xs'>Teacher</span>
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side='bottom'>
+                          <p className='text-xs'>Approved by teacher</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
               )}
             </div>
 

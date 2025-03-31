@@ -95,7 +95,7 @@ const App = memo(() => {
                 <Route path='/:username' element={<UserProfile />} />
               </Route>
             </Route>
-
+            <Route path='/404' element={<NotFound />} />
             <Route path='*' element={<NotFound />} />
           </Routes>
         </Suspense>

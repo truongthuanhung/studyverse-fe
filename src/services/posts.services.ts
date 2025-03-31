@@ -14,6 +14,10 @@ export const createPost = (body: CreatePostRequestBody) => {
   return http.post(`${postUrl}`, body);
 };
 
+export const sharePost = (parentPostId: string) => {
+  return http.post(`${postUrl}/${parentPostId}/share`);
+};
+
 export const getNewsFeed = (params: PagingParams = {}) => {
   const queryString = new URLSearchParams(params as Record<string, string>).toString();
   const url = queryString ? `${postUrl}?${queryString}` : postUrl;

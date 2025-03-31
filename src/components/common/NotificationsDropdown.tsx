@@ -11,12 +11,7 @@ import { getRelativeTime } from '@/utils/date';
 import { NotificationStatus, NotificationType } from '@/types/enums';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import {
-  markAllNotificationsAsRead,
-  readNotification,
-  fetchNotifications,
-  fetchMoreNotifications
-} from '@/store/slices/notificationsSlice';
+import { markAllNotificationsAsRead, readNotification, fetchNotifications } from '@/store/slices/notificationsSlice';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 interface NotificationsDropdownProps {
@@ -28,7 +23,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const {
     data: notifications,
@@ -37,27 +32,30 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
     currentPage
   } = useSelector((state: RootState) => state.notifications);
 
-  useEffect(() => {
-    dispatch(fetchNotifications({ page: 1, limit: 10 }));
-  }, []);
+  console.log({ hasMore, currentPage });
 
+  // Fixed infinite scroll logic
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0];
         if (firstEntry.isIntersecting && hasMore && !isFetchingNotifications) {
           dispatch(
-            fetchMoreNotifications({
+            fetchNotifications({
               page: currentPage + 1,
               limit: 10
             })
           );
         }
       },
-      { threshold: 0.5 }
+      {
+        root: null, // Use the viewport as the root
+        rootMargin: '0px 0px 300px 0px', // Fixed rootMargin format
+        threshold: 0.1
+      }
     );
 
-    const currentTarget = scrollRef.current;
+    const currentTarget = containerRef.current;
     if (currentTarget) {
       observer.observe(currentTarget);
     }
@@ -67,7 +65,14 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, isFetchingNotifications, currentPage]);
+  }, [hasMore, isFetchingNotifications, currentPage, dispatch, open]);
+
+  // Load initial notifications when dropdown opens
+  useEffect(() => {
+    if (open && notifications.length === 0 && !isFetchingNotifications) {
+      dispatch(fetchNotifications({ page: 1, limit: 10 }));
+    }
+  }, [open, notifications.length, isFetchingNotifications, dispatch]);
 
   const getIcon = (type: NotificationType) => {
     switch (type) {
@@ -101,7 +106,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
   const handleNotificationClick = async (notification: any) => {
     try {
       await dispatch(readNotification(notification._id)).unwrap();
-      setOpen(false); // Đóng dropdown
+      setOpen(false); // Close dropdown
       navigate(notification.target_url || '');
     } catch (err) {
       console.error(err);
@@ -152,8 +157,8 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
                             <span className='font-semibold text-sky-600'>{notification.actor.name}</span>{' '}
                             {notification.content}
                           </p>
-                          <Button variant='outline' className='rounded-full h-8 w-8'>
-                            <Ellipsis />
+                          <Button variant='outline' className='rounded-full h-8 w-8 p-0'>
+                            <Ellipsis className='h-4 w-4' />
                           </Button>
                         </div>
                         <div className='flex items-center justify-between'>
@@ -175,18 +180,23 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
                     <Separator />
                   </div>
                 ))}
-                <div ref={scrollRef} className=''>
+                {/* Intersection observer target */}
+                <div ref={containerRef} className='h-10 w-full flex justify-center items-center'>
                   {isFetchingNotifications && (
-                    <div className='flex justify-center'>
-                      <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-sky-500'></div>
-                    </div>
+                    <div className='animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-sky-500'></div>
                   )}
                 </div>
               </div>
             ) : (
               <div className='flex flex-col items-center justify-center h-full py-8 text-gray-500'>
-                <Bell className='h-12 w-12 text-gray-300 mb-2' />
-                <p>No notifications</p>
+                {isFetchingNotifications ? (
+                  <div className='animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-sky-500'></div>
+                ) : (
+                  <>
+                    <Bell className='h-8 w-8 text-gray-300 mb-2' />
+                    <p>No notifications</p>
+                  </>
+                )}
               </div>
             )}
           </ScrollArea>
