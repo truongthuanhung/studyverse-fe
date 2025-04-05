@@ -4,6 +4,7 @@ export interface IPost {
   type: number;
   privacy: number;
   parent_id: string | null;
+  parent_post: any;
   tags: any[];
   medias: string[];
   user_views: number;
@@ -45,8 +46,7 @@ export interface CreatePostRequestBody {
 export interface SharePostRequestBody {
   content: string;
   privacy: PostPrivacy;
-  parent_id: string;
-  mentions: string[];
+  mentions?: string[];
 }
 
 export interface CreateCommentRequestBody {

@@ -1,4 +1,4 @@
-import { CreateCommentRequestBody, CreatePostRequestBody } from '@/types/post';
+import { CreateCommentRequestBody, CreatePostRequestBody, SharePostRequestBody } from '@/types/post';
 import http from './http';
 
 interface PagingParams {
@@ -14,8 +14,8 @@ export const createPost = (body: CreatePostRequestBody) => {
   return http.post(`${postUrl}`, body);
 };
 
-export const sharePost = (parentPostId: string) => {
-  return http.post(`${postUrl}/${parentPostId}/share`);
+export const sharePost = (parentPostId: string, body: SharePostRequestBody) => {
+  return http.post(`${postUrl}/${parentPostId}/share`, body);
 };
 
 export const getNewsFeed = (params: PagingParams = {}) => {

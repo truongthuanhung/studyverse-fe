@@ -12,14 +12,14 @@ type EditorProps = {
   value: string;
   placeholder?: string;
   mention_users?: IUserInfo[];
-  mentions: string[];
-  setMentions: (value: any[]) => void;
+  mentions?: string[];
+  setMentions?: (value: any[]) => void;
   onChange: (value: string) => void;
   className?: string;
 };
 
 const Editor = forwardRef<any, EditorProps>(
-  ({ value, placeholder, mention_users, mentions, setMentions, className, onChange }, ref) => {
+  ({ value, placeholder, mention_users, mentions = [], setMentions = () => {}, className, onChange }, ref) => {
     // Convert mention_users to the format expected by quill-mention
     const profile = useSelector((state: RootState) => state.profile.user);
 

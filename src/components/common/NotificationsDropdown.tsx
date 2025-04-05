@@ -32,8 +32,6 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
     currentPage
   } = useSelector((state: RootState) => state.notifications);
 
-  console.log({ hasMore, currentPage });
-
   // Fixed infinite scroll logic
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -106,7 +104,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
   const handleNotificationClick = async (notification: any) => {
     try {
       await dispatch(readNotification(notification._id)).unwrap();
-      setOpen(false); // Close dropdown
+      setOpen(false);
       navigate(notification.target_url || '');
     } catch (err) {
       console.error(err);

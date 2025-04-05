@@ -122,7 +122,8 @@ export const fetchQuestions = createAsyncThunk(
       return {
         questions: response.data.result.questions,
         page,
-        limit
+        limit,
+        total_pages: response.data.result.total_pages
       };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch questions');
@@ -378,18 +379,19 @@ const questionsSlice = createSlice({
       })
       .addCase(fetchQuestions.fulfilled, (state, action) => {
         state.isFetchingQuestions = false;
-        const { questions, page, limit } = action.payload;
+        const { questions, page, total_pages } = action.payload;
         if (page === 1) {
           state.data = questions;
         } else {
           state.data = [...state.data, ...questions];
         }
         state.currentPage = page;
-        state.hasMore = questions.length === limit;
+        state.hasMore = page < total_pages;
       })
       .addCase(fetchQuestions.rejected, (state, action) => {
         state.isFetchingQuestions = false;
         state.error = action.payload as string;
+        state.hasMore = false;
       })
       .addCase(uploadQuestionFiles.pending, (state) => {
         state.isUploadingFiles = true;

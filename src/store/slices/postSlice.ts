@@ -1,6 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { CreatePostRequestBody, IPost } from '@/types/post';
-import { createPost, getMyPosts, getNewsFeed, getPostsByUserId, likePost, unlikePost } from '@/services/posts.services';
+import { CreatePostRequestBody, IPost, SharePostRequestBody } from '@/types/post';
+import {
+  createPost,
+  getMyPosts,
+  getNewsFeed,
+  getPostsByUserId,
+  likePost,
+  sharePost,
+  unlikePost
+} from '@/services/posts.services';
 import { PRIVACY_OPTIONS } from '@/constants/constants';
 import { uploadFiles } from '@/services/medias.services';
 
@@ -56,7 +64,8 @@ export const fetchPosts = createAsyncThunk(
       return {
         posts: response.data.result.posts as IPost[],
         page,
-        limit
+        limit,
+        total_pages: response.data.result.total_pages
       };
     } catch (err: any) {
       return rejectWithValue(err.response?.data || 'Failed to fetch posts');
@@ -122,6 +131,19 @@ export const createNewPost = createAsyncThunk(
   }
 );
 
+export const createSharePost = createAsyncThunk(
+  'posts/sharePost',
+  async ({ parentPostId, body }: { parentPostId: string; body: SharePostRequestBody }, { rejectWithValue }) => {
+    try {
+      const response = await sharePost(parentPostId, body);
+      // Return the newly shared post from the server
+      return response.data.result;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || 'Failed to share post');
+    }
+  }
+);
+
 export const likePostAction = createAsyncThunk<{ postId: string; like_count: number }, string>(
   'posts/likePost',
   async (postId, { rejectWithValue }) => {
@@ -183,6 +205,18 @@ const postSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(createSharePost.pending, (state) => {
+        state.isCreatingPost = true;
+        state.error = null;
+      })
+      .addCase(createSharePost.fulfilled, (state, action: PayloadAction<IPost>) => {
+        state.isCreatingPost = false;
+        state.posts = [action.payload, ...state.posts];
+      })
+      .addCase(createSharePost.rejected, (state, action: PayloadAction<any>) => {
+        state.isCreatingPost = false;
+        state.error = action.payload as string;
+      })
       .addCase(uploadPostFiles.pending, (state) => {
         state.isUploadingFiles = true;
         state.uploadedFiles = state.uploadedFiles.map((file) =>
@@ -214,7 +248,7 @@ const postSlice = createSlice({
       })
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.isFetching = false;
-        const { posts, page, limit } = action.payload;
+        const { posts, page, total_pages } = action.payload;
         if (page === 1) {
           // Replace posts for the first page
           state.posts = posts;
@@ -225,7 +259,7 @@ const postSlice = createSlice({
 
         // Update `hasMore` based on whether we received fewer posts than requested
         state.currentPage = page;
-        state.hasMore = posts.length === limit;
+        state.hasMore = page < total_pages;
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.isFetching = false;

@@ -32,7 +32,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
 import Select, { components } from 'react-select';
 import makeAnimated from 'react-select/animated';
-import { searchTagsByGroup } from '@/services/study_groups.services';
 import useDebounce from '@/hooks/useDebounce';
 import { CreatePostRequestBody } from '@/types/post';
 import {
@@ -63,20 +62,23 @@ interface TagOption {
 }
 
 const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
+  // Refs
   const quillRef = useRef<ReactQuill | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dispatch = useDispatch<AppDispatch>();
-  const profile = useSelector((state: RootState) => state.profile.user);
 
+  // Hooks
+  const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
+  const { groupId } = useParams();
+
+  // Selectors
+  const profile = useSelector((state: RootState) => state.profile.user);
   const { uploadedUrls, isCreatingPost, isUploadingFiles, content, privacy, uploadedFiles } = useSelector(
     (state: RootState) => state.posts
   );
 
+  // States
   const [mentions, setMentions] = useState<any[]>([]);
-  const { groupId } = useParams();
-  const { toast } = useToast();
-
-  // State cho tags
   const [tagInput, setTagInput] = useState('');
   const [tagOptions, setTagOptions] = useState<TagOption[]>([]);
   const [selectedTags, setSelectedTags] = useState<TagOption[]>([]);
@@ -84,20 +86,21 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
   const [menuIsOpen, setMenuIsOpen] = useState<boolean | undefined>(undefined);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // Debounce
   const debouncedTagInput = useDebounce(tagInput, 500);
 
-  // Custom NoOptionsMessage component
-  const NoOptionsMessage = (props: any) => {
-    if (isLoadingTags) return null;
+  // Effects
+  useEffect(() => {
+    if (debouncedTagInput) {
+      handleSearchTags(debouncedTagInput);
+    } else {
+      setTagOptions([]);
+      setIsLoadingTags(false);
+      setIsInitialLoad(true);
+    }
+  }, [debouncedTagInput, searchTags]);
 
-    return (
-      <components.NoOptionsMessage {...props}>
-        {!props.selectProps.inputValue ? 'Type to search for tags' : isInitialLoad ? null : 'No tags found'}
-      </components.NoOptionsMessage>
-    );
-  };
-
-  // Xử lý input change
+  // Handlers
   const handleInputChange = (inputValue: string) => {
     setTagInput(inputValue);
     if (inputValue) {
@@ -113,7 +116,6 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
     }
   };
 
-  // Hàm tìm kiếm tags
   const handleSearchTags = useCallback(
     async (query: string) => {
       if (!query.trim()) {
@@ -145,16 +147,15 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
     [groupId, toast]
   );
 
-  // Gọi API khi giá trị debounced thay đổi
-  useEffect(() => {
-    if (debouncedTagInput) {
-      handleSearchTags(debouncedTagInput);
-    } else {
-      setTagOptions([]);
-      setIsLoadingTags(false);
-      setIsInitialLoad(true);
-    }
-  }, [debouncedTagInput, searchTags]);
+  const NoOptionsMessage = (props: any) => {
+    if (isLoadingTags) return null;
+
+    return (
+      <components.NoOptionsMessage {...props}>
+        {!props.selectProps.inputValue ? 'Type to search for tags' : isInitialLoad ? null : 'No tags found'}
+      </components.NoOptionsMessage>
+    );
+  };
 
   const isRichTextEmpty = (content: string): boolean => {
     const strippedContent = content.replace(/<[^>]*>/g, '').trim();

@@ -1,5 +1,5 @@
 import { createCommentOnPost, getCommentsByPostId } from '@/services/posts.services';
-import { CreateCommentRequestBody, IComment } from '@/types/post';
+import { CreateCommentRequestBody, IComment, IPost } from '@/types/post';
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { updateCommentCount } from './postSlice';
 
@@ -48,17 +48,17 @@ export const fetchComments = createAsyncThunk<
 });
 
 // Async action to create a new comment
-export const createComment = createAsyncThunk<{ comment: IComment; comment_count: number }, CreateCommentRequestBody>(
+export const createComment = createAsyncThunk<{ comment: IComment; post: IPost }, CreateCommentRequestBody>(
   'comments/createComment',
   async (body, { dispatch, rejectWithValue }) => {
     try {
       const response = await createCommentOnPost(body);
-      const { comment, comment_count } = response.data.result;
+      const { comment, post } = response.data.result;
 
       // Dispatch action to update comment count for the post
-      dispatch(updateCommentCount({ postId: comment.post_id, commentCount: comment_count }));
+      dispatch(updateCommentCount({ postId: comment.post_id, commentCount: post.comment_count }));
 
-      return { comment, comment_count };
+      return { comment, post };
     } catch (err: any) {
       return rejectWithValue(err.response?.data || 'Failed to create comment');
     }
@@ -114,24 +114,21 @@ const commentSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(
-        createComment.fulfilled,
-        (state, action: PayloadAction<{ comment: IComment; comment_count: number }>) => {
-          state.isLoading = false;
-          const { comment } = action.payload;
+      .addCase(createComment.fulfilled, (state, action: PayloadAction<{ comment: IComment; post: IPost }>) => {
+        state.isLoading = false;
+        const { comment } = action.payload;
 
-          // Remove the pending comment first
-          if (state.pendingComments[comment.post_id]) {
-            state.pendingComments[comment.post_id] = [];
-          }
-
-          // Add the real comment
-          if (!state.comments[comment.post_id]) {
-            state.comments[comment.post_id] = [];
-          }
-          state.comments[comment.post_id].unshift(comment);
+        // Remove the pending comment first
+        if (state.pendingComments[comment.post_id]) {
+          state.pendingComments[comment.post_id] = [];
         }
-      )
+
+        // Add the real comment
+        if (!state.comments[comment.post_id]) {
+          state.comments[comment.post_id] = [];
+        }
+        state.comments[comment.post_id].unshift(comment);
+      })
       .addCase(createComment.rejected, (state, action: PayloadAction<any>) => {
         state.isLoading = false;
         state.error = action.payload as string;
