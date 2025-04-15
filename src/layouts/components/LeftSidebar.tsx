@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users, BookOpen, Calendar, Eye, User, UserPlus, UserCheck } from 'lucide-react';
 import MainLogo from '@/assets/images/mainLogo.jpeg';
-import { GroupItem } from './common';
+import { GroupItem } from '../common';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 

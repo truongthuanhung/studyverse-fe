@@ -4,6 +4,7 @@ import {
   createPost,
   getMyPosts,
   getNewsFeed,
+  getPostById,
   getPostsByUserId,
   likePost,
   sharePost,
@@ -54,6 +55,18 @@ const initialState: PostState = {
   hasMore: true,
   currentPage: 1
 };
+
+export const fetchSinglePost = createAsyncThunk(
+  'posts/fetchSinglePost',
+  async (postId: string, { rejectWithValue }) => {
+    try {
+      const response = await getPostById(postId);
+      return response.data.result;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || 'Failed to fetch posts');
+    }
+  }
+);
 
 // Async action to fetch posts
 export const fetchPosts = createAsyncThunk(
@@ -144,29 +157,23 @@ export const createSharePost = createAsyncThunk(
   }
 );
 
-export const likePostAction = createAsyncThunk<{ postId: string; like_count: number }, string>(
-  'posts/likePost',
-  async (postId, { rejectWithValue }) => {
-    try {
-      const response = await likePost(postId);
-      return { postId, like_count: response.data.like_count };
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || 'Failed to like post');
-    }
+export const likePostAction = createAsyncThunk('posts/likePost', async (postId: string, { rejectWithValue }) => {
+  try {
+    const response = await likePost(postId);
+    return response.data.result;
+  } catch (err: any) {
+    return rejectWithValue(err.response?.data || 'Failed to like post');
   }
-);
+});
 
-export const unlikePostAction = createAsyncThunk<{ postId: string; like_count: number }, string>(
-  'posts/unlikePost',
-  async (postId, { rejectWithValue }) => {
-    try {
-      const response = await unlikePost(postId);
-      return { postId, like_count: response.data.like_count };
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || 'Failed to unlike post');
-    }
+export const unlikePostAction = createAsyncThunk('posts/unlikePost', async (postId: string, { rejectWithValue }) => {
+  try {
+    const response = await unlikePost(postId);
+    return response.data.result;
+  } catch (err: any) {
+    return rejectWithValue(err.response?.data || 'Failed to unlike post');
   }
-);
+});
 
 const postSlice = createSlice({
   name: 'posts',
@@ -239,6 +246,19 @@ const postSlice = createSlice({
       .addCase(uploadPostFiles.rejected, (state, action) => {
         state.isUploadingFiles = false;
         state.uploadedFiles = state.uploadedFiles.map((file) => ({ ...file, status: 'error' }));
+        state.error = action.payload as string;
+      })
+      // Fetch single post
+      .addCase(fetchSinglePost.pending, (state) => {
+        state.isFetching = true;
+        state.error = null;
+      })
+      .addCase(fetchSinglePost.fulfilled, (state, action) => {
+        state.isFetching = false;
+        state.posts = [action.payload];
+      })
+      .addCase(fetchSinglePost.rejected, (state, action) => {
+        state.isFetching = false;
         state.error = action.payload as string;
       })
       // Fetch news feed posts
@@ -339,12 +359,13 @@ const postSlice = createSlice({
         state.likeLoading = true;
         state.error = null;
       })
-      .addCase(likePostAction.fulfilled, (state, action: PayloadAction<{ postId: string; like_count: number }>) => {
+      .addCase(likePostAction.fulfilled, (state, action) => {
         state.likeLoading = false;
-        const { postId, like_count } = action.payload;
-        const post = state.posts.find((post) => post._id === postId);
+        const { _id, like_count, comment_count } = action.payload;
+        const post = state.posts.find((post) => post._id === _id);
         if (post) {
           post.like_count = like_count;
+          post.comment_count = comment_count;
           post.isLiked = true;
         }
       })
@@ -358,12 +379,13 @@ const postSlice = createSlice({
         state.likeLoading = true;
         state.error = null;
       })
-      .addCase(unlikePostAction.fulfilled, (state, action: PayloadAction<{ postId: string; like_count: number }>) => {
+      .addCase(unlikePostAction.fulfilled, (state, action) => {
         state.likeLoading = false;
-        const { postId, like_count } = action.payload;
-        const post = state.posts.find((post) => post._id === postId);
+        const { _id, like_count, comment_count } = action.payload;
+        const post = state.posts.find((post) => post._id === _id);
         if (post) {
           post.like_count = like_count;
+          post.comment_count = comment_count;
           post.isLiked = false;
         }
       })

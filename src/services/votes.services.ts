@@ -25,20 +25,6 @@ export const unvoteQuestion = ({ groupId, questionId }: { groupId: string; quest
   return http.post(`/study-groups/${groupId}/questions/${questionId}/unvotes`);
 };
 
-export const voteReply = ({
-  groupId,
-  questionId,
-  replyId,
-  type
-}: {
-  groupId: string;
-  questionId: string;
-  replyId: string;
-  type: VoteType;
-}) => {
-  return http.post(`/study-groups/${groupId}/questions/${questionId}/replies/${replyId}/votes`, { type });
-};
-
 export const upvoteReply = ({
   groupId,
   questionId,

@@ -61,8 +61,8 @@ export const unvoteOnQuestion = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await unvoteQuestion({ groupId, questionId });
-      return { questionId };
+      const response = await unvoteQuestion({ groupId, questionId });
+      return response.data.result;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to unvote question');
     }
@@ -82,8 +82,8 @@ export const upvoteOnQuestion = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await upvoteQuestion({ groupId, questionId });
-      return { questionId, type: VoteType.Upvote };
+      const response = await upvoteQuestion({ groupId, questionId });
+      return response.data.result;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to upvote question');
     }
@@ -103,8 +103,8 @@ export const downvoteOnQuestion = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await downvoteQuestion({ groupId, questionId });
-      return { questionId, type: VoteType.Downvote };
+      const response = await downvoteQuestion({ groupId, questionId });
+      return response.data.result;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to downvote question');
     }
@@ -232,18 +232,30 @@ const questionsSlice = createSlice({
         question.reply_count = replies;
       }
     },
-    removeQuestionReply(state, action: PayloadAction<{ questionId: string }>) {
-      const { questionId } = action.payload;
-      const question = state.data.find((q) => q._id === questionId);
-      if (question && question.reply_count > 0) {
-        question.reply_count -= 1;
-      }
-    },
-    addQuestionReply(state, action: PayloadAction<{ questionId: string }>) {
-      const { questionId } = action.payload;
+    setQuestionReplyCount(state, action: PayloadAction<{ questionId: string; count: number }>) {
+      const { questionId, count } = action.payload;
       const question = state.data.find((q) => q._id === questionId);
       if (question) {
-        question.reply_count += 1;
+        question.reply_count = count;
+      }
+    },
+    refreshQuestion(
+      state,
+      action: PayloadAction<{
+        questionId: string;
+        question_info: {
+          reply_count: number;
+          upvotes: number;
+          downvotes: number;
+        };
+      }>
+    ) {
+      const { questionId, question_info } = action.payload;
+      const question = state.data.find((q) => q._id === questionId);
+      if (question) {
+        question.reply_count = question_info.reply_count;
+        question.upvotes = question_info.upvotes;
+        question.downvotes = question_info.downvotes;
       }
     }
   },
@@ -255,22 +267,13 @@ const questionsSlice = createSlice({
         state.error = null;
       })
       .addCase(upvoteOnQuestion.fulfilled, (state, action) => {
-        const { questionId } = action.payload;
-        const question = state.data.find((q) => q._id === questionId);
+        const { upvotes, downvotes, reply_count, _id } = action.payload;
+        const question = state.data.find((q) => q._id === _id);
 
         if (question) {
-          if (question.user_vote === VoteType.Upvote) {
-            // Nếu đã upvote trước đó, unvote (hủy upvote)
-            question.upvotes -= 1;
-            question.user_vote = null;
-          } else {
-            // Nếu chưa vote hoặc đã downvote trước đó
-            if (question.user_vote === VoteType.Downvote) {
-              question.downvotes -= 1;
-            }
-            question.upvotes += 1;
-            question.user_vote = VoteType.Upvote;
-          }
+          question.upvotes = upvotes;
+          question.downvotes = downvotes;
+          question.reply_count = reply_count;
         }
         state.isVoting = false;
       })
@@ -284,22 +287,13 @@ const questionsSlice = createSlice({
         state.error = null;
       })
       .addCase(downvoteOnQuestion.fulfilled, (state, action) => {
-        const { questionId } = action.payload;
-        const question = state.data.find((q) => q._id === questionId);
+        const { upvotes, downvotes, reply_count, _id } = action.payload;
+        const question = state.data.find((q) => q._id === _id);
 
         if (question) {
-          if (question.user_vote === VoteType.Downvote) {
-            // Nếu đã downvote trước đó, unvote (hủy downvote)
-            question.downvotes -= 1;
-            question.user_vote = null;
-          } else {
-            // Nếu chưa vote hoặc đã upvote trước đó
-            if (question.user_vote === VoteType.Upvote) {
-              question.upvotes -= 1;
-            }
-            question.downvotes += 1;
-            question.user_vote = VoteType.Downvote;
-          }
+          question.upvotes = upvotes;
+          question.downvotes = downvotes;
+          question.reply_count = reply_count;
         }
         state.isVoting = false;
       })
@@ -314,16 +308,13 @@ const questionsSlice = createSlice({
         state.error = null;
       })
       .addCase(unvoteOnQuestion.fulfilled, (state, action) => {
-        const { questionId } = action.payload;
-        const question = state.data.find((q) => q._id === questionId);
+        const { upvotes, downvotes, reply_count, _id } = action.payload;
+        const question = state.data.find((q) => q._id === _id);
 
         if (question) {
-          if (question.user_vote === VoteType.Upvote) {
-            question.upvotes -= 1;
-          } else if (question.user_vote === VoteType.Downvote) {
-            question.downvotes -= 1;
-          }
-          question.user_vote = null;
+          question.upvotes = upvotes;
+          question.downvotes = downvotes;
+          question.reply_count = reply_count;
         }
         state.isVoting = false;
       })
@@ -428,8 +419,8 @@ export const {
   removeUploadedFile,
   setUploadedFiles,
   updateQuestionReplies,
-  addQuestionReply,
-  removeQuestionReply
+  setQuestionReplyCount,
+  refreshQuestion
 } = questionsSlice.actions;
 
 export default questionsSlice.reducer;

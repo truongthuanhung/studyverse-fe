@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,16 +32,22 @@ import {
   ThumbsDown,
   Clock,
   CheckCircle2,
-  XCircle
+  Upload,
+  Send
 } from 'lucide-react';
 import { AppDispatch, RootState } from '@/store/store';
 import {
+  addReply,
+  addUploadedFiles,
   downvoteOnReply,
+  fetchChildReplies,
   removeReply,
+  removeUploadedFile,
+  resetReplyFiles,
   unvoteOnReply,
   updateReply,
-  upvoteOnReply,
-  voteOnReply
+  uploadReplyFiles,
+  upvoteOnReply
 } from '@/store/slices/repliesSlice';
 import { IReply } from '@/types/question';
 import Editor from '@/components/common/Editor';
@@ -50,6 +56,12 @@ import { VoteType } from '@/types/enums';
 import { getFullTime, getRelativeTime } from '@/utils/date';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import ReactQuill from 'react-quill';
+import { MAX_FILES } from '@/constants/constants';
+import FileUploadPreview from '@/components/common/FileUploadPreview';
+import { Spinner } from '@/components/ui/spinner';
+import { CreateReplyRequestBody } from '@/services/replies.services';
+import { cleanContent } from '@/utils/quill';
 
 interface ReplyProps {
   question_owner_id: string;
@@ -59,7 +71,12 @@ interface ReplyProps {
 }
 
 const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted = false, question_owner_id }) => {
+  // Refs
+  const quillRef = useRef<ReactQuill | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // States
+  const [createReplyText, setCreateReplyText] = useState<string>('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -68,7 +85,16 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(reply.content);
   const [mentions, setMentions] = useState<any[]>([]);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [showChildren, setShowChildren] = useState<boolean>(false);
+
+  const childReplies = useSelector(
+    (state: RootState) => state.replies.data[reply.question_id]?.find((r) => r._id === reply._id)?.childReplies
+  );
+  const pendingReplies = useSelector((state: RootState) => state.replies.pendingReplies[reply.question_id] || []);
+  const uploadedFiles = useSelector((state: RootState) => state.replies.uploadedFiles[reply.question_id] || []);
+  const { isCreatingReply, isUploadingFiles } = useSelector((state: RootState) => state.replies);
+  const uploadedUrls = useSelector((state: RootState) => state.replies.uploadedUrls[reply.question_id] || []);
 
   // Hooks
   const dispatch = useDispatch<AppDispatch>();
@@ -80,6 +106,32 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
   const profile = useSelector((state: RootState) => state.profile.user);
   const { admins, members } = useSelector((state: RootState) => state.studyGroup);
 
+  const onReply = async () => {
+    const sanitizedContent = cleanContent(createReplyText);
+    const payload: CreateReplyRequestBody = {
+      content: sanitizedContent,
+      parent_id: reply._id,
+      medias: uploadedUrls
+    };
+
+    try {
+      await dispatch(
+        addReply({
+          groupId: groupId as string,
+          questionId: reply.question_id,
+          body: payload
+        })
+      ).unwrap();
+
+      setCreateReplyText('');
+      dispatch(resetReplyFiles({ questionId: reply.question_id }));
+    } catch (err) {
+      toast({
+        description: 'Failed to create reply',
+        variant: 'destructive'
+      });
+    }
+  };
   // Effects
   useEffect(() => {
     if (isHighlighted) {
@@ -91,6 +143,58 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
       return () => clearTimeout(timer);
     }
   }, [isHighlighted]);
+
+  const handleLoadMoreChildren = async () => {
+    if (childReplies?.hasMore && !childReplies?.isLoading) {
+      try {
+        await dispatch(
+          fetchChildReplies({
+            groupId: groupId as string,
+            questionId: reply.question_id,
+            replyId: reply._id,
+            page: (childReplies.currentPage || 0) + 1,
+            limit: 5
+          })
+        ).unwrap();
+      } catch (error) {
+        toast({
+          description: 'Failed to load more child replies',
+          variant: 'destructive'
+        });
+      } finally {
+      }
+    }
+  };
+
+  const handleToggleReplies = async () => {
+    const newShowRepliesState = !showChildren;
+    setShowChildren(newShowRepliesState);
+
+    // Chỉ tải dữ liệu khi hiển thị replies và chưa có dữ liệu
+    if (
+      newShowRepliesState &&
+      reply.reply_count > 0 &&
+      (!childReplies || childReplies.data.length === 0) &&
+      !childReplies?.isLoading
+    ) {
+      try {
+        await dispatch(
+          fetchChildReplies({
+            groupId: groupId as string,
+            questionId: reply.question_id,
+            replyId: reply._id,
+            page: 1,
+            limit: 5
+          })
+        ).unwrap();
+      } catch (error) {
+        toast({
+          description: 'Failed to load child replies',
+          variant: 'destructive'
+        });
+      }
+    }
+  };
 
   // Handlers
   const handleDelete = async () => {
@@ -198,6 +302,49 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
       });
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleFileRemove = (index: number) => {
+    dispatch(
+      removeUploadedFile({
+        questionId: reply.question_id,
+        index
+      })
+    );
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files);
+    if (uploadedFiles.length + newFiles.length > MAX_FILES) {
+      alert(`Maximum ${MAX_FILES} files allowed`);
+      return;
+    }
+
+    // Tạo preview và đặt trạng thái ban đầu là 'pending'
+    const processedFiles = newFiles.map((file) => ({
+      ...file,
+      size: file.size,
+      type: file.type,
+      name: file.name,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+      status: 'pending'
+    }));
+
+    dispatch(addUploadedFiles({ questionId: reply.question_id as string, files: processedFiles }));
+    const formData = new FormData();
+    newFiles.forEach((file) => formData.append('files', file));
+
+    try {
+      await dispatch(uploadReplyFiles({ questionId: reply.question_id as string, formData })).unwrap();
+    } catch (error) {
+      alert(error);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -414,35 +561,128 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
         )}
 
         {!isPending && !isEditing && (
-          <div className='flex items-center gap-6 mt-2'>
-            <div className='flex items-center gap-1 text-sm'>
-              <div
-                className={`${
-                  userVote === VoteType.Upvote ? 'text-sky-500' : 'text-zinc-500'
-                } p-1 hover:text-sky-600 cursor-pointer`}
-                onClick={() => handleVote(VoteType.Upvote)}
-              >
-                <ThumbsUp size={16} />
+          <>
+            <div className='flex items-center gap-6 mt-2'>
+              <div className='flex items-center gap-1 text-sm'>
+                <div
+                  className={`${
+                    userVote === VoteType.Upvote ? 'text-sky-500' : 'text-zinc-500'
+                  } p-1 hover:text-sky-600 cursor-pointer`}
+                  onClick={() => handleVote(VoteType.Upvote)}
+                >
+                  <ThumbsUp size={16} />
+                </div>
+                <span>
+                  {reply.upvotes - reply.downvotes === 0
+                    ? 0
+                    : `${reply.upvotes - reply.downvotes > 0 ? '+' : ''}${reply.upvotes - reply.downvotes}`}
+                </span>
+                <div
+                  className={`${
+                    userVote === VoteType.Downvote ? 'text-sky-500' : 'text-zinc-500'
+                  } p-1 hover:text-sky-600 cursor-pointer`}
+                  onClick={() => handleVote(VoteType.Downvote)}
+                >
+                  <ThumbsDown size={16} />
+                </div>
               </div>
-              <span>
-                {reply.upvotes - reply.downvotes === 0
-                  ? 0
-                  : `${reply.upvotes - reply.downvotes > 0 ? '+' : ''}${reply.upvotes - reply.downvotes}`}
-              </span>
+
               <div
-                className={`${
-                  userVote === VoteType.Downvote ? 'text-sky-500' : 'text-zinc-500'
-                } p-1 hover:text-sky-600 cursor-pointer`}
-                onClick={() => handleVote(VoteType.Downvote)}
+                className='flex items-center gap-1 text-sm text-zinc-500 hover:text-sky-600 transition-colors cursor-pointer'
+                onClick={handleToggleReplies}
               >
-                <ThumbsDown size={16} />
+                <MessageCircle size={16} />
+                <span>{showChildren ? 'Hide Replies' : 'Reply'}</span>
+                {reply.reply_count > 0 && (
+                  <span className='ml-1 text-xs bg-gray-100 px-2 py-0.5 rounded-full'>{reply.reply_count}</span>
+                )}
               </div>
             </div>
-            <div className='flex items-center gap-1 text-sm text-zinc-500 hover:text-sky-600 transition-colors cursor-pointer'>
-              <MessageCircle size={16} />
-              <span>Reply</span>
-            </div>
-          </div>
+
+            {/* Hiển thị children replies */}
+            {showChildren && (
+              <div className='flex flex-col gap-4'>
+                <div className='mt-4 ml-12 space-y-4'>
+                  {childReplies?.isLoading && !childReplies?.data.length && (
+                    <div className='flex items-center justify-center'>
+                      <Loader2 className='w-6 h-6 animate-spin text-sky-500' />
+                    </div>
+                  )}
+
+                  {childReplies?.data.map((childReply) => (
+                    <Reply
+                      key={childReply._id}
+                      reply={childReply}
+                      question_owner_id={question_owner_id}
+                      isHighlighted={false}
+                    />
+                  ))}
+
+                  {childReplies?.hasMore && (
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={handleLoadMoreChildren}
+                      disabled={childReplies?.isLoading}
+                      className='mt-2'
+                    >
+                      {childReplies?.isLoading ? <Loader2 className='w-4 h-4 animate-spin mr-2' /> : null}
+                      Load More Replies
+                    </Button>
+                  )}
+
+                  {!childReplies?.isLoading && childReplies?.data.length === 0 && (
+                    <p className='text-sm text-zinc-500'>No replies yet</p>
+                  )}
+                </div>
+                <div className='border rounded-lg'>
+                  <Editor
+                    ref={quillRef}
+                    value={createReplyText}
+                    mentions={mentions}
+                    onChange={setCreateReplyText}
+                    setMentions={setMentions}
+                    mention_users={[
+                      ...admins.map((admin) => admin.user_info),
+                      ...members.map((member) => member.user_info)
+                    ]}
+                    placeholder='Write your reply'
+                  />
+                </div>
+                <input type='file' ref={fileInputRef} className='hidden' multiple onChange={handleFileUpload} />
+                <FileUploadPreview files={uploadedFiles} onRemove={handleFileRemove} />
+                <div className='mt-2 flex justify-between items-center'>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingFiles[reply.question_id]}
+                  >
+                    <Upload size={20} />
+                  </Button>
+
+                  <Button
+                    disabled={
+                      isCreatingReply ||
+                      isUploadingFiles[reply.question_id] ||
+                      (!createReplyText && uploadedUrls.length === 0)
+                    }
+                    onClick={onReply}
+                    className='rounded-[20px] bg-sky-500 hover:bg-sky-600 text-white'
+                  >
+                    {isCreatingReply ? (
+                      <Spinner size='small' />
+                    ) : (
+                      <>
+                        <Send className='mr-2' />
+                        Send
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

@@ -26,7 +26,7 @@ const UserProfile = () => {
 
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isUserValid, setIsUserValid] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { posts, isFetching: isPostsLoading, hasMore, currentPage } = useSelector((state: RootState) => state.posts);
 
   const [isFollowing, setIsFollowing] = useState(false);
@@ -39,13 +39,24 @@ const UserProfile = () => {
       navigate('/me');
       return;
     }
-    if (!username) return;
+    if (!username) {
+      navigate('/404');
+      return;
+    }
 
     try {
+      setIsLoading(true);
       // Reset posts state before fetching new user profile
       dispatch(resetPostState());
 
       const response = await getUserProfile(username);
+
+      // Check if user data is available
+      if (!response.data || !response.data.result) {
+        navigate('/404');
+        return;
+      }
+
       setUserProfile(response.data.result);
       setIsFollowing(response.data?.result?.isFollowed ? true : false);
       setIsUserValid(true);
@@ -59,6 +70,9 @@ const UserProfile = () => {
       );
     } catch (error) {
       setIsUserValid(false);
+      navigate('/404');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -219,7 +233,7 @@ const UserProfile = () => {
             Array(3)
               .fill(null)
               .map((_, index) => <PostSkeleton key={index} />)
-          ) : (
+          ) : posts.length > 0 ? (
             <>
               {posts.map((post, index) => (
                 <div
@@ -234,6 +248,12 @@ const UserProfile = () => {
                 {isPostsLoading && <PostSkeleton />}
               </div>
             </>
+          ) : (
+            <div className='flex flex-col items-center justify-center py-16 text-center'>
+              <div className='mb-4 text-6xl'>📝</div>
+              <h3 className='text-xl font-semibold mb-2'>No Posts Yet</h3>
+              <p className='text-zinc-500 max-w-md'>This user hasn't shared any posts yet. Check back later!</p>
+            </div>
           )}
         </div>
       </ScrollArea>

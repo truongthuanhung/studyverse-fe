@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import ReactQuill from 'react-quill';
 import Editor from './Editor';
 import { IComment, IPost } from '@/types/post';
@@ -41,6 +39,7 @@ const PostDialog: React.FC<PostDialogProps> = ({ post: initialPost, initialImage
   const comments = useSelector((state: RootState) => state.comments.comments[initialPost._id] || []);
   const { user } = useSelector((state: RootState) => state.profile);
   const post = storePost || initialPost;
+  console.log(post)
   const [content, setContent] = useState('');
   const quillRef = useRef<ReactQuill | null>(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(initialImageIndex);
@@ -139,13 +138,12 @@ const PostDialog: React.FC<PostDialogProps> = ({ post: initialPost, initialImage
       setContent('');
 
       const commentBody: CreateCommentRequestBody = {
-        post_id: post._id,
         content: sanitizedContent,
         parent_id: null
       };
 
       try {
-        await dispatch(createComment(commentBody));
+        await dispatch(createComment({ postId: post._id, body: commentBody }));
       } catch (err) {
         console.error('Failed to create comment:', err);
         //dispatch(removePendingComment({ postId: post._id, commentId: tempId }));

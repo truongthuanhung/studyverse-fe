@@ -20,6 +20,7 @@ interface NotificationsDropdownProps {
 
 const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children }) => {
   const [open, setOpen] = useState(false);
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -29,15 +30,27 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
     data: notifications,
     isFetchingNotifications,
     hasMore,
-    currentPage
+    currentPage,
+    totalPages
   } = useSelector((state: RootState) => state.notifications);
+
+  // Load initial notifications when dropdown opens for the first time
+  useEffect(() => {
+    if (open && !initialFetchDone && !isFetchingNotifications) {
+      dispatch(fetchNotifications({ page: 1, limit: 10 }));
+      setInitialFetchDone(true);
+    }
+  }, [open, initialFetchDone, isFetchingNotifications, dispatch]);
 
   // Fixed infinite scroll logic
   useEffect(() => {
+    // Only set up the observer if we're open and there might be more data to fetch
+    if (!open || !hasMore) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0];
-        if (firstEntry.isIntersecting && hasMore && !isFetchingNotifications) {
+        if (firstEntry.isIntersecting && hasMore && !isFetchingNotifications && currentPage < totalPages) {
           dispatch(
             fetchNotifications({
               page: currentPage + 1,
@@ -48,7 +61,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
       },
       {
         root: null, // Use the viewport as the root
-        rootMargin: '0px 0px 300px 0px', // Fixed rootMargin format
+        rootMargin: '0px 0px 300px 0px',
         threshold: 0.1
       }
     );
@@ -63,14 +76,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, isFetchingNotifications, currentPage, dispatch, open]);
-
-  // Load initial notifications when dropdown opens
-  useEffect(() => {
-    if (open && notifications.length === 0 && !isFetchingNotifications) {
-      dispatch(fetchNotifications({ page: 1, limit: 10 }));
-    }
-  }, [open, notifications.length, isFetchingNotifications, dispatch]);
+  }, [hasMore, isFetchingNotifications, currentPage, totalPages, dispatch, open]);
 
   const getIcon = (type: NotificationType) => {
     switch (type) {
@@ -179,11 +185,13 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ children 
                   </div>
                 ))}
                 {/* Intersection observer target */}
-                <div ref={containerRef} className='h-10 w-full flex justify-center items-center'>
-                  {isFetchingNotifications && (
-                    <div className='animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-sky-500'></div>
-                  )}
-                </div>
+                {hasMore && (
+                  <div ref={containerRef} className='h-10 w-full flex justify-center items-center'>
+                    {isFetchingNotifications && (
+                      <div className='animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-sky-500'></div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div className='flex flex-col items-center justify-center h-full py-8 text-gray-500'>

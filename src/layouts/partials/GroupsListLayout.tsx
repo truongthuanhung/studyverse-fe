@@ -1,11 +1,11 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Outlet } from 'react-router-dom';
-import GroupsListSidebar from './components/GroupsListSidebar';
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store/store';
 import { useToast } from '@/hooks/use-toast';
 import { getJoinedGroups, getRecommededGroups } from '@/store/slices/studyGroupsListSlice';
+import GroupsListSidebar from '../components/GroupsListSidebar';
 
 const GroupsListLayout = () => {
   const dispatch = useDispatch<AppDispatch>();

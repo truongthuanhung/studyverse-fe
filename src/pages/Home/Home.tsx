@@ -111,7 +111,7 @@ const Home = memo(() => {
   return (
     <ScrollArea
       ref={scrollAreaRef}
-      className='lg:max-w-3xl mx-auto pt-4 h-[calc(100vh-60px)] bg-[#F3F4F8] overflow-y-auto custom-scrollbar'
+      className='lg:max-w-3xl mx-auto pt-4 h-[calc(100vh-60px)] overflow-y-auto custom-scrollbar'
     >
       {/* Create Post Card */}
       <div className='px-4'>

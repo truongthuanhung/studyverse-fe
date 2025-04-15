@@ -429,7 +429,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
         <p className='cursor-pointer'>{post.comment_count} comments</p>
       </div>
       <Separator />
-      <div className='flex items-center justify-center py-1'>
+      <div className='flex items-center justify-center py-1 px-3'>
         <div
           onClick={handleLike}
           className={`${
@@ -444,7 +444,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
             <DialogTrigger className='flex-1 outline-none'>
               <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
                 <MessageCircleMore size={16} />
-                <p>Reply</p>
+                <p>Comment</p>
               </div>
             </DialogTrigger>
             <DialogContent className='max-w-[90vw] md:max-w-[100vw] max-h-[100vh] p-0 border-none'>

@@ -24,6 +24,9 @@ export interface IComment {
   content: string;
   created_at: string; // ISO datetime string
   updated_at: string; // ISO datetime string
+  like_count: number;
+  comment_count: number;
+  isLiked: boolean;
   user_info: IUserInfo;
 }
 
@@ -51,6 +54,5 @@ export interface SharePostRequestBody {
 
 export interface CreateCommentRequestBody {
   content: string;
-  post_id: string;
   parent_id: string | null;
 }

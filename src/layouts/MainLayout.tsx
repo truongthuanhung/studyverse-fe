@@ -14,7 +14,7 @@ const MainLayout = memo(() => {
           <LeftSidebar />
         </aside>
 
-        <main className='flex-1 lg:ml-[280px] lg:mr-[280px] bg-[#f3f4f8]'>
+        <main className='flex-1 lg:ml-[280px] lg:mr-[280px] bg-slate-100'>
           <Outlet />
         </main>
 

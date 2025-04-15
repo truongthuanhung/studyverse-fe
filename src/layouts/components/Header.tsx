@@ -171,6 +171,7 @@ const Header = memo(() => {
             <p className='hidden md:block text-[12px] font-medium'>Home</p>
           </div>
           <div
+            onClick={() => navigate('/community')}
             className={`w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
               '/community'
             )}`}
