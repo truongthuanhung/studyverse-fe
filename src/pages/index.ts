@@ -14,4 +14,6 @@ export { default as CreateQuestion } from '@/pages/StudyGroup/GroupCreateQuestio
 export { default as Relationship } from '@/pages/Connection/Relationship';
 export { default as UserProfile } from '@/pages/Profile/UserProfile';
 export { default as Profile } from '@/pages/Profile/Profile';
+export { default as Community } from '@/pages/Community/Community';
+export { default as PostDetail } from '@/pages/PostDetail/PostDetail';
 export { default as NotFound } from '@/pages/NotFound/NotFound';

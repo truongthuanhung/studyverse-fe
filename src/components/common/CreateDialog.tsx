@@ -1,10 +1,10 @@
-import { memo, useRef, useState } from 'react';
+import { memo, useRef, useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import ReactQuill from 'react-quill';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Upload, File, X, Hash, ChevronDown } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,12 @@ import FileUploadPreview from './FileUploadPreview';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
+import Select, { components } from 'react-select';
+import makeAnimated from 'react-select/animated';
+import { searchTagsByGroup } from '@/services/study_groups.services';
+import useDebounce from '@/hooks/useDebounce';
+
+const animatedComponents = makeAnimated();
 
 interface CreateDialogProps {
   isOpen: boolean;
@@ -44,7 +50,10 @@ interface UploadedFile extends File {
   preview?: string;
 }
 
-const SUGGESTED_TAGS = ['a', 'b'];
+interface TagOption {
+  value: string;
+  label: string;
+}
 
 const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateDialogProps) => {
   const quillRef = useRef<ReactQuill | null>(null);
@@ -56,14 +65,89 @@ const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateD
   );
 
   const [mentions, setMentions] = useState<any[]>([]);
-
   const { admins, members, role } = useSelector((state: RootState) => state.studyGroup);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
-
   const { groupId } = useParams();
-
   const { toast } = useToast();
+
+  // State cho tags
+  const [tagInput, setTagInput] = useState('');
+  const [tagOptions, setTagOptions] = useState<TagOption[]>([]);
+  const [selectedTags, setSelectedTags] = useState<TagOption[]>([]);
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
+  const [menuIsOpen, setMenuIsOpen] = useState<boolean | undefined>(undefined);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  const debouncedTagInput = useDebounce(tagInput, 500);
+
+  // Custom NoOptionsMessage component
+  const NoOptionsMessage = (props: any) => {
+    if (isLoadingTags) return null;
+
+    return (
+      <components.NoOptionsMessage {...props}>
+        {!props.selectProps.inputValue ? 'Type to search for tags' : isInitialLoad ? null : 'No tags found'}
+      </components.NoOptionsMessage>
+    );
+  };
+
+  // Xử lý input change
+  const handleInputChange = (inputValue: string) => {
+    setTagInput(inputValue);
+    if (inputValue) {
+      setIsLoadingTags(true);
+      setIsInitialLoad(true);
+      // Mở menu khi có input
+      setMenuIsOpen(true);
+    } else {
+      setTagOptions([]);
+      setIsLoadingTags(false);
+      // Đóng menu khi không có input
+      setMenuIsOpen(undefined);
+    }
+  };
+
+  // Hàm tìm kiếm tags
+  const searchTags = useCallback(
+    async (query: string) => {
+      if (!query.trim() || !groupId) {
+        setIsLoadingTags(false);
+        return;
+      }
+
+      try {
+        const response = await searchTagsByGroup(groupId, query);
+
+        // Chuyển đổi format từ API sang format cho react-select
+        const formattedOptions = response.data.result.map((tag: any) => ({
+          value: tag._id,
+          label: tag.name
+        }));
+
+        setTagOptions(formattedOptions);
+      } catch (error) {
+        console.error('Error searching tags:', error);
+        toast({
+          description: 'Failed to load tags',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoadingTags(false);
+        setIsInitialLoad(false);
+      }
+    },
+    [groupId, toast]
+  );
+
+  // Gọi API khi giá trị debounced thay đổi
+  useEffect(() => {
+    if (debouncedTagInput) {
+      searchTags(debouncedTagInput);
+    } else {
+      setTagOptions([]);
+      setIsLoadingTags(false);
+      setIsInitialLoad(true);
+    }
+  }, [debouncedTagInput, searchTags]);
 
   const isRichTextEmpty = (content: string): boolean => {
     // Remove all HTML tags and whitespace
@@ -88,7 +172,7 @@ const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateD
         title,
         content,
         medias: uploadedUrls.map((file) => file.url),
-        tags: selectedTags,
+        tags: selectedTags.map((tag) => tag.value),
         mentions: []
       };
       await dispatch(createNewQuestion({ groupId: groupId as string, body, role })).unwrap();
@@ -138,17 +222,6 @@ const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateD
 
   const handleFileRemove = (index: number) => {
     dispatch(removeUploadedFile(index));
-  };
-
-  const handleTagSelect = (tag: string) => {
-    if (!selectedTags.includes(tag)) {
-      setSelectedTags([...selectedTags, tag]);
-    }
-    setIsTagDropdownOpen(false);
-  };
-
-  const handleTagRemove = (tag: string) => {
-    setSelectedTags(selectedTags.filter((t) => t !== tag));
   };
 
   return (
@@ -218,6 +291,37 @@ const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateD
                 />
               </div>
 
+              <div className='grid w-full items-center gap-1.5 m'>
+                <Label>Tags</Label>
+                <p className='text-xs text-muted-foreground'>Add tags to help others find your question more easily</p>
+                <Select
+                  closeMenuOnSelect={false}
+                  components={{
+                    ...animatedComponents,
+                    NoOptionsMessage
+                  }}
+                  isMulti
+                  options={tagOptions}
+                  value={selectedTags}
+                  onChange={(newValue: any) => setSelectedTags(newValue)}
+                  onInputChange={handleInputChange}
+                  placeholder='Search for tags...'
+                  isLoading={isLoadingTags}
+                  menuIsOpen={menuIsOpen}
+                  onMenuOpen={() => setMenuIsOpen(true)}
+                  onMenuClose={() => setMenuIsOpen(undefined)}
+                  className='z-10'
+                  filterOption={(option, rawInput) => true}
+                  styles={{
+                    placeholder: (baseStyles) => ({
+                      ...baseStyles,
+                      color: '#5c6677',
+                      fontSize: '14px'
+                    })
+                  }}
+                />
+              </div>
+
               <div className='mt-2'>
                 <input
                   type='file'
@@ -243,53 +347,7 @@ const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateD
                       </span>
                     </span>
                   </Button>
-
-                  <div className='relative'>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      className='flex items-center gap-2 hover:bg-gray-100 transition-colors duration-200 border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-800 group'
-                      onClick={() => setIsTagDropdownOpen(!isTagDropdownOpen)}
-                    >
-                      <Hash
-                        className='text-purple-500 group-hover:scale-110 transition-transform duration-200'
-                        size={16}
-                      />
-                      <span className='font-medium'>Add tags</span>
-                      <ChevronDown className='w-4 h-4' />
-                    </Button>
-                    {isTagDropdownOpen && (
-                      <div className='absolute z-10 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5'>
-                        <div className='py-1'>
-                          {SUGGESTED_TAGS.map((tag: any, index) => (
-                            <div
-                              key={index}
-                              className='px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer'
-                              onClick={() => handleTagSelect(tag)}
-                            >
-                              {tag}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
-                {selectedTags.length > 0 && (
-                  <div className='flex flex-wrap gap-2 mt-2'>
-                    {selectedTags.map((tag) => (
-                      <div
-                        key={tag}
-                        className='flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700'
-                      >
-                        <span>{tag}</span>
-                        <button onClick={() => handleTagRemove(tag)}>
-                          <X className='w-4 h-4 text-gray-500 hover:text-gray-700' />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
                 <FileUploadPreview files={uploadedFiles} onRemove={handleFileRemove} />
               </div>
             </div>

@@ -6,23 +6,18 @@ import {
   deleteReply,
   editReply,
   EditReplyRequestBody,
+  getChildrenReplies,
   getRepliesByQuestionId,
   getReplyById
 } from '@/services/replies.services';
-import { updateQuestionReplies } from './questionsSlice';
+import { refreshQuestion } from './questionsSlice';
 import { uploadFiles } from '@/services/medias.services';
 import { VoteType } from '@/types/enums';
-import { voteReply } from '@/services/votes.services';
+import { downvoteReply, unvoteReply, upvoteReply } from '@/services/votes.services';
 
 interface UploadedFile extends File {
   preview?: string;
   status?: 'pending' | 'uploading' | 'error' | 'success';
-}
-
-interface UploadedFileInfo {
-  url: string;
-  type: string;
-  originalName: string;
 }
 
 interface PendingReply {
@@ -36,8 +31,19 @@ interface PendingReply {
   };
 }
 
+interface ReplyWithChildren extends IReply {
+  childReplies?: {
+    data: IReply[];
+    pendingReplies: PendingReply[];
+    currentPage: number;
+    hasMore: boolean;
+    totalPages: number;
+    isLoading: boolean;
+  };
+}
+
 interface RepliesState {
-  data: { [questionId: string]: IReply[] };
+  data: { [questionId: string]: ReplyWithChildren[] };
   pendingReplies: { [questionId: string]: PendingReply[] };
   currentPage: { [questionId: string]: number };
   hasMore: { [questionId: string]: boolean };
@@ -84,6 +90,42 @@ export const uploadReplyFiles = createAsyncThunk(
     }
   }
 );
+
+export const fetchChildReplies = createAsyncThunk<
+  {
+    questionId: string;
+    parentReplyId: string;
+    replies: IReply[];
+    page: number;
+    hasMore: boolean;
+    totalPages: number;
+  },
+  {
+    groupId: string;
+    questionId: string;
+    replyId: string;
+    page?: number;
+    limit?: number;
+  }
+>('replies/fetchChildReplies', async ({ groupId, questionId, replyId, page = 1, limit = 5 }, { rejectWithValue }) => {
+  try {
+    const response = await getChildrenReplies({ groupId, questionId, replyId }, { page, limit });
+
+    const { replies, page: currentPage, total_pages } = response.data.result;
+    const hasMore = currentPage < total_pages;
+
+    return {
+      questionId,
+      parentReplyId: replyId,
+      replies,
+      page: currentPage,
+      hasMore,
+      totalPages: total_pages
+    };
+  } catch (err: any) {
+    return rejectWithValue(err.response?.data || 'Failed to fetch child replies');
+  }
+});
 
 // Fetch reply by id
 
@@ -158,9 +200,11 @@ export const addReply = createAsyncThunk<
   try {
     const response = await createReply({ groupId, questionId, body });
     dispatch(
-      updateQuestionReplies({
+      refreshQuestion({
         questionId,
-        replies: response.data.result.reply_count
+        question_info: {
+          ...response.data.result.question_info
+        }
       })
     );
     return {
@@ -185,15 +229,15 @@ export const removeReply = createAsyncThunk<
 >('replies/removeReply', async ({ groupId, questionId, replyId }, { dispatch, rejectWithValue }) => {
   try {
     const response = await deleteReply({ groupId, questionId, replyId });
-
     // Update the reply count in the question
     dispatch(
-      updateQuestionReplies({
+      refreshQuestion({
         questionId,
-        replies: response.data.result.reply_count
+        question_info: {
+          ...response.data.result.question_info
+        }
       })
     );
-
     return {
       questionId,
       replyId
@@ -203,27 +247,71 @@ export const removeReply = createAsyncThunk<
   }
 });
 
-export const voteOnReply = createAsyncThunk(
-  'questions/voteOnReply',
+export const upvoteOnReply = createAsyncThunk(
+  'replies/upvoteReply',
   async (
     {
       groupId,
       questionId,
-      replyId,
-      type
+      replyId
     }: {
       groupId: string;
       questionId: string;
       replyId: string;
-      type: VoteType;
     },
     { rejectWithValue }
   ) => {
     try {
-      await voteReply({ groupId, questionId, replyId, type });
-      return { questionId, replyId, type };
+      const response = await upvoteReply({ groupId, questionId, replyId });
+      return response.data.result;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to vote on question');
+      return rejectWithValue(error.response?.data?.message || 'Failed to upvote reply');
+    }
+  }
+);
+
+export const downvoteOnReply = createAsyncThunk(
+  'replies/downvoteReply',
+  async (
+    {
+      groupId,
+      questionId,
+      replyId
+    }: {
+      groupId: string;
+      questionId: string;
+      replyId: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await downvoteReply({ groupId, questionId, replyId });
+      return response.data.result;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to downvote reply');
+    }
+  }
+);
+
+export const unvoteOnReply = createAsyncThunk(
+  'replies/unvoteReply',
+  async (
+    {
+      groupId,
+      questionId,
+      replyId
+    }: {
+      groupId: string;
+      questionId: string;
+      replyId: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await unvoteReply({ groupId, questionId, replyId });
+      return response.data.result;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to unvote reply');
     }
   }
 );
@@ -287,47 +375,267 @@ const repliesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // vote on reply
-      .addCase(voteOnReply.pending, (state) => {
-        state.isVoting = true;
-        state.error = null;
-      })
-      .addCase(voteOnReply.fulfilled, (state, action) => {
-        const { questionId, replyId, type } = action.payload;
+      .addCase(fetchChildReplies.pending, (state, action) => {
+        const { questionId, replyId } = action.meta.arg;
 
+        // Set global loading state
+        state.isFetchingReplies = true;
+        state.error = null;
+
+        // Set the specific parent reply's loading state
         if (state.data[questionId]) {
           state.data[questionId] = state.data[questionId].map((reply) => {
             if (reply._id === replyId) {
-              if (reply.user_vote === type) {
-                // Nếu đã vote loại này trước đó, thì hủy vote
-                if (type === VoteType.Upvote) {
-                  reply.upvotes -= 1;
-                } else {
-                  reply.downvotes -= 1;
-                }
-                reply.user_vote = null;
+              // Initialize childReplies if it doesn't exist
+              if (!reply.childReplies) {
+                reply.childReplies = {
+                  data: [],
+                  pendingReplies: [],
+                  currentPage: 0,
+                  hasMore: false,
+                  totalPages: 0,
+                  isLoading: true // Set loading state for this specific reply
+                };
               } else {
-                // Nếu đổi vote (hoặc vote mới)
-                if (reply.user_vote === VoteType.Upvote) {
-                  reply.upvotes -= 1;
-                } else if (reply.user_vote === VoteType.Downvote) {
-                  reply.downvotes -= 1;
-                }
-
-                if (type === VoteType.Upvote) {
-                  reply.upvotes += 1;
-                } else {
-                  reply.downvotes += 1;
-                }
-                reply.user_vote = type;
+                // Just update the loading state
+                reply.childReplies.isLoading = true;
               }
             }
             return reply;
           });
         }
+      })
+      .addCase(fetchChildReplies.fulfilled, (state, action) => {
+        const { questionId, parentReplyId, replies, page, hasMore, totalPages } = action.payload;
+        // Update the parent reply's child replies
+        if (state.data[questionId]) {
+          state.data[questionId] = state.data[questionId].map((reply) => {
+            if (reply._id === parentReplyId) {
+              // Initialize childReplies structure if it doesn't exist
+              if (!reply.childReplies) {
+                reply.childReplies = {
+                  data: [],
+                  pendingReplies: [],
+                  currentPage: page,
+                  hasMore,
+                  totalPages,
+                  isLoading: false
+                };
+              } else {
+                // Update pagination info and set loading to false
+                reply.childReplies.currentPage = page;
+                reply.childReplies.hasMore = hasMore;
+                reply.childReplies.totalPages = totalPages;
+                reply.childReplies.isLoading = false;
+              }
+
+              // Append new child replies (avoid duplicates)
+              const newReplies = replies.filter(
+                (childReply) => !reply.childReplies!.data.some((existing) => existing._id === childReply._id)
+              );
+              reply.childReplies.data = [...reply.childReplies.data, ...newReplies];
+            }
+            return reply;
+          });
+        }
+
+        state.isFetchingReplies = false;
+      })
+      .addCase(fetchChildReplies.rejected, (state, action) => {
+        const { questionId, replyId } = action.meta.arg;
+
+        // Set the specific parent reply's loading state to false
+        if (state.data[questionId]) {
+          state.data[questionId] = state.data[questionId].map((reply) => {
+            if (reply._id === replyId) {
+              if (reply.childReplies) {
+                reply.childReplies.isLoading = false;
+              }
+            }
+            return reply;
+          });
+        }
+
+        state.isFetchingReplies = false;
+        state.error = action.payload as string;
+      })
+      // Upvote Reply
+      .addCase(upvoteOnReply.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(upvoteOnReply.fulfilled, (state, action) => {
+        const { _id, parent_id, upvotes, downvotes, reply_count } = action.payload;
+        const { questionId } = action.meta.arg;
+
+        if (parent_id === null) {
+          // Update top-level reply
+          if (state.data[questionId]) {
+            state.data[questionId] = state.data[questionId].map((reply) => {
+              if (reply._id === _id) {
+                return {
+                  ...reply,
+                  upvotes,
+                  downvotes,
+                  reply_count,
+                  user_vote: VoteType.Upvote
+                };
+              }
+              return reply;
+            });
+          }
+        } else {
+          // Update child reply within parent's childReplies
+          if (state.data[questionId]) {
+            state.data[questionId] = state.data[questionId].map((reply) => {
+              if (reply._id === parent_id && reply.childReplies) {
+                return {
+                  ...reply,
+                  childReplies: {
+                    ...reply.childReplies,
+                    data: reply.childReplies.data.map((child) => {
+                      if (child._id === _id) {
+                        return {
+                          ...child,
+                          upvotes,
+                          downvotes,
+                          reply_count,
+                          user_vote: VoteType.Upvote
+                        };
+                      }
+                      return child;
+                    })
+                  }
+                };
+              }
+              return reply;
+            });
+          }
+        }
         state.isVoting = false;
       })
-      .addCase(voteOnReply.rejected, (state, action) => {
+
+      .addCase(upvoteOnReply.rejected, (state, action) => {
+        state.isVoting = false;
+        state.error = action.payload as string;
+      })
+
+      // Downvote Reply
+      .addCase(downvoteOnReply.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(downvoteOnReply.fulfilled, (state, action) => {
+        const { _id, parent_id, upvotes, downvotes, reply_count } = action.payload;
+        const { questionId } = action.meta.arg;
+
+        if (parent_id === null) {
+          // Update top-level reply
+          if (state.data[questionId]) {
+            state.data[questionId] = state.data[questionId].map((reply) => {
+              if (reply._id === _id) {
+                return {
+                  ...reply,
+                  upvotes,
+                  downvotes,
+                  reply_count,
+                  user_vote: VoteType.Downvote // Fixed: was incorrectly set to Upvote
+                };
+              }
+              return reply;
+            });
+          }
+        } else {
+          // Update child reply within parent's childReplies
+          if (state.data[questionId]) {
+            state.data[questionId] = state.data[questionId].map((reply) => {
+              if (reply._id === parent_id && reply.childReplies) {
+                return {
+                  ...reply,
+                  childReplies: {
+                    ...reply.childReplies,
+                    data: reply.childReplies.data.map((child) => {
+                      if (child._id === _id) {
+                        return {
+                          ...child,
+                          upvotes,
+                          downvotes,
+                          reply_count,
+                          user_vote: VoteType.Downvote // Fixed: was incorrectly set to Upvote
+                        };
+                      }
+                      return child;
+                    })
+                  }
+                };
+              }
+              return reply;
+            });
+          }
+        }
+        state.isVoting = false;
+      })
+      .addCase(downvoteOnReply.rejected, (state, action) => {
+        state.isVoting = false;
+        state.error = action.payload as string;
+      })
+
+      // Unvote Reply
+      .addCase(unvoteOnReply.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(unvoteOnReply.fulfilled, (state, action) => {
+        const { _id, parent_id, upvotes, downvotes, reply_count } = action.payload;
+        const { questionId } = action.meta.arg;
+
+        if (parent_id === null) {
+          // Update top-level reply
+          if (state.data[questionId]) {
+            state.data[questionId] = state.data[questionId].map((reply) => {
+              if (reply._id === _id) {
+                return {
+                  ...reply,
+                  upvotes,
+                  downvotes,
+                  reply_count,
+                  user_vote: null // Fixed: was incorrectly set to Upvote
+                };
+              }
+              return reply;
+            });
+          }
+        } else {
+          // Update child reply within parent's childReplies
+          if (state.data[questionId]) {
+            state.data[questionId] = state.data[questionId].map((reply) => {
+              if (reply._id === parent_id && reply.childReplies) {
+                return {
+                  ...reply,
+                  childReplies: {
+                    ...reply.childReplies,
+                    data: reply.childReplies.data.map((child) => {
+                      if (child._id === _id) {
+                        return {
+                          ...child,
+                          upvotes,
+                          downvotes,
+                          reply_count,
+                          user_vote: null // Fixed: was incorrectly set to Upvote
+                        };
+                      }
+                      return child;
+                    })
+                  }
+                };
+              }
+              return reply;
+            });
+          }
+        }
+        state.isVoting = false;
+      })
+      .addCase(unvoteOnReply.rejected, (state, action) => {
         state.isVoting = false;
         state.error = action.payload as string;
       })
@@ -387,48 +695,147 @@ const repliesSlice = createSlice({
       })
       .addCase(addReply.pending, (state, action) => {
         state.isCreatingReply = true;
-        const { questionId } = action.meta.arg;
+        const { questionId, body } = action.meta.arg;
 
-        // Add a pending reply to track optimistic UI update
+        // Create a pending reply object
         const pendingReply: PendingReply = {
           id: Date.now().toString(), // Temporary ID
-          content: action.meta.arg.body.content,
+          content: body.content,
           question_id: questionId,
           created_at: new Date().toISOString(),
           user_info: {
-            name: '', // You might want to get this from the current user in your app
+            name: '', // Get from current user context
             avatar: ''
           }
         };
 
-        state.pendingReplies[questionId] = [...(state.pendingReplies[questionId] || []), pendingReply];
+        // If it's a top-level reply (parent_id is null)
+        if (!body.parent_id) {
+          state.pendingReplies[questionId] = [...(state.pendingReplies[questionId] || []), pendingReply];
+        }
+        // If it's a reply to another reply (parent_id is not null)
+        else {
+          // Find the parent reply and update its childReplies.pendingReplies
+          if (state.data[questionId]) {
+            state.data[questionId] = state.data[questionId].map((reply) => {
+              if (reply._id === body.parent_id) {
+                // Initialize childReplies if it doesn't exist
+                if (!reply.childReplies) {
+                  reply.childReplies = {
+                    data: [],
+                    pendingReplies: [],
+                    currentPage: 1,
+                    hasMore: false,
+                    totalPages: 1,
+                    isLoading: false
+                  };
+                }
+
+                // Add to pendingReplies array
+                return {
+                  ...reply,
+                  childReplies: {
+                    ...reply.childReplies,
+                    pendingReplies: [...(reply.childReplies.pendingReplies || []), pendingReply]
+                  }
+                };
+              }
+              return reply;
+            });
+          }
+        }
       })
       .addCase(addReply.fulfilled, (state, action) => {
         const { questionId, reply } = action.payload;
+        const { body } = action.meta.arg;
 
-        // Remove the pending reply
-        state.pendingReplies[questionId] = (state.pendingReplies[questionId] || []).filter(
-          (pending) => pending.content !== reply.content
-        );
+        // Handle top-level replies
+        if (!body.parent_id) {
+          // Remove from pendingReplies
+          state.pendingReplies[questionId] = (state.pendingReplies[questionId] || []).filter(
+            (pending) => pending.content !== reply.content
+          );
 
-        // Add the new reply to the data
-        state.data[questionId] = state.data[questionId] || [];
-
-        // Avoid duplicates
-        if (!state.data[questionId].some((existing) => existing._id === reply._id)) {
-          state.data[questionId].unshift(reply); // Add to the beginning of the array
+          // Add to main data
+          state.data[questionId] = state.data[questionId] || [];
+          if (!state.data[questionId].some((existing) => existing._id === reply._id)) {
+            state.data[questionId].unshift(reply);
+          }
         }
+        // Handle child replies
+        else {
+          // Update the parent reply's childReplies
+          if (state.data[questionId]) {
+            state.data[questionId] = state.data[questionId].map((parentReply) => {
+              if (parentReply._id === body.parent_id) {
+                // Make sure childReplies exists
+                const childReplies = parentReply.childReplies || {
+                  data: [],
+                  pendingReplies: [],
+                  currentPage: 1,
+                  hasMore: false,
+                  totalPages: 1,
+                  isLoading: false
+                };
+
+                // Remove from pendingReplies
+                const updatedPendingReplies = childReplies.pendingReplies.filter(
+                  (pending) => pending.content !== reply.content
+                );
+
+                // Add to data if not exists
+                const replyExists = childReplies.data.some((child) => child._id === reply._id);
+                const updatedData = replyExists ? childReplies.data : [reply, ...childReplies.data];
+
+                return {
+                  ...parentReply,
+                  reply_count: parentReply.reply_count + 1, // Increment reply count
+                  childReplies: {
+                    ...childReplies,
+                    data: updatedData,
+                    pendingReplies: updatedPendingReplies
+                  }
+                };
+              }
+              return parentReply;
+            });
+          }
+        }
+
         state.isCreatingReply = false;
       })
       .addCase(addReply.rejected, (state, action) => {
-        const { questionId } = action.meta.arg;
+        const { questionId, body } = action.meta.arg;
 
-        // Remove the pending reply on failure
-        state.pendingReplies[questionId] = (state.pendingReplies[questionId] || []).filter(
-          (pending) => pending.content !== action.meta.arg.body.content
-        );
+        // For top-level replies
+        if (!body.parent_id) {
+          // Remove from pendingReplies
+          state.pendingReplies[questionId] = (state.pendingReplies[questionId] || []).filter(
+            (pending) => pending.content !== body.content
+          );
+        }
+        // For child replies
+        else {
+          // Remove from parent's childReplies.pendingReplies
+          if (state.data[questionId]) {
+            state.data[questionId] = state.data[questionId].map((parentReply) => {
+              if (parentReply._id === body.parent_id && parentReply.childReplies) {
+                return {
+                  ...parentReply,
+                  childReplies: {
+                    ...parentReply.childReplies,
+                    pendingReplies: parentReply.childReplies.pendingReplies.filter(
+                      (pending) => pending.content !== body.content
+                    )
+                  }
+                };
+              }
+              return parentReply;
+            });
+          }
+        }
+
         state.isCreatingReply = false;
-        // Set error
         state.error = action.payload as string;
       })
       // New cases for delete reply

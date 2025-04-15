@@ -9,7 +9,10 @@ import {
   notificationsReducer,
   relationshipReducer,
   studyGroupsListReducer,
-  invitationsReducer
+  invitationsReducer,
+  searchReducer,
+  contactReducer,
+  communityReducer
 } from './slices';
 import { studyGroupApi } from './apis/studyGroupApi';
 
@@ -25,6 +28,9 @@ const store = configureStore({
     relationship: relationshipReducer,
     studyGroupsList: studyGroupsListReducer,
     invitations: invitationsReducer,
+    search: searchReducer,
+    contact: contactReducer,
+    community: communityReducer,
     [studyGroupApi.reducerPath]: studyGroupApi.reducer // Add API reducer
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(studyGroupApi.middleware) // Add API middleware

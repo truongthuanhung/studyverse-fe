@@ -22,14 +22,17 @@ import {
   NotFound,
   GroupQuestionDetail,
   GroupManageQuestions,
-  NewConversation
+  NewConversation,
+  Community,
+  PostDetail
 } from './pages';
 import SubLayout from './layouts/SubLayout';
-import { memo, Suspense, lazy } from 'react';
+import { memo, Suspense } from 'react';
 import { ToastContainer } from 'react-toastify';
 import { GroupsListLayout } from './layouts';
 import GroupDiscover from './pages/StudyGroup/GroupDiscover';
 import Invitations from './pages/Invitations/Invitations';
+import LeftSidebarOnlyLayout from './layouts/partials/LeftSidebarOnlyLayout';
 
 // Loading component for Suspense fallback
 const Loading = () => <div className='flex items-center justify-center h-screen'>Loading...</div>;
@@ -54,6 +57,12 @@ const App = memo(() => {
             <Route element={<MainLayout />}>
               <Route element={<PrivateRoutes />}>
                 <Route path='/' element={<Home />} />
+              </Route>
+            </Route>
+
+            <Route element={<LeftSidebarOnlyLayout />}>
+              <Route element={<PrivateRoutes />}>
+                <Route path='/posts/:postId' element={<PostDetail />} />
               </Route>
             </Route>
 
@@ -91,11 +100,12 @@ const App = memo(() => {
                 </Route>
 
                 <Route path='/me' element={<Profile />} />
+                <Route path='/community' element={<Community />} />
                 <Route path='/invitations' element={<Invitations />} />
                 <Route path='/:username' element={<UserProfile />} />
               </Route>
             </Route>
-
+            <Route path='/404' element={<NotFound />} />
             <Route path='*' element={<NotFound />} />
           </Routes>
         </Suspense>

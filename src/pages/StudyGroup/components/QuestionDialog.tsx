@@ -8,7 +8,10 @@ import {
   MessageCircleMore,
   Repeat2,
   Maximize2,
-  Upload
+  Upload,
+  Hash,
+  Dot,
+  Shield
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ReactQuill from 'react-quill';
@@ -19,7 +22,7 @@ import Editor from '@/components/common/Editor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFullTime, getRelativeTime } from '@/utils/date';
 import { Button } from '@/components/ui/button';
-import { VoteType } from '@/types/enums';
+import { StudyGroupRole, VoteType } from '@/types/enums';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import {
@@ -37,6 +40,8 @@ import { useToast } from '@/hooks/use-toast';
 import { MAX_FILES } from '@/constants/constants';
 import FileUploadPreview from '@/components/common/FileUploadPreview';
 import Reply from './Reply';
+import { Badge } from '@/components/ui/badge';
+import { badgeConfig } from './Badge';
 
 interface QuestionDialogProps {
   question: IQuestion;
@@ -67,6 +72,7 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
   const [currentMediaIndex, setCurrentMediaIndex] = useState(initialImageIndex);
   const [convertedText, setConvertedText] = useState('');
   const [mentions, setMentions] = useState<any[]>([]);
+  const [showAllTags, setShowAllTags] = useState(false);
 
   // Hooks
   const dispatch = useDispatch<AppDispatch>();
@@ -177,7 +183,6 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
 
       setConvertedText('');
       dispatch(resetReplyFiles({ questionId: question._id }));
-      toast({ description: 'Reply created successfully' });
     } catch (err) {
       toast({
         description: 'Failed to create reply',
@@ -225,6 +230,33 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
 
   const handlePrevMedia = () => {
     setCurrentMediaIndex((prevIndex) => (prevIndex === 0 ? mediaFiles.length - 1 : prevIndex - 1));
+  };
+
+  // Generate a deterministic pastel color based on tag name
+  const getTagColor = (tagName: string) => {
+    // Simple hash function for the tag name
+    let hash = 0;
+    for (let i = 0; i < tagName.length; i++) {
+      hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // List of pastel color pairs (background and text)
+    const colorPairs = [
+      { bg: 'bg-blue-50', text: 'text-blue-700' },
+      { bg: 'bg-green-50', text: 'text-green-700' },
+      { bg: 'bg-purple-50', text: 'text-purple-700' },
+      { bg: 'bg-pink-50', text: 'text-pink-700' },
+      { bg: 'bg-yellow-50', text: 'text-yellow-700' },
+      { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+      { bg: 'bg-red-50', text: 'text-red-700' },
+      { bg: 'bg-orange-50', text: 'text-orange-700' },
+      { bg: 'bg-teal-50', text: 'text-teal-700' },
+      { bg: 'bg-cyan-50', text: 'text-cyan-700' }
+    ];
+
+    // Use the hash to select a color pair
+    const colorIndex = Math.abs(hash) % colorPairs.length;
+    return colorPairs[colorIndex];
   };
 
   return (
@@ -282,20 +314,72 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
           <div className='flex flex-col'>
-            <p className='font-semibold cursor-pointer'>{question.user_info.name}</p>
-            <p className='text-zinc-500 text-xs'>{`@${question.user_info.username}`}</p>
-            <p className='text-zinc-500 text-xs'>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className='cursor-pointer'>{getRelativeTime(question.created_at)}</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <span>{getFullTime(question.created_at)}</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </p>
+            <div className='flex items-center gap-4'>
+              <p className='font-semibold cursor-pointer'>{question.user_info.name}</p>
+              <div className='flex items-center gap-1'>
+                {question.user_info.role === StudyGroupRole.Admin && (
+                  <Badge className='bg-red-100 text-red-800 hover:bg-red-200 px-2 py-0.5 text-xs font-medium gap-1'>
+                    <Shield size={12} />
+                    Admin
+                  </Badge>
+                )}
+
+                {question.user_info.badges && question.user_info.badges.length > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className='flex gap-1 items-center'>
+                          {question.user_info.badges.slice(0, 2).map((badge) => {
+                            const config = badgeConfig[badge.name] || badgeConfig.default;
+                            return (
+                              <Badge
+                                key={badge._id}
+                                className={`${config.color} px-2 py-0.5 text-xs font-medium gap-1 cursor-pointer`}
+                                variant='outline'
+                              >
+                                {config.icon}
+                                {badge.name}
+                              </Badge>
+                            );
+                          })}
+                          {question.user_info.badges.length > 2 && (
+                            <Badge className='bg-gray-100 text-gray-800 px-2 py-0.5 text-xs font-medium hover:bg-gray-200'>
+                              +{question.user_info.badges.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className='max-w-xs'>
+                        <div className='flex flex-col gap-1'>
+                          {question.user_info.badges.map((badge) => (
+                            <div key={badge._id} className='flex items-center gap-2'>
+                              <div className='text-sm font-medium'>{badge.name}</div>
+                              <div className='text-xs text-gray-500'>{badge.description}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </div>
+            <div className='text-zinc-500 text-sm flex items-center gap-x-0.5'>
+              <p>{`@${question.user_info.username}`}</p>
+              <Dot size={18} />
+              <p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className='cursor-pointer'>{getRelativeTime(question.created_at)}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>{getFullTime(question.created_at)}</span>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -318,9 +402,49 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
           />
         </div>
 
+        {question.tags && question.tags.length > 0 && (
+          <div className='flex flex-wrap gap-2 mt-3 mb-2'>
+            {(showAllTags ? question.tags : question.tags.slice(0, 3)).map((tag) => {
+              const { bg, text } = getTagColor(tag.name);
+              return (
+                <Badge
+                  key={tag._id}
+                  className={`${bg} ${text} hover:bg-opacity-80 px-3 py-1 text-xs font-medium cursor-pointer gap-1 transition-all`}
+                  variant='outline'
+                >
+                  <Hash size={12} />
+                  {tag.name}
+                </Badge>
+              );
+            })}
+            {!showAllTags && question.tags.length > 3 && (
+              <Badge
+                className='bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 text-xs font-medium cursor-pointer'
+                variant='outline'
+                onClick={() => setShowAllTags(true)}
+              >
+                +{question.tags.length - 3} more
+              </Badge>
+            )}
+            {showAllTags && question.tags.length > 3 && (
+              <Badge
+                className='bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 text-xs font-medium cursor-pointer'
+                variant='outline'
+                onClick={() => setShowAllTags(false)}
+              >
+                Show less
+              </Badge>
+            )}
+          </div>
+        )}
+
         <div className='flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
-          <p className='cursor-pointer'>{question.upvotes - question.downvotes} votes</p>
-          <p className='cursor-pointer'>{question.replies} replies</p>
+          <p className='cursor-pointer'>
+            {question.upvotes - question.downvotes === 0
+              ? '0 votes'
+              : `${question.upvotes - question.downvotes > 0 ? '+' : ''}${question.upvotes - question.downvotes} votes`}
+          </p>
+          <p className='cursor-pointer'>{question.reply_count} replies</p>
         </div>
 
         <div className='flex items-center gap-2 py-2 border-t px-2'>

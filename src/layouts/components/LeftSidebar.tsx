@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users, BookOpen, Calendar, Eye, User, UserPlus, UserCheck } from 'lucide-react';
 import MainLogo from '@/assets/images/mainLogo.jpeg';
-import { GroupItem } from './common';
+import { GroupItem } from '../common';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 
@@ -88,44 +88,6 @@ const LeftSidebar = () => {
             </div>
           </div>
         </div>
-
-        <Separator className='mt-4' />
-
-        {/* Meeting Schedule Section */}
-        <div className='mt-4'>
-          <div className='flex items-center gap-2 font-medium'>
-            <Calendar size={18} className='text-primary' />
-            <span>Meeting schedule</span>
-          </div>
-
-          <div className='ml-6 mt-2'>
-            <div className='flex items-center justify-between'>
-              <span className='text-muted-foreground text-sm'>Completed</span>
-              <Badge variant='outline' className='text-sky-500 bg-sky-50'>
-                3
-              </Badge>
-            </div>
-
-            <div className='flex items-center justify-between mt-2'>
-              <span className='text-muted-foreground text-sm'>Confirmed</span>
-              <Badge variant='outline' className='text-sky-500 bg-sky-50'>
-                2
-              </Badge>
-            </div>
-
-            <div className='flex items-center justify-between mt-2'>
-              <span className='text-muted-foreground text-sm'>Pending</span>
-              <Badge variant='outline' className='text-sky-500 bg-sky-50'>
-                2
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        <Button variant='ghost' className='w-full justify-start gap-2 mt-4'>
-          <Eye size={16} />
-          <span className='text-sm'>View all schedule</span>
-        </Button>
 
         <Separator className='mt-4' />
 

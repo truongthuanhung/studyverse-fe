@@ -98,12 +98,12 @@ const MediaGallery: React.FC<{
       )}
 
       {rawFiles.length > 0 && (
-        <div className='mt-4 px-4'>
+        <div className='p-4'>
           <div className='space-y-2'>
             {rawFiles.map((url, index) => (
               <div
                 key={url}
-                className='relative border border-gray-200 bg-gray-50 p-3 flex justify-between items-center cursor-pointer hover:bg-gray-100 rounded-lg'
+                className='relative border bg-white p-3 flex justify-between items-center cursor-pointer hover:bg-gray-100 rounded-lg'
                 onClick={() => downloadFile(url)}
               >
                 <div className='flex items-center gap-3 min-w-0'>

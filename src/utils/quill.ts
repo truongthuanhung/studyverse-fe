@@ -31,3 +31,9 @@ export const formats = [
   'background',
   'mention'
 ];
+
+export const cleanContent = (htmlContent: string): string => {
+  let cleanedContent = htmlContent.trim();
+  cleanedContent = cleanedContent.replace(/^\s*<br\s*\/?>|<br\s*\/?>\s*$/g, '');
+  return cleanedContent;
+};

@@ -1,6 +1,6 @@
 import { uploadFiles } from '@/services/medias.services';
 import { createQuestion, deleteQuestion, getQuestionById, getQuestionsByGroupId } from '@/services/questions.services';
-import { voteQuestion } from '@/services/votes.services';
+import { downvoteQuestion, unvoteQuestion, upvoteQuestion, voteQuestion } from '@/services/votes.services';
 import { StudyGroupRole, VoteType } from '@/types/enums';
 import { IQuestion } from '@/types/question';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
@@ -48,38 +48,82 @@ const initialState: QuestionsState = {
   currentPage: 1
 };
 
-export const voteOnQuestion = createAsyncThunk(
-  'questions/voteOnQuestion',
+export const unvoteOnQuestion = createAsyncThunk(
+  'questions/unvoteOnQuestion',
   async (
     {
       groupId,
-      questionId,
-      type
+      questionId
     }: {
       groupId: string;
       questionId: string;
-      type: VoteType;
     },
     { rejectWithValue }
   ) => {
     try {
-      await voteQuestion({ groupId, questionId, type });
-      return { questionId, type };
+      const response = await unvoteQuestion({ groupId, questionId });
+      return response.data.result;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to vote on question');
+      return rejectWithValue(error.response?.data?.message || 'Failed to unvote question');
+    }
+  }
+);
+
+export const upvoteOnQuestion = createAsyncThunk(
+  'questions/upvoteOnQuestion',
+  async (
+    {
+      groupId,
+      questionId
+    }: {
+      groupId: string;
+      questionId: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await upvoteQuestion({ groupId, questionId });
+      return response.data.result;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to upvote question');
+    }
+  }
+);
+
+export const downvoteOnQuestion = createAsyncThunk(
+  'questions/downvoteOnQuestion',
+  async (
+    {
+      groupId,
+      questionId
+    }: {
+      groupId: string;
+      questionId: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await downvoteQuestion({ groupId, questionId });
+      return response.data.result;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to downvote question');
     }
   }
 );
 
 export const fetchQuestions = createAsyncThunk(
   'questions/fetchQuestions',
-  async ({ groupId, page = 1, limit = 10 }: { groupId: string; page: number; limit: number }, { rejectWithValue }) => {
+  async (
+    { groupId, page = 1, limit = 10, tagId }: { groupId: string; page: number; limit: number; tagId?: string },
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await getQuestionsByGroupId(groupId, { page, limit, status: 1 });
+      const response = await getQuestionsByGroupId(groupId, { page, limit, status: 1, tag_id: tagId });
       return {
         questions: response.data.result.questions,
         page,
-        limit
+        limit,
+        total_pages: response.data.result.total_pages
       };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch questions');
@@ -185,12 +229,99 @@ const questionsSlice = createSlice({
       const { questionId, replies } = action.payload;
       const question = state.data.find((q) => q._id === questionId);
       if (question) {
-        question.replies = replies;
+        question.reply_count = replies;
+      }
+    },
+    setQuestionReplyCount(state, action: PayloadAction<{ questionId: string; count: number }>) {
+      const { questionId, count } = action.payload;
+      const question = state.data.find((q) => q._id === questionId);
+      if (question) {
+        question.reply_count = count;
+      }
+    },
+    refreshQuestion(
+      state,
+      action: PayloadAction<{
+        questionId: string;
+        question_info: {
+          reply_count: number;
+          upvotes: number;
+          downvotes: number;
+        };
+      }>
+    ) {
+      const { questionId, question_info } = action.payload;
+      const question = state.data.find((q) => q._id === questionId);
+      if (question) {
+        question.reply_count = question_info.reply_count;
+        question.upvotes = question_info.upvotes;
+        question.downvotes = question_info.downvotes;
       }
     }
   },
   extraReducers: (builder) => {
     builder
+      // Upvote question
+      .addCase(upvoteOnQuestion.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(upvoteOnQuestion.fulfilled, (state, action) => {
+        const { upvotes, downvotes, reply_count, _id } = action.payload;
+        const question = state.data.find((q) => q._id === _id);
+
+        if (question) {
+          question.upvotes = upvotes;
+          question.downvotes = downvotes;
+          question.reply_count = reply_count;
+        }
+        state.isVoting = false;
+      })
+      .addCase(upvoteOnQuestion.rejected, (state, action) => {
+        state.isVoting = false;
+        state.error = action.payload as string;
+      })
+      // Downvote question
+      .addCase(downvoteOnQuestion.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(downvoteOnQuestion.fulfilled, (state, action) => {
+        const { upvotes, downvotes, reply_count, _id } = action.payload;
+        const question = state.data.find((q) => q._id === _id);
+
+        if (question) {
+          question.upvotes = upvotes;
+          question.downvotes = downvotes;
+          question.reply_count = reply_count;
+        }
+        state.isVoting = false;
+      })
+      .addCase(downvoteOnQuestion.rejected, (state, action) => {
+        state.isVoting = false;
+        state.error = action.payload as string;
+      })
+
+      // Unvote question
+      .addCase(unvoteOnQuestion.pending, (state) => {
+        state.isVoting = true;
+        state.error = null;
+      })
+      .addCase(unvoteOnQuestion.fulfilled, (state, action) => {
+        const { upvotes, downvotes, reply_count, _id } = action.payload;
+        const question = state.data.find((q) => q._id === _id);
+
+        if (question) {
+          question.upvotes = upvotes;
+          question.downvotes = downvotes;
+          question.reply_count = reply_count;
+        }
+        state.isVoting = false;
+      })
+      .addCase(unvoteOnQuestion.rejected, (state, action) => {
+        state.isVoting = false;
+        state.error = action.payload as string;
+      })
       // Create question
       .addCase(createNewQuestion.pending, (state) => {
         state.isCreatingQuestion = true;
@@ -239,18 +370,19 @@ const questionsSlice = createSlice({
       })
       .addCase(fetchQuestions.fulfilled, (state, action) => {
         state.isFetchingQuestions = false;
-        const { questions, page, limit } = action.payload;
+        const { questions, page, total_pages } = action.payload;
         if (page === 1) {
           state.data = questions;
         } else {
           state.data = [...state.data, ...questions];
         }
         state.currentPage = page;
-        state.hasMore = questions.length === limit;
+        state.hasMore = page < total_pages;
       })
       .addCase(fetchQuestions.rejected, (state, action) => {
         state.isFetchingQuestions = false;
         state.error = action.payload as string;
+        state.hasMore = false;
       })
       .addCase(uploadQuestionFiles.pending, (state) => {
         state.isUploadingFiles = true;
@@ -275,45 +407,6 @@ const questionsSlice = createSlice({
         state.isUploadingFiles = false;
         state.uploadedFiles = state.uploadedFiles.map((file) => ({ ...file, status: 'error' }));
         state.error = action.payload as string;
-      })
-      // Vote question
-      .addCase(voteOnQuestion.pending, (state) => {
-        state.isVoting = true;
-        state.error = null;
-      })
-      .addCase(voteOnQuestion.fulfilled, (state, action) => {
-        const { questionId, type } = action.payload;
-        const question = state.data.find((q) => q._id === questionId);
-
-        if (question) {
-          if (question.user_vote === type) {
-            // Nếu đã vote loại này trước đó, thì hủy vote
-            if (type === VoteType.Upvote) {
-              question.upvotes -= 1;
-            } else {
-              question.downvotes -= 1;
-            }
-            question.user_vote = null;
-          } else {
-            // Nếu đổi vote (hoặc vote mới)
-            if (question.user_vote === VoteType.Upvote) {
-              question.upvotes -= 1;
-            } else if (question.user_vote === VoteType.Downvote) {
-              question.downvotes -= 1;
-            }
-
-            if (type === VoteType.Upvote) {
-              question.upvotes += 1;
-            } else {
-              question.downvotes += 1;
-            }
-            question.user_vote = type;
-          }
-        }
-      })
-      .addCase(voteOnQuestion.rejected, (state, action) => {
-        state.isVoting = false;
-        state.error = action.payload as string;
       });
   }
 });
@@ -325,7 +418,9 @@ export const {
   addUploadedFiles,
   removeUploadedFile,
   setUploadedFiles,
-  updateQuestionReplies
+  updateQuestionReplies,
+  setQuestionReplyCount,
+  refreshQuestion
 } = questionsSlice.actions;
 
 export default questionsSlice.reducer;

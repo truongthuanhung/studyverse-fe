@@ -7,15 +7,7 @@ interface IGroupUserInfo {
   username: string;
   avatar: string;
   role: StudyGroupRole.Admin;
-  badges: {
-    _id: string;
-    badge_id: string;
-    created_at: string;
-    badge_name: string;
-    badge_description: string;
-    badge_icon_url: string;
-    badge_points_required: number;
-  }[];
+  badges: IBadge[];
 }
 
 interface IQuestion {
@@ -25,7 +17,7 @@ interface IQuestion {
   status: QuestionStatus;
   user_id: string;
   group_id: string;
-  tags: string[];
+  tags: any[];
   medias: string[];
   mentions: string[];
   approved_at: string | null;
@@ -34,7 +26,7 @@ interface IQuestion {
   user_info: IGroupUserInfo;
   upvotes: number;
   downvotes: number;
-  replies: number;
+  reply_count: number;
   user_vote: VoteType | null;
 }
 
@@ -50,4 +42,6 @@ interface IReply {
   upvotes: number;
   downvotes: number;
   user_vote: VoteType | null;
+  approved_by_user: boolean;
+  approved_by_teacher: boolean;
 }

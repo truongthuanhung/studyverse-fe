@@ -86,7 +86,7 @@ const CreateGroup = () => {
       toast({
         description: 'Create study group successfully'
       });
-      navigate('/groups');
+      navigate('/groups/my-groups');
     } catch (err) {
       console.error('Failed to create study group:', err);
     } finally {
