@@ -21,7 +21,7 @@ import { registerService } from '@/services/user.services';
 function Register() {
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const years = Array.from({ length: 2024 - 1930 + 1 }, (_, i) => 2024 - i);
+  const years = Array.from({ length: new Date().getFullYear() - 1930 + 1 }, (_, i) => new Date().getFullYear() - i);
 
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
@@ -112,12 +112,12 @@ function Register() {
     }
   };
   return (
-    <div className='bg-[#F3F2F0] h-screen'>
+    <div className='bg-[#F3F2F0] pb-8'>
       <div className='flex items-center justify-center'>
         <img src={Logo} alt='' className='block w-[80px] h-[80px]' />
       </div>
       <div className='bg-white w-[354px] md:w-[500px] py-[16px] px-[16px] md:px-[20px] rounded-[12px] mx-auto'>
-        <h1 className='text-[24px] font-bold'>Account Register</h1>
+        <h1 className='text-xl font-bold'>Account Register</h1>
         <div className='grid w-full items-center gap-[8px] mt-[16px]'>
           <Label htmlFor='name'>Name</Label>
           <Input type='text' id='name' placeholder='Name' value={name} onChange={(e) => setName(e.target.value)} />

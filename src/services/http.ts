@@ -48,6 +48,7 @@ http.interceptors.response.use(
         if (err.response && err.response.status === 401 && err.response.data?.message === 'jwt refresh_token expired') {
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
           window.location.href = '/login';
         }
         return Promise.reject(err);

@@ -1,5 +1,12 @@
 import { Gender, Role } from './enums';
 
+interface IUserInfo {
+  _id: string;
+  name: string;
+  username: string;
+  avatar: string;
+}
+
 export interface IUser {
   _id?: ObjectId;
   name: string;
@@ -17,6 +24,12 @@ export interface IUser {
   username?: string; //optional
   avatar?: string; //optional
   cover_photo?: string; //optional
+
+  friends?: string;
+  followings?: string;
+  followers?: string;
+
+  isFollowed?: boolean;
 }
 
 export interface ILoginBody {
@@ -57,4 +70,30 @@ export interface IResetPasswordBody {
 
 export interface ILogoutBody {
   refresh_token: string;
+}
+
+export interface IUpdateMeBody {
+  name?: string;
+  bio?: string; //optional
+  location?: string; //optional
+  website?: string; //optional
+  username?: string; //optional
+  avatar?: string; //optional
+  cover_photo?: string; //optional
+}
+
+export interface IFollowBody {
+  followed_user_id: string;
+}
+
+export interface IUnfollowBody {
+  unfollowed_user_id: string;
+}
+
+interface IRelationship {
+  _id: string;
+  username: string;
+  name: string;
+  avatar: string;
+  created_at: string;
 }

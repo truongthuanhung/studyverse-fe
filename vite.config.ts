@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
@@ -8,8 +8,21 @@ export default defineConfig({
   server: {
     port: 3000
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.ts'
+  },
   css: {
-    devSourcemap: true
+    modules: {
+      localsConvention: 'camelCase',
+      generateScopedName: '[name]_[local]_[hash:base64:5]'
+    },
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler' // or "modern"
+      }
+    }
   },
   resolve: {
     alias: {
