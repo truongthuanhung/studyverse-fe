@@ -1,9 +1,7 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { UserPlus, ChevronRight, Users, Search, X } from 'lucide-react';
-import RelatedItem from '../common/RelatedItem';
+import { Users, Search, X } from 'lucide-react';
 import ContactItem from '../common/ContactItem';
 import { useEffect, useRef, useState } from 'react';
 import { getUsers } from '@/services/user.services';
