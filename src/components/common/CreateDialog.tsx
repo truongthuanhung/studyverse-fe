@@ -44,6 +44,7 @@ interface CreateDialogProps {
   onOpenChange: (open: boolean) => void;
   isLoading: boolean;
   isGroup: boolean;
+  children?: React.ReactNode;
 }
 
 interface UploadedFile extends File {
@@ -55,7 +56,7 @@ interface TagOption {
   label: string;
 }
 
-const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateDialogProps) => {
+const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup, children }: CreateDialogProps) => {
   const quillRef = useRef<ReactQuill | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dispatch = useDispatch<AppDispatch>();
@@ -227,9 +228,11 @@ const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateD
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <div className='text-muted-foreground rounded-[20px] bg-gray-100 hover:bg-gray-200 flex items-center flex-1 px-4 py-2 cursor-pointer'>
-          What's on your mind, {profile?.name || ''}?
-        </div>
+        {children || (
+          <div className='text-muted-foreground rounded-[20px] bg-gray-100 hover:bg-gray-200 flex items-center flex-1 px-4 py-2 cursor-pointer'>
+            What's on your mind, {profile?.name || ''}?
+          </div>
+        )}
       </DialogTrigger>
       <DialogContent className='sm:max-w-[600px] max-h-[95vh] gap-2 px-0'>
         <ScrollArea>
@@ -311,7 +314,7 @@ const CreateDialog = memo(({ isOpen, onOpenChange, isLoading, isGroup }: CreateD
                   onMenuOpen={() => setMenuIsOpen(true)}
                   onMenuClose={() => setMenuIsOpen(undefined)}
                   className='z-10'
-                  filterOption={(option, rawInput) => true}
+                  filterOption={() => true}
                   styles={{
                     placeholder: (baseStyles) => ({
                       ...baseStyles,

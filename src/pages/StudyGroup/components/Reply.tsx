@@ -91,7 +91,6 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
   const childReplies = useSelector(
     (state: RootState) => state.replies.data[reply.question_id]?.find((r) => r._id === reply._id)?.childReplies
   );
-  const pendingReplies = useSelector((state: RootState) => state.replies.pendingReplies[reply.question_id] || []);
   const uploadedFiles = useSelector((state: RootState) => state.replies.uploadedFiles[reply.question_id] || []);
   const { isCreatingReply, isUploadingFiles } = useSelector((state: RootState) => state.replies);
   const uploadedUrls = useSelector((state: RootState) => state.replies.uploadedUrls[reply.question_id] || []);
@@ -541,7 +540,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
         {rawFiles.length > 0 && (
           <div className='mt-4'>
             <div className='space-y-2'>
-              {rawFiles.map((url, index) => (
+              {rawFiles.map((url) => (
                 <div
                   key={url}
                   className='relative border border-gray-200 bg-gray-50 p-3 flex justify-between items-center cursor-pointer hover:bg-gray-100 rounded-lg'

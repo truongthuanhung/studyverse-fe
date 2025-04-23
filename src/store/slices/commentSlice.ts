@@ -5,7 +5,7 @@ import {
   likeComment,
   unlikeComment
 } from '@/services/posts.services';
-import { CreateCommentRequestBody, IComment, IPost } from '@/types/post';
+import { CreateCommentRequestBody, IComment } from '@/types/post';
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { updateCommentCount } from './postSlice';
 
@@ -350,7 +350,7 @@ const commentSlice = createSlice({
       })
       .addCase(createComment.fulfilled, (state, action) => {
         state.isLoading = false;
-        const { comment, post } = action.payload;
+        const { comment } = action.payload;
 
         // If the comment is a reply to another comment
         if (comment.parent_id) {

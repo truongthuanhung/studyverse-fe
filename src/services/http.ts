@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { refreshToken } from './user.services';
 
+const { VITE_API_URL } = import.meta.env;
+
 const http = axios.create({
-  baseURL: 'http://localhost:3003',
+  baseURL: VITE_API_URL,
   headers: {
     'Content-Type': 'application/json'
   }

@@ -5,7 +5,7 @@ function SubLayout() {
   return (
     <>
       <Header />
-      <div className='mt-[60px]'>
+      <div className='mt-[60px] bg-slate-100'>
         <Outlet />
       </div>
     </>

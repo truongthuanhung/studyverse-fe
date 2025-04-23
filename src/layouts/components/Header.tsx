@@ -108,7 +108,7 @@ const Header = memo(() => {
       await fetchUnread();
     };
 
-    const handleNewMessage = async (data: any) => {
+    const handleNewMessage = async () => {
       await fetchUnread();
     };
 

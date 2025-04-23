@@ -17,7 +17,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({ conversationId, c
   };
 
   return (
-    <div className='border-r'>
+    <div className='border-r bg-white'>
       <div className='px-4 py-2 flex gap-2 items-center justify-between border-b'>
         <div className='cursor-pointer'>
           <MenuIcon />

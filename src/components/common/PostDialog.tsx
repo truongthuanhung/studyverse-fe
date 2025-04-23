@@ -39,7 +39,7 @@ const PostDialog: React.FC<PostDialogProps> = ({ post: initialPost, initialImage
   const comments = useSelector((state: RootState) => state.comments.comments[initialPost._id] || []);
   const { user } = useSelector((state: RootState) => state.profile);
   const post = storePost || initialPost;
-  console.log(post)
+  console.log(post);
   const [content, setContent] = useState('');
   const quillRef = useRef<ReactQuill | null>(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(initialImageIndex);
@@ -87,7 +87,7 @@ const PostDialog: React.FC<PostDialogProps> = ({ post: initialPost, initialImage
     return plainText !== '';
   };
 
-  const { mediaFiles, rawFiles } = React.useMemo(() => {
+  const { mediaFiles } = React.useMemo(() => {
     const getMediaType = (url: string) => {
       const extension = url.split('.').pop()?.toLowerCase() || '';
       const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];

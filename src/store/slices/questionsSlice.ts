@@ -1,7 +1,7 @@
 import { uploadFiles } from '@/services/medias.services';
 import { createQuestion, deleteQuestion, getQuestionById, getQuestionsByGroupId } from '@/services/questions.services';
-import { downvoteQuestion, unvoteQuestion, upvoteQuestion, voteQuestion } from '@/services/votes.services';
-import { StudyGroupRole, VoteType } from '@/types/enums';
+import { downvoteQuestion, unvoteQuestion, upvoteQuestion } from '@/services/votes.services';
+import { StudyGroupRole } from '@/types/enums';
 import { IQuestion } from '@/types/question';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 
