@@ -36,6 +36,7 @@ import { Badge } from '@/components/ui/badge';
 import { getTagColor } from '@/utils/tag';
 import SharePostDialog from './SharePostDialog';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
+import { getInitialsAvatarFallback } from '@/utils/text';
 
 interface PostProps {
   post: IPost;
@@ -62,14 +63,13 @@ const Post: React.FC<PostProps> = ({ post }) => {
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [showAllTags, setShowAllTags] = useState<boolean>(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState<boolean>(false);
 
   // Selectors
   const profile = useSelector((state: RootState) => state.profile.user);
 
   // Constants
   const limit = 5;
-  const MAX_HEIGHT = 72;
+  const MAX_HEIGHT = 200;
 
   // Effects
 
@@ -139,7 +139,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
     }
   };
 
-  const { mediaFiles, rawFiles } = React.useMemo(() => {
+  const { mediaFiles } = React.useMemo(() => {
     const getMediaType = (url: string) => {
       const extension = url.split('.').pop()?.toLowerCase() || '';
       const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
@@ -178,8 +178,8 @@ const Post: React.FC<PostProps> = ({ post }) => {
             className='w-[48px] h-[48px] cursor-pointer'
             onClick={() => navigateToProfile(post.user_info.user_id, post.user_info.username)}
           >
-            <AvatarImage src={post.user_info.avatar || 'https://github.com/shadcn.png'} />
-            <AvatarFallback>CN</AvatarFallback>
+            <AvatarImage src={post.user_info.avatar} />
+            <AvatarFallback>{getInitialsAvatarFallback(post.user_info.name)}</AvatarFallback>
           </Avatar>
           <div className='flex flex-col'>
             <p
@@ -261,7 +261,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
           <div
             ref={contentRef}
             className={`whitespace-pre-line relative ${
-              !isExpanded && shouldShowReadMore ? 'max-h-[72px] overflow-hidden' : ''
+              !isExpanded && shouldShowReadMore ? 'max-h-[200px] overflow-hidden' : ''
             }`}
             style={{
               maskImage:
@@ -314,7 +314,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
                 <div
                   ref={parentContentRef}
                   className={`whitespace-pre-line relative ${
-                    !isParentExpanded && shouldShowParentReadMore ? 'max-h-[72px] overflow-hidden' : ''
+                    !isParentExpanded && shouldShowParentReadMore ? 'max-h-[200px] overflow-hidden' : ''
                   }`}
                   style={{
                     maskImage:

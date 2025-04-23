@@ -67,7 +67,6 @@ export const getRelativeTime = (isoTime: string): string => {
 
   const diff = now.getTime() - target.getTime(); // Khoảng thời gian chênh lệch tính bằng ms
 
-  if (diff < 0) return 'In the future'; // Nếu thời gian là tương lai
   if (diff < 60000) return 'Just now'; // <1 phút
   const minutes = Math.floor(diff / 60000);
   if (minutes < 60) return `${minutes}m`; // <1 giờ

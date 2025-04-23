@@ -24,7 +24,6 @@ const GroupDiscover = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const recommendedContainerRef = useRef<HTMLDivElement>(null);
-  const popularContainerRef = useRef<HTMLDivElement>(null);
 
   const { recommendedGroups, isLoadingRecommendedGroups, hasMoreRecommendedGroups, recommendedGroupsCurrentPage } =
     useSelector((state: RootState) => state.studyGroupsList);

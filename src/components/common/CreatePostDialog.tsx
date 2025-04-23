@@ -310,7 +310,7 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
                   onMenuOpen={() => setMenuIsOpen(true)}
                   onMenuClose={() => setMenuIsOpen(undefined)}
                   className='z-10'
-                  filterOption={(option, rawInput) => true}
+                  filterOption={() => true}
                   styles={{
                     placeholder: (baseStyles) => ({
                       ...baseStyles,

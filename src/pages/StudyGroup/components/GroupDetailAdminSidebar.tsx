@@ -1,4 +1,3 @@
-import { AnalyticsIcon, HomeIcon, LargeSettingsIcon, PeopleAddIcon, PeopleIcon } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';

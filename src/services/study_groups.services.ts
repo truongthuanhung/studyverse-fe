@@ -98,3 +98,7 @@ export const inviteFriends = (groupId: string, body: { invited_user_ids: string[
 export const searchTagsByGroup = (groupId: string, query: string) => {
   return http.get(`${baseUrl}/${groupId}/tags?q=${query}`);
 };
+
+export const getFeaturedGroups = (limit: number = 10) => {
+  return http.get(`${baseUrl}/featured-groups?limit=${limit}`);
+};

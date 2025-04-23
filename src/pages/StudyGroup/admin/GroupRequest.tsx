@@ -3,11 +3,7 @@ import JoinRequest from '../components/JoinRequest';
 import { AppDispatch, RootState } from '@/store/store';
 import { useEffect, useRef } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
-import {
-  fetchStudyGroupJoinRequests,
-  getGroupJoinRequestsCount,
-  getGroupPendingCount
-} from '@/store/slices/studyGroupSlice';
+import { fetchStudyGroupJoinRequests, getGroupJoinRequestsCount } from '@/store/slices/studyGroupSlice';
 import { memo } from 'react';
 import { UserRoundPlus } from 'lucide-react';
 import { useSocket } from '@/contexts/SocketContext';

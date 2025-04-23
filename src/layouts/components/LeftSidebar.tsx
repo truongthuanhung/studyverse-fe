@@ -1,16 +1,25 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, BookOpen, Calendar, Eye, User, UserPlus, UserCheck } from 'lucide-react';
+import { Users, BookOpen, User, UserPlus, UserCheck } from 'lucide-react';
 import MainLogo from '@/assets/images/mainLogo.jpeg';
 import { GroupItem } from '../common';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store/store';
+import { useEffect } from 'react';
+import { getUserFeaturedGroups } from '@/store/slices/studyGroupsListSlice';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'react-router-dom';
 
 const LeftSidebar = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const profile = useSelector((state: RootState) => state.profile.user);
+  const { featuredGroups, isLoadingFeaturedGroups } = useSelector((state: RootState) => state.studyGroupsList);
+
+  useEffect(() => {
+    dispatch(getUserFeaturedGroups({ limit: 3 }));
+  }, [dispatch]);
 
   return (
     <ScrollArea className='h-[calc(100vh-60px)] border-r hidden lg:block w-full bg-white p-4'>
@@ -23,7 +32,7 @@ const LeftSidebar = () => {
           </Avatar>
           <div className='flex flex-col'>
             <p className='font-semibold'>{profile?.name || ''}</p>
-            <p className='text-muted-foreground text-sm'>@{profile?.role}</p>
+            <p className='text-muted-foreground text-sm'>@{profile?.username}</p>
           </div>
         </div>
 
@@ -71,21 +80,50 @@ const LeftSidebar = () => {
 
         <Separator className='mt-4' />
 
-        {/* Study Groups Section */}
+        {/* Study Groups Section - Improved */}
         <div className='mt-4'>
-          <div className='flex items-center gap-2 font-medium'>
-            <BookOpen size={18} className='text-primary' />
-            <span>Study groups</span>
+          <div className='flex items-center justify-between mb-2'>
+            <div className='flex items-center gap-2 font-medium'>
+              <BookOpen size={18} className='text-primary' />
+              <span>Featured groups</span>
+            </div>
+            <Link className='text-sky-500 hover:text-sky-600 text-sm' to='/groups/my-groups'>
+              View all
+            </Link>
           </div>
 
-          <div className='mt-3'>
-            <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
-            <div className='mt-1'>
-              <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
-            </div>
-            <div className='mt-1'>
-              <GroupItem name={'Software Engineering'} image={'https://github.com/shadcn.png'} />
-            </div>
+          <div className='mt-1 space-y-1 rounded-md overflow-hidden'>
+            {isLoadingFeaturedGroups ? (
+              <div className='space-y-2 p-2'>
+                <div className='flex items-center gap-2'>
+                  <Skeleton className='h-9 w-9 rounded-full' />
+                  <Skeleton className='h-4 w-32' />
+                </div>
+                <div className='flex items-center gap-2'>
+                  <Skeleton className='h-9 w-9 rounded-full' />
+                  <Skeleton className='h-4 w-28' />
+                </div>
+                <div className='flex items-center gap-2'>
+                  <Skeleton className='h-9 w-9 rounded-full' />
+                  <Skeleton className='h-4 w-36' />
+                </div>
+              </div>
+            ) : featuredGroups.length > 0 ? (
+              <div className='bg-accent/30 rounded-md'>
+                {featuredGroups.map((group) => (
+                  <GroupItem
+                    key={group._id}
+                    group_id={group._id}
+                    name={group.name}
+                    image={group.cover_photo || 'https://github.com/shadcn.png'}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className='text-sm text-muted-foreground text-center py-4 bg-accent/30 rounded-md'>
+                No featured groups available
+              </div>
+            )}
           </div>
         </div>
 

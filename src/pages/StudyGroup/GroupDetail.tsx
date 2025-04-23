@@ -370,7 +370,7 @@ const GroupDetail = () => {
               </div>
             </div>
             <>
-              {studyGroup.role !== StudyGroupRole.Guest || studyGroup.info?.privacy === StudyGroupPrivacy.Public ? (
+              {studyGroup.role !== StudyGroupRole.Guest ? (
                 <Outlet />
               ) : (
                 <div className='py-10'>

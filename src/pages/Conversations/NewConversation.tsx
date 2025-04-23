@@ -18,7 +18,7 @@ function NewConversation() {
   const { userId } = useParams();
   console.log(userId);
 
-  const [conversation, setConversation] = useState<any>(null);
+  const [conversation] = useState<any>(null);
   const [user, setUser] = useState<IUser | null>(null);
 
   const [text, setText] = useState<string>('');
@@ -84,7 +84,7 @@ function NewConversation() {
       _id: profile?.user?._id
     };
     //socket.connect();
-    socket.on('get_new_message', async (id) => {
+    socket.on('get_new_message', async () => {
       await fetchConversations();
     });
 

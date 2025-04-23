@@ -106,16 +106,14 @@ const PostDialog: React.FC<PostDialogProps> = ({ post: initialPost, initialImage
       setContent('');
 
       const commentBody: CreateCommentRequestBody = {
-        post_id: post._id,
         content: sanitizedContent,
         parent_id: null
       };
 
       try {
-        await dispatch(createComment(commentBody));
+        await dispatch(createComment({ postId: post._id, body: commentBody }));
       } catch (err) {
         console.error('Failed to create comment:', err);
-        //dispatch(removePendingComment({ postId: post._id, commentId: tempId }));
       }
     }
   };

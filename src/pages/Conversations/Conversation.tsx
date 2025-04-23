@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import ConversationsList from './components/ConversationsList';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Message from './components/Message';
 import { VariableSizeList as List } from 'react-window';
@@ -16,9 +16,8 @@ function Conversation() {
   const [conversation, setConversation] = useState<any>(null);
   const [text, setText] = useState<string>('');
   const [conversations, setConversations] = useState<any[]>([]);
-  const [isLoadingConversation, setIsLoadingConversation] = useState<boolean>(false);
+  const [isLoadingConversation] = useState<boolean>(false);
 
-  const navigate = useNavigate();
   const { socket } = useSocket();
   const listRef = useRef<any>(null);
 
@@ -152,7 +151,7 @@ function Conversation() {
     <div className='flex'>
       <ConversationsList conversationId={conversationId} conversations={conversations} />
       {conversationId ? (
-        <div className='flex-1'>
+        <div className='flex-1 bg-white'>
           <div className='px-4 flex items-center justify-between border-b'>
             <div className='flex items-center gap-4'>
               <Avatar>

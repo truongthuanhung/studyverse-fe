@@ -55,29 +55,6 @@ function RightSidebar() {
   return (
     <ScrollArea className='h-[calc(100vh-60px)] border-l bg-white w-full'>
       <div className='p-4 space-y-4'>
-        {/* Related People Section */}
-        <div className='space-y-3'>
-          <div className='flex items-center gap-2'>
-            <UserPlus size={18} className='text-primary' />
-            <h3 className='font-medium'>Related people</h3>
-          </div>
-
-          <div className='space-y-1'>
-            <RelatedItem
-              name='John Smith'
-              image='https://media.istockphoto.com/id/1336063208/photo/single-portrait-of-smiling-confident-male-student-teenager-looking-at-camera-in-library.jpg?s=612x612&w=0&k=20&c=w9SCRRCFa-Li82fmZotJzHdGGWXBVN7FgfBCD5NK7ic='
-            />
-            <RelatedItem name='James Green' image='https://cdn-icons-png.flaticon.com/512/5556/5556499.png' />
-          </div>
-
-          <Button variant='ghost' className='w-full justify-start gap-2 p-2 h-auto'>
-            <ChevronRight size={16} />
-            <span className='text-sm'>View more people</span>
-          </Button>
-        </div>
-
-        <Separator />
-
         {/* Contacts Section */}
         <div className='space-y-3'>
           <div className='flex items-center'>
@@ -116,7 +93,7 @@ function RightSidebar() {
                 to={user.conversation_id ? `conversations/${user.conversation_id}` : `conversations/t/${user._id}`}
                 className='block'
               >
-                <ContactItem name={user?.name || ''} image={user?.avatar || 'https://github.com/shadcn.png'} isOnline />
+                <ContactItem name={user?.name || ''} image={user?.avatar} isOnline />
               </Link>
             ))}
 

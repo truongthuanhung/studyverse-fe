@@ -362,7 +362,7 @@ const groupSlice = createSlice({
         state.isInvitingFriends = true;
         state.error = null;
       })
-      .addCase(inviteFriendsToJoinGroup.fulfilled, (state, action) => {
+      .addCase(inviteFriendsToJoinGroup.fulfilled, (state) => {
         state.isInvitingFriends = false;
       })
       .addCase(inviteFriendsToJoinGroup.rejected, (state, action) => {
