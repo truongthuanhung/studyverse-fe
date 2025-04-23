@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { useEffect, useRef } from 'react';
-import { useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { fetchPendingQuestions, fetchRejectedQuestions } from '@/store/slices/studyGroupSlice';
 import { memo } from 'react';
 import PostSkeleton from '@/components/common/PostSkeleton';
@@ -48,9 +48,6 @@ const GroupManageQuestions = memo(() => {
   const { groupId } = useParams();
   const pendingContainerRef = useRef<HTMLDivElement>(null);
   const rejectedContainerRef = useRef<HTMLDivElement>(null);
-  const [searchParams] = useSearchParams();
-  const location = useLocation();
-  const questionId = searchParams.get('questionId');
 
   const {
     pendingQuestions,

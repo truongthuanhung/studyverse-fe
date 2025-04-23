@@ -66,10 +66,12 @@ interface PaginationParams {
   limit: number;
 }
 
+const { VITE_API_URL } = import.meta.env;
+
 export const studyGroupApi = createApi({
   reducerPath: 'studyGroupApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:3003',
+    baseUrl: VITE_API_URL,
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('access_token');
       if (token) {

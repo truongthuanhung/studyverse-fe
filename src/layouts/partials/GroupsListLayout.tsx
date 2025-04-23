@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store/store';
 import { useToast } from '@/hooks/use-toast';
-import { getJoinedGroups, getRecommededGroups } from '@/store/slices/studyGroupsListSlice';
+import { getJoinedGroups } from '@/store/slices/studyGroupsListSlice';
 import GroupsListSidebar from '../components/GroupsListSidebar';
 
 const GroupsListLayout = () => {

@@ -19,7 +19,7 @@ type EditorProps = {
 };
 
 const Editor = forwardRef<any, EditorProps>(
-  ({ value, placeholder, mention_users, mentions = [], setMentions = () => {}, className, onChange }, ref) => {
+  ({ value, placeholder, mention_users, setMentions = () => {}, className, onChange }) => {
     // Convert mention_users to the format expected by quill-mention
     const profile = useSelector((state: RootState) => state.profile.user);
 
@@ -37,7 +37,7 @@ const Editor = forwardRef<any, EditorProps>(
       mention: {
         allowedChars: /^[A-Za-z\sÅÄÖåäö]*$/,
         mentionDenotationChars: ['@'],
-        source: function (searchTerm: string, renderList: any, mentionChar: string) {
+        source: function (searchTerm: string, renderList: any) {
           let values = mentionUsers;
 
           if (searchTerm.length === 0) {

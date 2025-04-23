@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, MessageCircle, Plus, Shield, UserMinus, Users } from 'lucide-react';
+import { MessageCircle, Plus, Shield, UserMinus, Users } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +39,7 @@ const GroupUserHoverCard: React.FC<GroupUserHoverCardProps> = ({ children, user,
   const { toast } = useToast();
 
   // Use refetch capability from the RTK Query hook
-  const { data: userStats, isLoading, refetch } = useGetGroupUserStatsQuery({ groupId, userId: user._id });
+  const { data: userStats, refetch } = useGetGroupUserStatsQuery({ groupId, userId: user._id });
 
   useEffect(() => {
     if (userStats) {

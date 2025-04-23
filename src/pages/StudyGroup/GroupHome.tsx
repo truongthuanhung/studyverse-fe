@@ -41,7 +41,6 @@ const GroupHome = memo(() => {
   const [searchParams] = useSearchParams();
   const tagId = searchParams.get('tagId');
   const [tagInfo, setTagInfo] = useState<TagInfo | null>(null);
-  const [isLoadingTag, setIsLoadingTag] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -65,7 +64,6 @@ const GroupHome = memo(() => {
         return;
       }
 
-      setIsLoadingTag(true);
       try {
         if (tagId && groupId) {
           const response = await getTagInGroup(tagId, groupId);
@@ -76,8 +74,6 @@ const GroupHome = memo(() => {
       } catch (err) {
         console.error(err);
         navigate('/404');
-      } finally {
-        setIsLoadingTag(false);
       }
     };
     fetchTag();

@@ -2,12 +2,14 @@ import { HomeIcon, PeopleIcon } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react';
+import CreateDialog from '@/components/common/CreateDialog';
 
 const GroupDetailMemberSidebar = () => {
   const [activeTab, setActiveTab] = useState<'general' | 'chats'>('general');
   const { groupId } = useParams();
   const location = useLocation();
   const slug = location.pathname.split('/').pop();
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
@@ -59,12 +61,9 @@ const GroupDetailMemberSidebar = () => {
           <p className='font-semibold'>Membership</p>
         </div>
       </div>
-      <Button
-        onClick={() => handleNavigation(`/groups/${groupId}/create-question`)}
-        className='mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'
-      >
-        Create a question
-      </Button>
+      <CreateDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} isLoading={false} isGroup={true}>
+        <Button className='mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'>Create a question</Button>
+      </CreateDialog>
     </div>
   );
 };

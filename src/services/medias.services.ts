@@ -2,10 +2,6 @@ import http from './http';
 
 const mediasUrl = '/medias';
 
-interface UploadFilesPayload {
-  files: File | File[];
-}
-
 export const uploadFiles = (formData: FormData) => {
   return http.post(`${mediasUrl}/upload`, formData, {
     headers: {

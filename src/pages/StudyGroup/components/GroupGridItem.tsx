@@ -25,8 +25,7 @@ interface GroupGridItemProps {
 
 const GroupGridItem: React.FC<GroupGridItemProps> = ({
   group,
-  isJoined = true, // Default to true for backward compatibility
-  onJoinGroup
+  isJoined = true // Default to true for backward compatibility
 }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();

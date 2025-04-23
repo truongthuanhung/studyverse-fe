@@ -152,7 +152,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
     setIsDeleteDialogOpen(true);
   };
 
-  const { mediaFiles, rawFiles } = React.useMemo(() => {
+  const { mediaFiles } = React.useMemo(() => {
     const getMediaType = (url: string) => {
       const extension = url.split('.').pop()?.toLowerCase() || '';
       const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];

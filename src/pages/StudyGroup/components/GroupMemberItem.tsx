@@ -141,7 +141,9 @@ const GroupMemberItem: React.FC<GroupMemberItemProps> = ({
             <Button
               size='sm'
               variant={isAdmin ? 'outline' : 'default'}
-              className={isAdmin ? 'border-blue-200 text-blue-600' : ''}
+              className={`rounded-[20px] ${
+                isAdmin ? 'border-blue-200 text-blue-600' : 'text-white bg-sky-500 hover:bg-sky-600'
+              }`}
               onClick={isAdmin ? handleDemote : handlePromote}
             >
               {isAdmin ? 'Demote' : 'Promote'}
@@ -150,7 +152,7 @@ const GroupMemberItem: React.FC<GroupMemberItemProps> = ({
             <Button
               size='sm'
               variant='outline'
-              className='border-destructive/50 text-destructive hover:bg-destructive/10'
+              className='border-destructive/50 text-destructive hover:bg-destructive/10 rounded-[20px]'
               onClick={handleRemove}
             >
               Remove

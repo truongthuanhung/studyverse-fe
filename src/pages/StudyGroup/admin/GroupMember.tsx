@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import GroupMemberItem from '../components/GroupMemberItem';
 import { useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';

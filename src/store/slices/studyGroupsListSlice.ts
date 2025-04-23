@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { StudyGroup } from '@/types/group';
-import { getMyStudyGroups } from '@/services/study_groups.services';
+import { getFeaturedGroups, getMyStudyGroups } from '@/services/study_groups.services';
 import { getMyRecommendedGroups } from '@/services/recommendations.services';
 
 // Updated interface to include pagination state
@@ -8,8 +8,10 @@ interface StudyGroupsListState {
   joinedGroups: StudyGroup[];
   managedGroups: StudyGroup[];
   recommendedGroups: StudyGroup[];
+  featuredGroups: StudyGroup[];
   isLoadingJoinedGroups: boolean;
   isLoadingRecommendedGroups: boolean;
+  isLoadingFeaturedGroups: boolean;
   error: string | null;
   joinedGroupsCurrentPage: number;
   managedGroupsCurrentPage: number;
@@ -23,8 +25,10 @@ const initialState: StudyGroupsListState = {
   joinedGroups: [],
   managedGroups: [],
   recommendedGroups: [],
+  featuredGroups: [],
   isLoadingJoinedGroups: false,
   isLoadingRecommendedGroups: false,
+  isLoadingFeaturedGroups: false,
   error: null,
   joinedGroupsCurrentPage: 1,
   managedGroupsCurrentPage: 1,
@@ -63,12 +67,36 @@ export const getRecommededGroups = createAsyncThunk(
   }
 );
 
+export const getUserFeaturedGroups = createAsyncThunk(
+  'groupsList/getUserFeaturedGroups',
+  async ({ limit = 10 }: { limit?: number } = {}, { rejectWithValue }) => {
+    try {
+      const response = await getFeaturedGroups(limit);
+      return response.data.result;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to fetch featured groups');
+    }
+  }
+);
+
 const groupsListSlice = createSlice({
   name: 'groupsList',
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(getUserFeaturedGroups.pending, (state) => {
+        state.isLoadingFeaturedGroups = true;
+        state.error = null;
+      })
+      .addCase(getUserFeaturedGroups.fulfilled, (state, action) => {
+        state.isLoadingFeaturedGroups = false;
+        state.featuredGroups = action.payload;
+      })
+      .addCase(getUserFeaturedGroups.rejected, (state, action) => {
+        state.isLoadingFeaturedGroups = false;
+        state.error = action.payload as string;
+      })
       .addCase(getJoinedGroups.pending, (state) => {
         state.isLoadingJoinedGroups = true;
         state.error = null;
