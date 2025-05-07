@@ -26,22 +26,61 @@ import { createStudyGroup } from '@/services/study_groups.services';
 import { useNavigate } from 'react-router-dom';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { COMMON_MESSAGES, GROUP_MESSAGES } from '@/constants/messages';
+
+const schema = yup
+  .object({
+    groupName: yup.string().required('Group name is required'),
+    privacy: yup.string().required('Privacy setting is required'),
+    description: yup.string().required('Description is required')
+  })
+  .required();
+
+type FormData = {
+  groupName: string;
+  privacy: string;
+  description: string;
+};
 
 const CreateGroup = () => {
-  const profile = useSelector((state: RootState) => state.profile.user);
-  const [image, setImage] = useState<File | null>(null);
-  const [zoom, setZoom] = useState(1);
-  const [groupName, setGroupName] = useState('');
-  const [privacy, setPrivacy] = useState(StudyGroupPrivacy.Public.toString());
-  const [description, setDescription] = useState('');
+  // Refs
   const editorRef = useRef<AvatarEditor>(null);
+
+  // States
+  const [image, setImage] = useState<File | null>(null);
+  const [zoom, setZoom] = useState<number>(1);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>(undefined);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
 
+  // Hooks
   const navigate = useNavigate();
   const { toast } = useToast();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors }
+  } = useForm<FormData>({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      groupName: '',
+      privacy: StudyGroupPrivacy.Public.toString(),
+      description: ''
+    }
+  });
 
+  // Watch values for preview
+  const watchedGroupName = watch('groupName');
+  const watchedPrivacy = watch('privacy');
+
+  // Selectors
+  const profile = useSelector((state: RootState) => state.profile.user);
+
+  // Handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImage(e.target.files[0]);
@@ -71,24 +110,31 @@ const CreateGroup = () => {
     }
   };
 
-  const onSubmit = async () => {
-    console.log('Group Data Submitted:', { groupName, privacy, description, uploadedImageUrl });
+  const onSubmit = async (data: FormData) => {
     const payload: CreateStudyGroupRequestBody = {
-      name: groupName,
-      privacy: parseInt(privacy),
-      description,
+      name: data.groupName,
+      privacy: parseInt(data.privacy),
+      description: data.description,
       cover_photo: uploadedImageUrl
     };
+
     try {
       setIsCreating(true);
       const response = await createStudyGroup(payload);
       console.log(response);
       toast({
-        description: 'Create study group successfully'
+        title: COMMON_MESSAGES.SUCCESS_TITLE,
+        description: GROUP_MESSAGES.CREATE_SUCCESS
       });
       navigate('/groups/my-groups');
-    } catch (err) {
-      console.error('Failed to create study group:', err);
+    } catch (error) {
+      console.error(`${GROUP_MESSAGES.CREATE_FAILED}:`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast({
+        title: COMMON_MESSAGES.ERROR_TITLE,
+        description: errorMessage,
+        variant: 'destructive'
+      });
     } finally {
       setIsCreating(false);
     }
@@ -119,26 +165,33 @@ const CreateGroup = () => {
             <p className='text-xs'>Admin</p>
           </div>
         </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSubmit();
-          }}
-          className='mt-4'
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className='mt-4'>
           <div className='grid w-full max-w-sm items-center gap-1.5'>
-            <Label htmlFor='name'>Group name</Label>
+            <Label htmlFor='groupName'>Group name</Label>
             <Input
-              type='text'
-              id='name'
+              id='groupName'
               placeholder='Enter group name'
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
+              {...register('groupName')}
+              className={errors.groupName ? 'border-red-500' : ''}
             />
+            {errors.groupName && <p className='text-red-500 text-xs'>{errors.groupName.message}</p>}
           </div>
+
           <div className='grid w-full max-w-sm items-center gap-1.5 mt-4'>
             <Label htmlFor='privacy'>Group privacy</Label>
-            <Select value={privacy} onValueChange={(value: string) => setPrivacy(value)}>
+            <Select
+              defaultValue={StudyGroupPrivacy.Public.toString()}
+              onValueChange={(value) => {
+                // This is a workaround since shadcn Select doesn't work directly with register
+                const event = {
+                  target: {
+                    name: 'privacy',
+                    value: value
+                  }
+                };
+                register('privacy').onChange(event);
+              }}
+            >
               <SelectTrigger className='w-full' id='privacy'>
                 <SelectValue />
               </SelectTrigger>
@@ -149,21 +202,24 @@ const CreateGroup = () => {
                 </SelectGroup>
               </SelectContent>
             </Select>
+            {errors.privacy && <p className='text-red-500 text-xs'>{errors.privacy.message}</p>}
           </div>
+
           <div className='grid w-full gap-1.5 mt-4'>
             <Label htmlFor='description'>Group description</Label>
             <Textarea
-              className='h-[90px]'
-              placeholder='Type your group description here.'
               id='description'
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              placeholder='Type your group description here.'
+              className={`h-[90px] ${errors.description ? 'border-red-500' : ''}`}
+              {...register('description')}
             />
+            {errors.description && <p className='text-red-500 text-xs'>{errors.description.message}</p>}
           </div>
+
           <Button
             type='submit'
             className='w-full bg-sky-500 text-white hover:bg-sky-600 mt-4 rounded-[20px]'
-            disabled={isUploading || isCreating} // Disable khi đang xử lý
+            disabled={isUploading || isCreating}
           >
             {isCreating ? <Spinner size='small' /> : 'Create'}
           </Button>
@@ -217,12 +273,12 @@ const CreateGroup = () => {
             )}
           </div>
           <div className='p-4'>
-            <h1 className='font-bold text-xl'>{groupName || 'New Study Group'}</h1>
+            <h1 className='font-bold text-xl'>{watchedGroupName || 'New Study Group'}</h1>
             <div className='flex flex-col md:flex-row md:items-center md:justify-between mt-2 md:mt-0 gap-2'>
               <div className='flex gap-8'>
                 <div className='flex items-center gap-2 text-zinc-500 font-medium'>
-                  {privacy === '0' ? <GlobeIcon /> : <LockIcon />}
-                  <p className='text-sm'>{privacy === '0' ? 'Public group' : 'Private group'}</p>
+                  {watchedPrivacy === '0' ? <GlobeIcon /> : <LockIcon />}
+                  <p className='text-sm'>{watchedPrivacy === '0' ? 'Public group' : 'Private group'}</p>
                 </div>
                 <div className='flex items-center gap-2 text-zinc-500 font-medium'>
                   <PersonFilledIcon />

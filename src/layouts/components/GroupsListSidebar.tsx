@@ -50,14 +50,6 @@ const GroupsListSidebar = () => {
           <Button
             variant='ghost'
             className='w-full justify-start font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700'
-          >
-            <UserPlus className='mr-3 h-5 w-5 text-sky-500' />
-            Groups I Manage
-          </Button>
-
-          <Button
-            variant='ghost'
-            className='w-full justify-start font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700'
             onClick={() => navigate('/groups/discover')}
           >
             <Compass className='mr-3 h-5 w-5 text-sky-500' />

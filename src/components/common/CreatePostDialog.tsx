@@ -286,6 +286,7 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
                   onChange={(value) => {
                     dispatch(setContent(value));
                   }}
+                  className='w-[552px]'
                   mention_users={[]}
                 />
               </div>

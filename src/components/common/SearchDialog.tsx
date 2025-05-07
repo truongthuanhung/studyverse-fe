@@ -11,6 +11,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   clearSearchResults,
   fetchSearchResults,
+  fetchSearchPreview,
   fetchSearchHistory,
   clearAllSearchHistory,
   removeSearchHistoryItem
@@ -20,14 +21,14 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { getRelativeTime } from '@/utils/date';
 
-// Define types for search results
 interface UserResult {
   _id: string;
   name: string;
   username?: string;
-  bio?: string;
   avatar?: string;
+  bio?: string;
   role: string;
   location?: string;
   created_at: string;
@@ -51,7 +52,10 @@ interface PostResult {
 
 interface SearchHistory {
   _id: string;
+  user_id: string;
+  group_id: string | null;
   content: string;
+  created_at: string;
   updated_at: string;
 }
 
@@ -62,62 +66,149 @@ interface SearchDialogProps {
 const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
+  const searchState = useSelector((state: RootState) => state.search);
+
   const {
-    data: searchData,
+    data,
+    previewData,
     isLoading,
-    hasMore,
-    total,
-    currentPage,
+    hasMoreUser,
+    hasMorePost,
+    hasMoreGroup,
+    totalUsers,
+    totalPosts,
+    totalGroups,
+    currentUserPage,
+    currentPostPage,
+    currentGroupPage,
     searchHistory,
     isLoadingHistory
-  } = useSelector((state: RootState) => state.search);
+  } = searchState;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('results');
   const [resultTypeTab, setResultTypeTab] = useState('all');
-  const loaderRef = useRef<HTMLDivElement>(null);
+  const userLoaderRef = useRef<HTMLDivElement>(null);
+  const postLoaderRef = useRef<HTMLDivElement>(null);
+  const groupLoaderRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Load search history when dialog opens
+  // Calculate total results based on the active tab
+  const total = (() => {
+    switch (resultTypeTab) {
+      case 'users':
+        return totalUsers;
+      case 'posts':
+        return totalPosts;
+      case 'groups':
+        return totalGroups;
+      case 'all':
+        return totalUsers + totalPosts + totalGroups;
+      default:
+        return 0;
+    }
+  })();
+
+  // Get current page based on active tab
+  const currentPage = (() => {
+    switch (resultTypeTab) {
+      case 'users':
+        return currentUserPage;
+      case 'posts':
+        return currentPostPage;
+      case 'groups':
+        return currentGroupPage;
+      default:
+        return 1;
+    }
+  })();
+
   useEffect(() => {
     if (isSearchOpen) {
       dispatch(fetchSearchHistory());
     }
   }, [isSearchOpen, dispatch]);
 
-  // Infinite scrolling setup
+  // Setup intersection observers for each result type
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    // Observer for User results
+    const userObserver = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0];
-        if (firstEntry.isIntersecting && hasMore && !isLoading && submittedQuery) {
+        if (firstEntry.isIntersecting && hasMoreUser && !isLoading && submittedQuery && resultTypeTab === 'users') {
           dispatch(
             fetchSearchResults({
-              page: currentPage + 1,
-              limit: 10,
-              query: submittedQuery
+              query: submittedQuery,
+              type: 'user',
+              page: currentUserPage + 1,
+              limit: 10
             })
           );
         }
       },
-      {
-        threshold: 0.1
-      }
+      { threshold: 0.1 }
     );
 
-    const currentTarget = loaderRef.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
+    // Observer for Post results
+    const postObserver = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        if (firstEntry.isIntersecting && hasMorePost && !isLoading && submittedQuery && resultTypeTab === 'posts') {
+          dispatch(
+            fetchSearchResults({
+              query: submittedQuery,
+              type: 'post',
+              page: currentPostPage + 1,
+              limit: 10
+            })
+          );
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    // Observer for Group results
+    const groupObserver = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        if (firstEntry.isIntersecting && hasMoreGroup && !isLoading && submittedQuery && resultTypeTab === 'groups') {
+          dispatch(
+            fetchSearchResults({
+              query: submittedQuery,
+              type: 'group',
+              page: currentGroupPage + 1,
+              limit: 10
+            })
+          );
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    // Connect observers to their respective ref elements
+    if (userLoaderRef.current) userObserver.observe(userLoaderRef.current);
+    if (postLoaderRef.current) postObserver.observe(postLoaderRef.current);
+    if (groupLoaderRef.current) groupObserver.observe(groupLoaderRef.current);
 
     return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
+      if (userLoaderRef.current) userObserver.unobserve(userLoaderRef.current);
+      if (postLoaderRef.current) postObserver.unobserve(postLoaderRef.current);
+      if (groupLoaderRef.current) groupObserver.unobserve(groupLoaderRef.current);
     };
-  }, [hasMore, isLoading, currentPage, dispatch, submittedQuery]);
+  }, [
+    hasMoreUser,
+    hasMorePost,
+    hasMoreGroup,
+    isLoading,
+    submittedQuery,
+    resultTypeTab,
+    currentUserPage,
+    currentPostPage,
+    currentGroupPage,
+    dispatch
+  ]);
 
   // Clear search results when dialog closes
   useEffect(() => {
@@ -130,6 +221,26 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
     }
   }, [isSearchOpen, dispatch]);
 
+  // Handle change of result type tab
+  useEffect(() => {
+    if (submittedQuery && resultTypeTab && activeTab === 'results') {
+      dispatch(clearSearchResults());
+
+      if (resultTypeTab === 'all') {
+        dispatch(fetchSearchPreview({ query: submittedQuery }));
+      } else {
+        dispatch(
+          fetchSearchResults({
+            query: submittedQuery,
+            type: resultTypeTab.slice(0, -1) as 'user' | 'post' | 'group',
+            page: 1,
+            limit: 10
+          })
+        );
+      }
+    }
+  }, [resultTypeTab, dispatch, submittedQuery, activeTab]);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -137,18 +248,22 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
     // Update the submitted query when search is performed
     setSubmittedQuery(searchQuery);
     setActiveTab('results');
-    setResultTypeTab('all');
 
     dispatch(clearSearchResults());
 
-    // Execute search
-    await dispatch(
-      fetchSearchResults({
-        query: searchQuery,
-        page: 1,
-        limit: 10
-      })
-    );
+    // Execute appropriate search based on the selected tab
+    if (resultTypeTab === 'all') {
+      await dispatch(fetchSearchPreview({ query: searchQuery }));
+    } else {
+      await dispatch(
+        fetchSearchResults({
+          query: searchQuery,
+          type: resultTypeTab.slice(0, -1) as 'user' | 'post' | 'group', // Convert plural to singular
+          page: 1,
+          limit: 10
+        })
+      );
+    }
 
     // Refresh search history immediately after search
     dispatch(fetchSearchHistory());
@@ -158,18 +273,22 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
     setSearchQuery(content);
     setSubmittedQuery(content);
     setActiveTab('results');
-    setResultTypeTab('all');
 
     dispatch(clearSearchResults());
 
-    // Execute search
-    await dispatch(
-      fetchSearchResults({
-        query: content,
-        page: 1,
-        limit: 10
-      })
-    );
+    // Execute appropriate search based on the selected tab
+    if (resultTypeTab === 'all') {
+      await dispatch(fetchSearchPreview({ query: content }));
+    } else {
+      await dispatch(
+        fetchSearchResults({
+          query: content,
+          type: resultTypeTab.slice(0, -1) as 'user' | 'post' | 'group', // Convert plural to singular
+          page: 1,
+          limit: 10
+        })
+      );
+    }
 
     // Refresh search history
     dispatch(fetchSearchHistory());
@@ -218,27 +337,6 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
       month: '2-digit',
       year: 'numeric'
     });
-  };
-
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-
-    const diffSecs = Math.floor(diffMs / 1000);
-    const diffMins = Math.floor(diffSecs / 60);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffDays > 0) {
-      return diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
-    } else if (diffHours > 0) {
-      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    } else if (diffMins > 0) {
-      return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-    } else {
-      return 'Just now';
-    }
   };
 
   // Highlight keywords in text
@@ -368,7 +466,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
                 <Badge variant={post.privacy === 0 ? 'outline' : 'secondary'} className='text-xs mr-2'>
                   {post.privacy === 0 ? 'Public' : 'Private'}
                 </Badge>
-                <span>Posted {formatRelativeTime(post.created_at)}</span>
+                <span>Posted {getRelativeTime(post.created_at)}</span>
               </div>
               {post.medias.length > 0 && (
                 <Badge variant='outline' className='text-xs'>
@@ -392,7 +490,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
         <Clock size={16} className='text-gray-400 mr-3' />
         <div className='flex-1'>
           <p className='text-gray-800 font-medium'>{item.content}</p>
-          <p className='text-xs text-gray-500'>{formatRelativeTime(item.updated_at)}</p>
+          <p className='text-xs text-gray-500'>{getRelativeTime(item.updated_at)}</p>
         </div>
         <TooltipProvider>
           <Tooltip>
@@ -415,10 +513,34 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
     );
   };
 
+  // Helper function to get the relevant data based on the current result type tab
+  const getResultsData = () => {
+    if (resultTypeTab === 'all') {
+      return previewData;
+    } else {
+      return data;
+    }
+  };
+
+  // Get the appropriate data based on the selected tab
+  const currentData = getResultsData();
+
   // Calculate if we have results
-  const hasUsers = searchData?.users && searchData.users.length > 0;
-  const hasGroups = searchData?.groups && searchData.groups.length > 0;
-  const hasPosts = searchData?.posts && searchData.posts.length > 0;
+  const hasUsers =
+    resultTypeTab === 'all'
+      ? currentData?.users && currentData.users.length > 0
+      : resultTypeTab === 'users' && data?.users && data.users.length > 0;
+
+  const hasGroups =
+    resultTypeTab === 'all'
+      ? currentData?.groups && currentData.groups.length > 0
+      : resultTypeTab === 'groups' && data?.groups && data.groups.length > 0;
+
+  const hasPosts =
+    resultTypeTab === 'all'
+      ? currentData?.posts && currentData.posts.length > 0
+      : resultTypeTab === 'posts' && data?.posts && data.posts.length > 0;
+
   const hasAnyResults = hasUsers || hasGroups || hasPosts;
 
   // Handle tab change for main tabs (results/history)
@@ -495,24 +617,24 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
           </TabsList>
 
           <TabsContent value='results' className='mt-0'>
-            {hasAnyResults && submittedQuery && (
+            {submittedQuery && (
               <div className='mb-4'>
                 <Tabs value={resultTypeTab} onValueChange={setResultTypeTab}>
                   <TabsList className='w-full'>
                     <TabsTrigger value='all' className='flex-1'>
-                      All ({total || 0})
+                      All
                     </TabsTrigger>
                     <TabsTrigger value='users' className='flex-1'>
                       <User size={14} className='mr-1' />
-                      Users
+                      Users {totalUsers > 0 && `(${totalUsers})`}
                     </TabsTrigger>
                     <TabsTrigger value='groups' className='flex-1'>
                       <Users size={14} className='mr-1' />
-                      Groups
+                      Groups {totalGroups > 0 && `(${totalGroups})`}
                     </TabsTrigger>
                     <TabsTrigger value='posts' className='flex-1'>
                       <FileText size={14} className='mr-1' />
-                      Posts
+                      Posts {totalPosts > 0 && `(${totalPosts})`}
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -541,33 +663,53 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
                 </div>
               )}
 
-              {/* Display results based on selected tab */}
+              {/* Display users */}
               {hasAnyResults && (resultTypeTab === 'all' || resultTypeTab === 'users') && hasUsers && (
                 <div className='mb-4'>
                   {resultTypeTab === 'all' && <h3 className='text-sm font-medium mb-2'>Users</h3>}
-                  {searchData.users.map((user: UserResult) => renderUserItem(user))}
+                  {resultTypeTab === 'all'
+                    ? previewData.users.map((user: UserResult) => renderUserItem(user))
+                    : data.users.map((user: UserResult) => renderUserItem(user))}
+                  {resultTypeTab === 'users' && hasMoreUser && (
+                    <div ref={userLoaderRef} className='h-10 w-full flex justify-center items-center'>
+                      {isLoading && (
+                        <div className='animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-sky-500'></div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
+              {/* Display groups */}
               {hasAnyResults && (resultTypeTab === 'all' || resultTypeTab === 'groups') && hasGroups && (
                 <div className='mb-4'>
                   {resultTypeTab === 'all' && <h3 className='text-sm font-medium mb-2'>Groups</h3>}
-                  {searchData.groups.map((group: GroupResult) => renderGroupItem(group))}
+                  {resultTypeTab === 'all'
+                    ? previewData.groups.map((group: GroupResult) => renderGroupItem(group))
+                    : data.groups.map((group: GroupResult) => renderGroupItem(group))}
+                  {resultTypeTab === 'groups' && hasMoreGroup && (
+                    <div ref={groupLoaderRef} className='h-10 w-full flex justify-center items-center'>
+                      {isLoading && (
+                        <div className='animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-sky-500'></div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
+              {/* Display posts */}
               {hasAnyResults && (resultTypeTab === 'all' || resultTypeTab === 'posts') && hasPosts && (
                 <div className='mb-4'>
                   {resultTypeTab === 'all' && <h3 className='text-sm font-medium mb-2'>Posts</h3>}
-                  {searchData.posts.map((post: PostResult) => renderPostItem(post))}
-                </div>
-              )}
-
-              {/* Intersection observer target for infinite scrolling */}
-              {hasMore && (
-                <div ref={loaderRef} className='h-10 w-full flex justify-center items-center'>
-                  {isLoading && currentPage > 1 && (
-                    <div className='animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-sky-500'></div>
+                  {resultTypeTab === 'all'
+                    ? previewData.posts.map((post: PostResult) => renderPostItem(post))
+                    : data.posts.map((post: PostResult) => renderPostItem(post))}
+                  {resultTypeTab === 'posts' && hasMorePost && (
+                    <div ref={postLoaderRef} className='h-10 w-full flex justify-center items-center'>
+                      {isLoading && (
+                        <div className='animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-sky-500'></div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

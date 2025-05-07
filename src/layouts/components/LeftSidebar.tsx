@@ -18,12 +18,12 @@ const LeftSidebar = () => {
   const { featuredGroups, isLoadingFeaturedGroups } = useSelector((state: RootState) => state.studyGroupsList);
 
   useEffect(() => {
-    dispatch(getUserFeaturedGroups({ limit: 3 }));
+    dispatch(getUserFeaturedGroups({ limit: 5 }));
   }, [dispatch]);
 
   return (
-    <ScrollArea className='h-[calc(100vh-60px)] border-r hidden lg:block w-full bg-white p-4'>
-      <div>
+    <ScrollArea className='h-[calc(100vh-60px)] border-r w-full bg-white'>
+      <div className='p-4 space-y-4'>
         {/* Profile Section */}
         <div className='flex items-center gap-3'>
           <Avatar className='h-12 w-12 border-2 border-primary/10'>
@@ -92,7 +92,7 @@ const LeftSidebar = () => {
             </Link>
           </div>
 
-          <div className='mt-1 space-y-1 rounded-md overflow-hidden'>
+          <div className='mt-1 space-y-1'>
             {isLoadingFeaturedGroups ? (
               <div className='space-y-2 p-2'>
                 <div className='flex items-center gap-2'>
@@ -109,16 +109,11 @@ const LeftSidebar = () => {
                 </div>
               </div>
             ) : featuredGroups.length > 0 ? (
-              <div className='bg-accent/30 rounded-md'>
+              <>
                 {featuredGroups.map((group) => (
-                  <GroupItem
-                    key={group._id}
-                    group_id={group._id}
-                    name={group.name}
-                    image={group.cover_photo || 'https://github.com/shadcn.png'}
-                  />
+                  <GroupItem key={group._id} group_id={group._id} name={group.name} image={group.cover_photo} />
                 ))}
-              </div>
+              </>
             ) : (
               <div className='text-sm text-muted-foreground text-center py-4 bg-accent/30 rounded-md'>
                 No featured groups available

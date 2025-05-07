@@ -20,9 +20,20 @@ export const deleteGroupSearchHistory = (groupId: string, searchHistoryId: strin
   return http.delete(`${baseUrl}/study-groups/${groupId}/history/${searchHistoryId}`);
 };
 
-export const generalSearch = (query: string, params: PagingParams) => {
+export const generalSearch = ({
+  query,
+  type,
+  params
+}: {
+  query: string;
+  type?: 'user' | 'post' | 'group';
+  params: PagingParams;
+}) => {
   return http.get(`${baseUrl}/?q=${query}`, {
-    params
+    params: {
+      ...params,
+      type
+    }
   });
 };
 

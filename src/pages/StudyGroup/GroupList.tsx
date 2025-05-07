@@ -8,15 +8,19 @@ import { useEffect, useRef } from 'react';
 import { getJoinedGroups } from '@/store/slices/studyGroupsListSlice';
 
 const GroupList = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
+  // Refs
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Hooks
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+
+  // Selectors
   const { joinedGroups, isLoadingJoinedGroups, hasMoreJoinedGroups, joinedGroupsCurrentPage } = useSelector(
     (state: RootState) => state.studyGroupsList
   );
 
-  // Infinite scroll logic
+  // Effects
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {

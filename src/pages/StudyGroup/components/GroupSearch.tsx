@@ -18,6 +18,7 @@ import {
 import { AppDispatch, RootState } from '@/store/store';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { getRelativeTime } from '@/utils/date';
 
 interface GroupSearchProps {
   groupId: string;
@@ -42,9 +43,8 @@ interface SearchHistory {
 const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
-  const { data, isLoading, total, currentPage, hasMore, searchHistory, isLoadingHistory } = useSelector(
-    (state: RootState) => state.search
-  );
+  const { data, isLoading, totalQuestions, currentQuestionPage, hasMoreQuestion, searchHistory, isLoadingHistory } =
+    useSelector((state: RootState) => state.search);
 
   const searchResults = data.questions;
 
@@ -55,21 +55,16 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
   const loaderRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Load search history when dialog opens
   useEffect(() => {
-    if (isSearchOpen) {
-      dispatch(fetchGroupSearchHistory(groupId));
-    }
-  }, [isSearchOpen, groupId, dispatch]);
+    if (isLoading || !hasMoreQuestion) return;
 
-  useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0];
-        if (firstEntry.isIntersecting && hasMore && !isLoading) {
+        if (firstEntry.isIntersecting && hasMoreQuestion && !isLoading) {
           dispatch(
             fetchGroupSearchResults({
-              page: currentPage + 1,
+              page: currentQuestionPage + 1,
               limit: 10,
               groupId,
               query: submittedQuery
@@ -92,7 +87,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, isLoading, currentPage, dispatch, submittedQuery, groupId]);
+  }, [hasMoreQuestion, isLoading, currentQuestionPage, dispatch, submittedQuery, groupId]);
 
   // Clear search results when dialog closes
   useEffect(() => {
@@ -185,36 +180,6 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
     dispatch(clearSearchResults());
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-
-    const diffSecs = Math.floor(diffMs / 1000);
-    const diffMins = Math.floor(diffSecs / 60);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffDays > 0) {
-      return diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
-    } else if (diffHours > 0) {
-      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    } else if (diffMins > 0) {
-      return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-    } else {
-      return 'Just now';
-    }
-  };
-
   // Highlight keywords in text
   const highlightKeywords = (text: string, keywords: string) => {
     if (!keywords.trim()) return text;
@@ -246,7 +211,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
             dangerouslySetInnerHTML={{ __html: highlightedContent }}
           />
           <div className='text-sm text-gray-500 mt-2 flex justify-between'>
-            <span>Posted on {formatDate(item.created_at)}</span>
+            <span>{getRelativeTime(item.created_at)}</span>
             <span>{item.reply_count} Replies</span>
           </div>
         </CardContent>
@@ -264,7 +229,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
         <Clock size={16} className='text-gray-400 mr-3' />
         <div className='flex-1'>
           <p className='text-gray-800 font-medium'>{item.content}</p>
-          <p className='text-xs text-gray-500'>{formatRelativeTime(item.updated_at)}</p>
+          <p className='text-xs text-gray-500'>{getRelativeTime(item.updated_at)}</p>
         </div>
         <TooltipProvider>
           <Tooltip>
@@ -334,9 +299,9 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
           <Button
             className='rounded-[20px] bg-sky-500 hover:bg-sky-600'
             type='submit'
-            disabled={isLoading && currentPage === 1}
+            disabled={isLoading && currentQuestionPage === 1}
           >
-            {isLoading && currentPage === 1 ? 'Searching...' : 'Search'}
+            {isLoading && currentQuestionPage === 1 ? 'Searching...' : 'Search'}
           </Button>
         </form>
 
@@ -345,8 +310,8 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
             <TabsTrigger value='results' className='flex items-center'>
               <Search size={16} className='mr-2' />
               Results
-              {total > 0 && (
-                <span className='ml-2 bg-sky-100 text-sky-700 text-xs px-2 py-0.5 rounded-full'>{total}</span>
+              {totalQuestions > 0 && (
+                <span className='ml-2 bg-sky-100 text-sky-700 text-xs px-2 py-0.5 rounded-full'>{totalQuestions}</span>
               )}
             </TabsTrigger>
             <TabsTrigger value='history' className='flex items-center'>
@@ -363,7 +328,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
           <TabsContent value='results' className='mt-0'>
             {searchResults.length > 0 && (
               <div className='flex justify-between items-center mb-4'>
-                <p className='text-sm text-gray-500'>{total} results</p>
+                <p className='text-sm text-gray-500'>{totalQuestions} results</p>
                 {submittedQuery && searchQuery !== submittedQuery && (
                   <p className='text-xs text-blue-500'>
                     Showing results for: <strong>{submittedQuery}</strong>
@@ -377,16 +342,14 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
                 <>
                   <div className='space-y-3'>{searchResults.map((item) => renderQuestionItem(item))}</div>
 
-                  {/* Intersection observer target */}
-                  {hasMore && (
-                    <div ref={loaderRef} className='h-10 w-full flex justify-center items-center'>
-                      {isLoading && (
-                        <div className='animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-sky-500'></div>
-                      )}
-                    </div>
-                  )}
+                  {/* Loading indicator and intersection observer target */}
+                  <div ref={loaderRef} className={`${isLoading && hasMoreQuestion && 'py-4'} flex justify-center`}>
+                    {isLoading && hasMoreQuestion && (
+                      <div className='animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-sky-500'></div>
+                    )}
+                  </div>
                 </>
-              ) : submittedQuery && !isLoading && currentPage === 1 ? (
+              ) : submittedQuery && !isLoading && currentQuestionPage === 1 ? (
                 <div className='text-center py-10'>
                   <p className='text-gray-500'>No matching results found</p>
                   <p className='text-sm text-gray-400 mt-1'>Try with different keywords</p>
@@ -400,7 +363,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
                 </div>
               )}
 
-              {isLoading && submittedQuery && currentPage === 1 && (
+              {isLoading && submittedQuery && currentQuestionPage === 0 && (
                 <div className='text-center py-10'>
                   <div className='w-8 h-8 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto'></div>
                   <p className='text-gray-500 mt-3'>Searching...</p>
