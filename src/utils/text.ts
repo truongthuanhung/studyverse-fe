@@ -12,3 +12,13 @@ export const getInitialsAvatarFallback = (name: string): string => {
 
   return (firstInitial + lastInitial).toUpperCase();
 };
+
+export const isRichTextEmpty = (content: string): boolean => {
+  // Remove all HTML tags and whitespace
+  const strippedContent = content.replace(/<[^>]*>/g, '').trim();
+
+  // Check if the content is empty or only contains empty paragraphs
+  const onlyEmptyParagraphs = content.replace(/(<p>(<br>)*<\/p>)|(<p><\/p>)/g, '').trim();
+
+  return strippedContent === '' || onlyEmptyParagraphs === '';
+};

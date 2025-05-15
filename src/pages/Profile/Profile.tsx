@@ -230,7 +230,7 @@ const Profile = () => {
   }
 
   return (
-    <div className='flex flex-col md:flex-row gap-6 p-4 max-w-7xl mx-auto'>
+    <div className='flex flex-col md:flex-row gap-8 p-4 max-w-7xl mx-auto'>
       {/* Profile Card */}
       <Card className='md:w-1/3 lg:w-1/4 h-fit'>
         <CardHeader className='relative pb-0'>
@@ -311,7 +311,7 @@ const Profile = () => {
 
           <Dialog open={open} onOpenChange={handleDialogOpen}>
             <DialogTrigger asChild>
-              <Button className='w-full rounded-full' variant='default'>
+              <Button className='w-full rounded-full bg-sky-500 hover:bg-sky-600' variant='default'>
                 <Edit className='mr-2 h-4 w-4' />
                 Edit profile
               </Button>

@@ -3,44 +3,27 @@ import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react';
 import CreateDialog from '@/components/common/CreateDialog';
+import { useTranslation } from 'react-i18next';
+import { Plus } from 'lucide-react';
 
 const GroupDetailMemberSidebar = () => {
-  const [activeTab, setActiveTab] = useState<'general' | 'chats'>('general');
+  // Hooks
   const { groupId } = useParams();
   const location = useLocation();
   const slug = location.pathname.split('/').pop();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  // States
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
-  const navigate = useNavigate();
-
+  // Handlers
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
   return (
     <div className='w-full h-[calc(100vh-60px)] p-4 border-r hidden lg:block bg-white shadow-lg'>
-      <div className='flex items-center gap-2'>
-        <Button
-          className={`${
-            activeTab === 'general'
-              ? 'bg-sky-500 hover:bg-sky-600 text-white'
-              : 'bg-gray-200 hover:bg-gray-300 text-primary'
-          } flex-1 rounded-[20px]`}
-          onClick={() => setActiveTab('general')}
-        >
-          General
-        </Button>
-        <Button
-          className={`${
-            activeTab === 'chats'
-              ? 'bg-sky-500 hover:bg-sky-600 text-white'
-              : 'bg-gray-200 hover:bg-gray-300 text-primary'
-          } flex-1 rounded-[20px]`}
-          onClick={() => setActiveTab('chats')}
-        >
-          Chats
-        </Button>
-      </div>
       <div className='flex flex-col mt-4 -mx-4'>
         <div
           onClick={() => handleNavigation(`/groups/${groupId}/home`)}
@@ -49,7 +32,7 @@ const GroupDetailMemberSidebar = () => {
           } flex gap-4 items-center cursor-pointer px-4 py-3`}
         >
           <HomeIcon />
-          <p className='font-semibold'>Community home</p>
+          <p className='font-semibold'>{t('groupSidebar.communityHome')}</p>
         </div>
         <div
           onClick={() => handleNavigation(`/groups/${groupId}/members`)}
@@ -58,11 +41,14 @@ const GroupDetailMemberSidebar = () => {
           } flex gap-4 items-center cursor-pointer px-4 py-3`}
         >
           <PeopleIcon />
-          <p className='font-semibold'>Membership</p>
+          <p className='font-semibold'>{t('groupSidebar.membership')}</p>
         </div>
       </div>
-      <CreateDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} isLoading={false} isGroup={true}>
-        <Button className='mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'>Create a question</Button>
+      <CreateDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} isGroup={true}>
+        <Button className='mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'>
+          <Plus className='mr-2 h-4 w-4' />
+          {t('groupSidebar.createQuestion')}
+        </Button>
       </CreateDialog>
     </div>
   );

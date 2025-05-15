@@ -44,4 +44,5 @@ interface IReply {
   user_vote: VoteType | null;
   approved_by_user: boolean;
   approved_by_teacher: boolean;
+  parent_id: string | null;
 }

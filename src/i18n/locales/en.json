@@ -1,0 +1,267 @@
+{
+  "common": {
+    "language": "Language",
+    "loadMore": "Load More",
+    "post": "Post",
+    "loading": "Loading",
+    "saveChanges": "Save changes",
+    "cancel": "Cancel",
+    "search": "Search",
+    "approve": "Approve",
+    "decline": "Decline"
+  },
+  "user": {
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "followSuccess": "Follow successfully",
+    "unfollowSuccess": "Unfollow successfully"
+  },
+  "menu": {
+    "myProfile": "My profile",
+    "myInvitations": "My invitations",
+    "myAppointments": "My appointments",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "navigation": {
+    "home": "Home",
+    "community": "Community",
+    "studyGroups": "Study groups",
+    "messages": "Messages",
+    "invitations": "Invitations",
+    "notifications": "Notifications"
+  },
+  "sidebar": {
+    "connections": "Connections",
+    "friends": "Friends",
+    "followers": "Followers",
+    "following": "Following",
+    "featuredGroups": "Featured groups",
+    "viewAll": "View all",
+    "noFeaturedGroups": "No featured groups available",
+    "contacts": "Contacts",
+    "noContactsFound": "No contacts found",
+    "noContactsAvailable": "No contacts available",
+    "footer": {
+      "copyright": "© 2024 StudyVerse Corp.",
+      "terms": {
+        "termsOfService": "Terms of Service",
+        "privacyPolicy": "Privacy Policy",
+        "warranty": "Warranty",
+        "termsOfSale": "Terms of Sale",
+        "cookiePolicy": "Cookie Policy",
+        "helpCenter": "Help Center"
+      }
+    }
+  },
+
+  "post": {
+    "sharePost": "Share post",
+    "deleteQuestion": "Delete question",
+    "reportQuestion": "Report question",
+    "turnOnNotifications": "Turn on notifications",
+    "seeMore": "See more",
+    "seeLess": "See less",
+    "likes": "{{count}} likes",
+    "comments": "{{count}} comments",
+    "noLikesYet": "No likes yet",
+    "like": "Like",
+    "comment": "Comment",
+    "reply": "Reply",
+    "share": "Share",
+    "showMoreTags": "+{{count}} more",
+    "showLessTags": "Show less",
+    "loadMoreComment": "Load more comments",
+    "privacy": {
+      "public": "Public",
+      "friends": "Friends",
+      "followers": "Followers",
+      "onlyMe": "Only me"
+    },
+    "title": "Share a post",
+    "description": "Share this post with your thoughts",
+    "addThoughts": "Add your thoughts",
+    "sharedSuccess": "Shared post successfully",
+    "sharedError": "Failed to share post"
+  },
+
+  "groups": {
+    "noGroupsTitle": "No study groups found",
+    "createGroup": "Create New Group",
+    "title": "Study Groups",
+    "searchPlaceholder": "Search groups",
+    "myGroups": "My Study Groups",
+    "discoverGroups": "Discover Groups",
+    "openGroup": "Open Group",
+    "viewMaterials": "View Materials",
+    "seeMembers": "See Members",
+    "joined": "Joined on",
+    "members": "members",
+    "viewGroup": "View Group",
+    "requestToJoin": "Request to join",
+    "cancelJoinRequest": "Cancel join request",
+    "requestSentSuccess": "Request sent successfully",
+    "cancelRequestSuccess": "Cancel request successfully",
+    "requestError": "Something went wrong. Please try again.",
+    "privateGroup": "Private group",
+    "publicGroup": "Public group",
+    "inviteFriends": "Invite friends",
+    "shareGroup": "Share this group",
+    "aboutGroup": "About this group",
+    "private": "Private",
+    "privateDescription": "Only members can see who's in the group and what they post.",
+    "public": "Public",
+    "publicDescription": "Everyone can see who's in the group and what they post.",
+    "history": "History",
+    "createdOn": "Study group created on {{date}}",
+    "coverPhoto": "Group cover photo",
+    "editGroupError": "Failed to edit study group",
+
+    "pendingTab": "Pending Questions",
+    "rejectedTab": "Rejected Questions",
+    "emptyPendingTitle": "No pending questions",
+    "emptyPendingDescription": "There are currently no questions waiting for approval. New questions will appear here once students submit them.",
+    "emptyRejectedTitle": "No rejected questions",
+    "emptyRejectedDescription": "There are currently no rejected questions. Questions that are rejected by moderators will appear here.",
+
+    "noRequestsTitle": "No requests yet",
+    "noRequestsDescription": "When students request to join this group, they will appear here.",
+
+    "settingsTitle": "Group Settings",
+    "loading": "Loading group data...",
+    "nameLabel": "Name",
+    "privacyLabel": "Group Privacy",
+    "privacyPublic": "Public",
+    "privacyPrivate": "Private",
+    "privacyPlaceholder": "Select privacy level",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Enter group description...",
+    "updateSuccess": "Group settings updated successfully",
+    "updateError": "Failed to update group settings",
+
+    "noQuestionTitle": "No questions yet",
+    "noQuestionDescription": "Be the first to start a discussion in this group!",
+    "askQuestion": "Ask a Question"
+  },
+  "search": {
+    "title": "Search",
+    "groupSearch": "Search in group",
+    "placeholder": "Enter search keywords...",
+    "buttonText": "Search",
+    "searching": "Searching...",
+    "tabs": {
+      "results": "Results",
+      "history": "History"
+    },
+    "resultTypes": {
+      "all": "All",
+      "users": "Users",
+      "groups": "Groups",
+      "posts": "Posts"
+    },
+    "emptyStates": {
+      "initial": "Enter keywords to search",
+      "noResults": "No matching results found",
+      "tryAgain": "Try with different keywords",
+      "noHistory": "No search history",
+      "historyWillAppear": "Your recent searches will appear here"
+    },
+    "history": {
+      "recentSearches": "Recent searches",
+      "clearAll": "Clear all",
+      "loadingHistory": "Loading search history..."
+    },
+    "badges": {
+      "public": "Public",
+      "private": "Private",
+      "teacher": "Teacher",
+      "student": "Student",
+      "media": "media"
+    },
+    "timeIndicators": {
+      "joined": "Joined",
+      "created": "Created",
+      "posted": "Posted"
+    },
+    "tooltips": {
+      "deleteSearch": "Delete this search"
+    }
+  },
+  "community": {
+    "peopleFromStudyGroups": "People you may know from the study groups",
+    "peopleWithMutualConnections": "People who have mutual connections with you"
+  },
+  "groupSidebar": {
+    "communityHome": "Community home",
+    "manageQuestions": "Manage questions",
+    "joinRequests": "Join requests",
+    "membership": "Membership",
+    "groupAnalysis": "Group analysis",
+    "groupSettings": "Group settings",
+    "createQuestion": "Create a question"
+  },
+  "createDialog": {
+    "createQuestion": "Create a question",
+    "createPost": "Create a post",
+    "whatsOnYourMind": "What's on your mind, {{userName}}?",
+    "title": "Title",
+    "enterTitle": "Enter your question title",
+    "problemDetails": "What are the details of your problem?",
+    "problemDescription": "Introduce the problem and expand on what you put in the title. Minimum 20 characters.",
+    "tags": "Tags",
+    "tagsDescription": "Add tags to help others find your question more easily",
+    "searchTags": "Search for tags...",
+    "typeToSearchTags": "Type to search for tags",
+    "noTagsFound": "No tags found",
+    "attachFiles": "Attach files",
+    "emptyFieldsError": "Title and content cannot be empty",
+    "maxFilesError": "Maximum {maxFiles} files allowed",
+    "createSuccess": "Create question successfully",
+    "failedToLoadTags": "Failed to load tags"
+  },
+  "question": {
+    "admin": "Admin",
+    "delete": "Delete question",
+    "report": "Report question",
+    "notifications": "Turn on notifications",
+    "deleteConfirmTitle": "Are you sure you want to delete this question?",
+    "deleteConfirmDescription": "This action cannot be undone. This will permanently delete your question and all its replies.",
+    "cancel": "Cancel",
+    "approveSuccess": "Approve question successfully",
+    "rejectSuccess": "Reject question successfully",
+    "approveError": "Failed to approve question",
+    "rejectError": "Failed to reject question",
+    "seeMore": "See more",
+    "seeLess": "See less",
+    "showMore": "+{count} more",
+    "showLess": "Show less",
+    "votes": "votes",
+    "positiveVotes": "+{count} votes",
+    "negativeVotes": "{count} votes",
+    "replies": "replies",
+    "upvote": "Upvote",
+    "downvote": "Downvote",
+    "reply": "Reply",
+    "publish": "Publish",
+    "approve": "Approve",
+    "decline": "Decline",
+    "writeReply": "Write your reply",
+    "hideReply": "Hide replies",
+    "loadMoreReply": "Load more replies",
+    "noReply": "No replies yet"
+  },
+  "invitations": {
+    "title": "Group Invitations",
+    "description": "Manage your study group invitations on StudyVerse",
+    "empty": "You don't have any group invitations",
+    "count": "{{count}} invitations",
+    "invitedBy": "Invited by",
+    "invitationSentOn": "Invitation sent on {{date}}",
+    "approveSuccess": "Invitation has been approved successfully",
+    "approveFailed": "Failed to approve the invitation",
+    "declineSuccess": "Invitation has been declined successfully",
+    "declineFailed": "Failed to decline the invitation",
+    "decline": "Decline",
+    "approve": "Approve"
+  }
+}

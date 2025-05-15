@@ -21,17 +21,21 @@ import { Spinner } from '@/components/ui/spinner';
 import { createNewPost, fetchPosts, resetPostState } from '@/store/slices/postSlice';
 import PostSkeleton from '@/components/common/PostSkeleton';
 import CreatePostDialog from '@/components/common/CreatePostDialog';
+import { COMMON_MESSAGES, POST_MESSAGES } from '@/constants/messages';
+import { useToast } from '@/hooks/use-toast';
 window.katex = katex as any;
 
 const Home = memo(() => {
+  // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
+  // States
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Selectors
   const profile = useSelector((state: RootState) => state.profile.user);
-  const dispatch = useDispatch<AppDispatch>();
-
   const {
     posts,
     isFetching: isPostsLoading,
@@ -41,7 +45,11 @@ const Home = memo(() => {
     currentPage
   } = useSelector((state: RootState) => state.posts);
 
-  // Infinite Scroll Observer
+  // Hooks
+  const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
+
+  // Effects
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -73,7 +81,6 @@ const Home = memo(() => {
     };
   }, [hasMore, isPostsLoading, currentPage, dispatch]);
 
-  // Initial posts fetch
   useEffect(() => {
     setIsLoading(true);
     dispatch(
@@ -88,6 +95,7 @@ const Home = memo(() => {
     };
   }, [dispatch]);
 
+  // Handlers
   const handleSubmit = async () => {
     try {
       const body: CreatePostRequestBody = {
@@ -102,91 +110,96 @@ const Home = memo(() => {
       await dispatch(createNewPost(body)).unwrap();
       dispatch(resetPostState());
     } catch (error) {
-      console.error('Failed to create post:', error);
+      console.error(`${POST_MESSAGES.CREATE_FAILED}:`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast({
+        title: COMMON_MESSAGES.ERROR_TITLE,
+        description: errorMessage,
+        variant: 'destructive'
+      });
     } finally {
       setIsDialogOpen(false);
     }
   };
 
   return (
-    <ScrollArea
-      ref={scrollAreaRef}
-      className='lg:max-w-3xl mx-auto pt-4 h-[calc(100vh-60px)] overflow-y-auto custom-scrollbar'
-    >
-      {/* Create Post Card */}
-      <div className='px-4'>
-        <div className='bg-white rounded-lg shadow-md p-4 flex gap-2 w-full mx-auto'>
-          <Avatar className='h-[40px] w-[40px]'>
-            <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <div className='text-muted-foreground rounded-[20px] bg-gray-100 hover:bg-gray-200 flex items-center flex-1 px-4 py-2 cursor-pointer'>
-                What's on your mind, {profile?.name || ''}?
-              </div>
-            </DialogTrigger>
-            <DialogContent className='sm:max-w-[600px] max-h-[90vh] gap-2'>
-              {isLoading && (
-                <div className='absolute inset-0 z-10 flex flex-col items-center justify-center'>
-                  <div className='absolute inset-0 bg-white bg-opacity-60 rounded-[12px]'></div>
-                  <div className='relative z-10'>
-                    <Spinner size='medium' />
-                    <span className='text-gray-600 mt-2'>Posting</span>
-                  </div>
+    <ScrollArea ref={scrollAreaRef} className='pt-4 h-[calc(100vh-60px)]'>
+      <div className='lg:max-w-2xl mx-auto'>
+        {/* Create Post Card */}
+        <div className='px-4'>
+          <div className='bg-white rounded-lg shadow-md p-4 flex gap-2 w-full mx-auto'>
+            <Avatar className='h-[40px] w-[40px]'>
+              <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
+              <AvatarFallback>CN</AvatarFallback>
+            </Avatar>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <div className='text-muted-foreground rounded-[20px] bg-gray-100 hover:bg-gray-200 flex items-center flex-1 px-4 py-2 cursor-pointer'>
+                  What's on your mind, {profile?.name || ''}?
                 </div>
-              )}
-              <DialogHeader>
-                <DialogTitle>Create a post</DialogTitle>
-                <DialogDescription>
-                  Share your thoughts, including rich text and mathematical formulas
-                </DialogDescription>
-              </DialogHeader>
+              </DialogTrigger>
+              <DialogContent className='sm:max-w-[600px] max-h-[90vh] gap-2'>
+                {isLoading && (
+                  <div className='absolute inset-0 z-10 flex flex-col items-center justify-center'>
+                    <div className='absolute inset-0 bg-white bg-opacity-60 rounded-[12px]'></div>
+                    <div className='relative z-10'>
+                      <Spinner size='medium' />
+                      <span className='text-gray-600 mt-2'>Posting</span>
+                    </div>
+                  </div>
+                )}
+                <DialogHeader>
+                  <DialogTitle>Create a post</DialogTitle>
+                  <DialogDescription>
+                    Share your thoughts, including rich text and mathematical formulas
+                  </DialogDescription>
+                </DialogHeader>
 
-              <div className='flex items-center space-x-2 my-2'>
-                <Avatar className='h-[48px] w-[48px]'>
-                  <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
-                  <AvatarFallback>CN</AvatarFallback>
-                </Avatar>
-                <CreatePostDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
-              </div>
+                <div className='flex items-center space-x-2 my-2'>
+                  <Avatar className='h-[48px] w-[48px]'>
+                    <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
+                    <AvatarFallback>CN</AvatarFallback>
+                  </Avatar>
+                  <CreatePostDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
+                </div>
 
-              <DialogFooter className='mt-2'>
-                <Button
-                  className='w-full bg-sky-500 hover:bg-sky-600 rounded-[20px]'
-                  type='submit'
-                  onClick={handleSubmit}
-                >
-                  Post
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter className='mt-2'>
+                  <Button
+                    className='w-full bg-sky-500 hover:bg-sky-600 rounded-[20px]'
+                    type='submit'
+                    onClick={handleSubmit}
+                  >
+                    Post
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-      </div>
 
-      {/* Posts List */}
-      <div className='flex flex-col gap-4 px-4 mt-4'>
-        {isPostsLoading && posts.length === 0 ? (
-          Array(3)
-            .fill(null)
-            .map((_, index) => <PostSkeleton key={index} />)
-        ) : (
-          <>
-            {posts.map((post) => (
-              <Post key={post._id} post={post} />
-            ))}
-            {/* Loading indicator */}
-            <div ref={containerRef} className='flex flex-col gap-4 items-center justify-center'>
-              {isPostsLoading && (
-                <>
-                  <PostSkeleton />
-                  <PostSkeleton />
-                </>
-              )}
-            </div>
-          </>
-        )}
+        {/* Posts List */}
+        <div className='flex flex-col gap-4 px-4 mt-4'>
+          {isPostsLoading && posts.length === 0 ? (
+            Array(3)
+              .fill(null)
+              .map((_, index) => <PostSkeleton key={index} />)
+          ) : (
+            <>
+              {posts.map((post) => (
+                <Post key={post._id} post={post} />
+              ))}
+              {/* Loading indicator */}
+              <div ref={containerRef} className='flex flex-col gap-4 items-center justify-center'>
+                {isPostsLoading && (
+                  <>
+                    <PostSkeleton />
+                    <PostSkeleton />
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </ScrollArea>
   );

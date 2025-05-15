@@ -44,6 +44,7 @@ import {
   uploadPostFiles
 } from '@/store/slices/postSlice';
 import { searchTags } from '@/services/tags.services';
+import { useTranslation } from 'react-i18next';
 
 const animatedComponents = makeAnimated();
 
@@ -70,6 +71,7 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   const { groupId } = useParams();
+  const { t } = useTranslation();
 
   // Selectors
   const profile = useSelector((state: RootState) => state.profile.user);
@@ -241,7 +243,7 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
         <ScrollArea>
           <div className='max-h-[calc(95vh-48px)] px-6'>
             <DialogHeader>
-              <DialogTitle>Create a post</DialogTitle>
+              <DialogTitle>{t('createDialog.createPost')}</DialogTitle>
               <DialogDescription></DialogDescription>
             </DialogHeader>
 
@@ -274,10 +276,8 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
 
             <div className='flex flex-col gap-4 mt-4'>
               <div className='grid w-full items-center gap-1.5'>
-                <Label>What are the details of your problem?</Label>
-                <p className='text-xs text-muted-foreground'>
-                  Introduce the problem and expand on what you put in the title. Minimum 20 characters.
-                </p>
+                <Label>{t('createDialog.problemDetails')}</Label>
+                <p className='text-xs text-muted-foreground'>{t('createDialog.problemDescription')}</p>
                 <Editor
                   ref={quillRef}
                   value={content}
@@ -286,13 +286,14 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
                   onChange={(value) => {
                     dispatch(setContent(value));
                   }}
+                  className='w-[552px]'
                   mention_users={[]}
                 />
               </div>
 
               <div className='grid w-full items-center gap-1.5 m'>
-                <Label>Tags</Label>
-                <p className='text-xs text-muted-foreground'>Add tags to help others find your question more easily</p>
+                <Label>{t('createDialog.tags')}</Label>
+                <p className='text-xs text-muted-foreground'>{t('createDialog.tagsDescription')}</p>
                 <Select
                   closeMenuOnSelect={false}
                   components={{
@@ -304,7 +305,7 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
                   value={selectedTags}
                   onChange={(newValue: any) => setSelectedTags(newValue)}
                   onInputChange={handleInputChange}
-                  placeholder='Search for tags...'
+                  placeholder={t('createDialog.searchTags')}
                   isLoading={isLoadingTags}
                   menuIsOpen={menuIsOpen}
                   onMenuOpen={() => setMenuIsOpen(true)}
@@ -340,7 +341,7 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
                   >
                     <Upload size={16} className='text-blue-500' />
                     <span className='font-medium'>
-                      Attach files
+                      {t('createDialog.attachFiles')}
                       <span className='ml-1 text-sm text-gray-500'>
                         ({uploadedFiles.length}/{MAX_FILES})
                       </span>
@@ -357,7 +358,7 @@ const CreatePostDialog = memo(({ isOpen, onOpenChange }: CreateDialogProps) => {
                 type='submit'
                 onClick={handleSubmit}
               >
-                {isCreatingPost ? <Spinner size='small' /> : 'Post'}
+                {isCreatingPost ? <Spinner size='small' /> : t('common.post')}
               </Button>
             </DialogFooter>
           </div>

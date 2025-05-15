@@ -8,6 +8,7 @@ import PostSkeleton from '@/components/common/PostSkeleton';
 import Question from '../components/Question';
 import { ClipboardList } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTranslation } from 'react-i18next';
 
 const EmptyState = ({ title, description }: { title: string; description: string }) => (
   <div className='flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md w-full md:w-[680px] mx-auto mb-4'>
@@ -44,11 +45,16 @@ const QuestionsList = ({
 );
 
 const GroupManageQuestions = memo(() => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { groupId } = useParams();
+  // Refs
   const pendingContainerRef = useRef<HTMLDivElement>(null);
   const rejectedContainerRef = useRef<HTMLDivElement>(null);
 
+  // Hooks
+  const dispatch = useDispatch<AppDispatch>();
+  const { groupId } = useParams();
+  const { t } = useTranslation();
+
+  // Selectors
   const {
     pendingQuestions,
     rejectedQuestions,
@@ -60,6 +66,7 @@ const GroupManageQuestions = memo(() => {
     isFetchingRejectedQuestions
   } = useSelector((state: RootState) => state.studyGroup);
 
+  // Effects
   useEffect(() => {
     const createObserver = (
       ref: React.RefObject<HTMLDivElement>,
@@ -151,10 +158,10 @@ const GroupManageQuestions = memo(() => {
         <div className='flex items-center justify-center'>
           <TabsList className='mb-4 w-full md:w-[680px] mx-auto'>
             <TabsTrigger value='pending' className='flex-1'>
-              Pending Questions
+              {t('groups.pendingTab')}
             </TabsTrigger>
             <TabsTrigger value='rejected' className='flex-1'>
-              Rejected Questions
+              {t('groups.rejectedTab')}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -165,10 +172,7 @@ const GroupManageQuestions = memo(() => {
               .fill(null)
               .map((_, index) => <PostSkeleton key={index} />)
           ) : pendingQuestions.length === 0 ? (
-            <EmptyState
-              title='No pending questions'
-              description='There are currently no questions waiting for approval. New questions will appear here once students submit them.'
-            />
+            <EmptyState title={t('groups.emptyPendingTitle')} description={t('groups.emptyPendingDescription')} />
           ) : (
             <QuestionsList
               questions={pendingQuestions}
@@ -185,10 +189,7 @@ const GroupManageQuestions = memo(() => {
               .fill(null)
               .map((_, index) => <PostSkeleton key={index} />)
           ) : rejectedQuestions.length === 0 ? (
-            <EmptyState
-              title='No rejected questions'
-              description='There are currently no rejected questions. Questions that are rejected by moderators will appear here.'
-            />
+            <EmptyState title={t('groups.emptyRejectedTitle')} description={t('groups.emptyRejectedDescription')} />
           ) : (
             <QuestionsList
               questions={rejectedQuestions}

@@ -10,6 +10,7 @@ import { useDispatch } from 'react-redux';
 import { updateUserFollowStatus } from '@/store/slices/communitySlice';
 import { AppDispatch } from '@/store/store';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface User {
   _id: string;
@@ -38,6 +39,7 @@ const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
   const { toast } = useToast();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Effects
   useEffect(() => {
@@ -62,14 +64,14 @@ const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
       if (isFollowing) {
         await unfollow({ unfollowed_user_id: person._id });
         toast({
-          description: 'Unfollowed successfully'
+          description: t('user.unfollowSuccess')
         });
 
         dispatch(updateUserFollowStatus({ userId: person._id, isFollowing: false }));
       } else {
         await follow({ followed_user_id: person._id });
         toast({
-          description: 'Followed successfully'
+          description: t('user.followSuccess')
         });
 
         dispatch(updateUserFollowStatus({ userId: person._id, isFollowing: true }));
@@ -78,7 +80,7 @@ const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
       setIsFollowing(!isFollowing);
     } catch (error) {
       toast({
-        description: 'An error occurred. Please try again',
+        description: t('user.followError'),
         variant: 'destructive'
       });
     } finally {
@@ -146,7 +148,7 @@ const PersonCard: React.FC<PersonCardProps> = ({ person }) => {
           ) : (
             <UserPlus2 className='h-4 w-4 mr-2' />
           )}
-          {isFollowing ? 'Unfollow' : 'Follow'}
+          {isFollowing ? t('user.unfollow') : t('user.follow')}
         </Button>
       </CardContent>
     </Card>

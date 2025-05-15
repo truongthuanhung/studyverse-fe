@@ -62,6 +62,8 @@ import FileUploadPreview from '@/components/common/FileUploadPreview';
 import { Spinner } from '@/components/ui/spinner';
 import { CreateReplyRequestBody } from '@/services/replies.services';
 import { cleanContent } from '@/utils/quill';
+import { useTranslation } from 'react-i18next';
+import { isRichTextEmpty } from '@/utils/text';
 
 interface ReplyProps {
   question_owner_id: string;
@@ -100,6 +102,7 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
   const { groupId } = useParams();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Selectors
   const profile = useSelector((state: RootState) => state.profile.user);
@@ -585,17 +588,18 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
                   <ThumbsDown size={16} />
                 </div>
               </div>
-
-              <div
-                className='flex items-center gap-1 text-sm text-zinc-500 hover:text-sky-600 transition-colors cursor-pointer'
-                onClick={handleToggleReplies}
-              >
-                <MessageCircle size={16} />
-                <span>{showChildren ? 'Hide Replies' : 'Reply'}</span>
-                {reply.reply_count > 0 && (
-                  <span className='ml-1 text-xs bg-gray-100 px-2 py-0.5 rounded-full'>{reply.reply_count}</span>
-                )}
-              </div>
+              {reply.parent_id === null && (
+                <div
+                  className='flex items-center gap-1 text-sm text-zinc-500 hover:text-sky-600 transition-colors cursor-pointer'
+                  onClick={handleToggleReplies}
+                >
+                  <MessageCircle size={16} />
+                  <span>{showChildren ? t('question.hideReply') : t('question.reply')}</span>
+                  {reply.reply_count > 0 && (
+                    <span className='ml-1 text-xs bg-gray-100 px-2 py-0.5 rounded-full'>{reply.reply_count}</span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Hiển thị children replies */}
@@ -626,15 +630,15 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
                       className='mt-2'
                     >
                       {childReplies?.isLoading ? <Loader2 className='w-4 h-4 animate-spin mr-2' /> : null}
-                      Load More Replies
+                      {t('question.loadMoreReply')}
                     </Button>
                   )}
 
                   {!childReplies?.isLoading && childReplies?.data.length === 0 && (
-                    <p className='text-sm text-zinc-500'>No replies yet</p>
+                    <p className='text-sm text-zinc-500'>{t('question.noReply')}</p>
                   )}
                 </div>
-                <div className='border rounded-lg'>
+                <div className='relative'>
                   <Editor
                     ref={quillRef}
                     value={createReplyText}
@@ -645,8 +649,21 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
                       ...admins.map((admin) => admin.user_info),
                       ...members.map((member) => member.user_info)
                     ]}
-                    placeholder='Write your reply'
+                    placeholder={t('question.writeReply')}
                   />
+                  <Button
+                    disabled={
+                      isCreatingReply ||
+                      isUploadingFiles[reply.question_id] ||
+                      (isRichTextEmpty(createReplyText) && uploadedUrls.length === 0)
+                    }
+                    onClick={onReply}
+                    variant='ghost'
+                    size='icon'
+                    className='absolute right-[28px] bottom-[4px] -translate-y-1/2 bg-transparent hover:bg-transparent p-0 h-auto w-auto text-sky-500 hover:text-sky-600'
+                  >
+                    {isCreatingReply ? <Spinner size='small' /> : <Send size={16} />}
+                  </Button>
                 </div>
                 <input type='file' ref={fileInputRef} className='hidden' multiple onChange={handleFileUpload} />
                 <FileUploadPreview files={uploadedFiles} onRemove={handleFileRemove} />
@@ -658,25 +675,6 @@ const Reply: React.FC<ReplyProps> = ({ reply, isPending = false, isHighlighted =
                     disabled={isUploadingFiles[reply.question_id]}
                   >
                     <Upload size={20} />
-                  </Button>
-
-                  <Button
-                    disabled={
-                      isCreatingReply ||
-                      isUploadingFiles[reply.question_id] ||
-                      (!createReplyText && uploadedUrls.length === 0)
-                    }
-                    onClick={onReply}
-                    className='rounded-[20px] bg-sky-500 hover:bg-sky-600 text-white'
-                  >
-                    {isCreatingReply ? (
-                      <Spinner size='small' />
-                    ) : (
-                      <>
-                        <Send className='mr-2' />
-                        Send
-                      </>
-                    )}
                   </Button>
                 </div>
               </div>

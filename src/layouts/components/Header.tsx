@@ -28,6 +28,8 @@ import { showNotification } from '@/components/common/CustomToast';
 import { Input } from '@/components/ui/input';
 import SearchDialog from '@/components/common/SearchDialog';
 import { useMediaQuery } from 'react-responsive';
+import LanguageSelector from '@/components/common/LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 const Header = memo(() => {
   // States
@@ -41,6 +43,7 @@ const Header = memo(() => {
   const isDesktopOrLaptop = useMediaQuery({
     query: '(min-width: 1224px)'
   });
+  const { t } = useTranslation();
 
   // Selectors
   const profile = useSelector((state: RootState) => state.profile.user);
@@ -145,7 +148,12 @@ const Header = memo(() => {
           <SearchDialog>
             {isDesktopOrLaptop ? (
               <div className='relative'>
-                <Input type='text' placeholder='Search...' className='pl-9 pr-12 cursor-pointer' readOnly />
+                <Input
+                  type='text'
+                  placeholder={t('search.placeholder')}
+                  className='pl-9 pr-12 cursor-pointer'
+                  readOnly
+                />
                 <Search className='absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500' />
                 <div className='absolute right-3 top-1/2 transform -translate-y-1/2'>
                   <kbd className='pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-gray-50 px-1.5 font-mono text-[10px] font-medium text-gray-500'>
@@ -168,7 +176,7 @@ const Header = memo(() => {
             )}`}
           >
             <Home size={22} />
-            <p className='hidden md:block text-[12px] font-medium'>Home</p>
+            <p className='hidden md:block text-[12px] font-medium'>{t('navigation.home')}</p>
           </div>
           <div
             onClick={() => navigate('/community')}
@@ -177,16 +185,16 @@ const Header = memo(() => {
             )}`}
           >
             <UsersRound size={22} />
-            <p className='hidden md:block text-[12px] font-medium'>Community</p>
+            <p className='hidden md:block text-[12px] font-medium'>{t('navigation.community')}</p>
           </div>
           <div
             onClick={() => navigate('/groups/my-groups')}
-            className={`w-[40px] md:w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
+            className={`min-w-[40px] md:min-w-[80px] flex flex-col items-center justify-between hover:text-sky-500 cursor-pointer ${getTextColor(
               '/groups'
             )}`}
           >
             <BookOpen size={22} />
-            <p className='hidden md:block text-[12px] font-medium'>Study groups</p>
+            <p className='hidden md:block text-[12px] font-medium'>{t('navigation.studyGroups')}</p>
           </div>
           <div
             onClick={() => navigate('/conversations')}
@@ -195,7 +203,7 @@ const Header = memo(() => {
             )}`}
           >
             <MessageCircleMore size={22} />
-            <p className='hidden md:block text-[12px] font-medium'>Messages</p>
+            <p className='hidden md:block text-[12px] font-medium'>{t('navigation.messages')}</p>
             {unread > 0 && (
               <span className='absolute -top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
                 {unread > 99 ? 99 : unread}
@@ -209,7 +217,7 @@ const Header = memo(() => {
             )}`}
           >
             <Mail size={22} />
-            <p className='hidden md:block text-[12px] font-medium'>Invitations</p>
+            <p className='hidden md:block text-[12px] font-medium'>{t('navigation.invitations')}</p>
             {unread > 0 && (
               <span className='absolute -top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
                 {unread > 99 ? 99 : unread}
@@ -223,7 +231,7 @@ const Header = memo(() => {
               )}`}
             >
               <Bell size={22} />
-              <p className='hidden md:block text-[12px] font-medium'>Notifications</p>
+              <p className='hidden md:block text-[12px] font-medium'>{t('navigation.notifications')}</p>
               {unreadCount > 0 && (
                 <span className='absolute -top-2 right-2 bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
                   {unreadCount > 99 ? 99 : unreadCount}
@@ -231,6 +239,9 @@ const Header = memo(() => {
               )}
             </div>
           </NotificationsDropdown>
+
+          {/* Language Selector */}
+          <LanguageSelector />
           <div className='w-[40px] md:w-[80px] flex flex-col items-center justify-between cursor-pointer'>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -251,25 +262,25 @@ const Header = memo(() => {
                 <DropdownMenuGroup>
                   <DropdownMenuItem className='gap-[8px] cursor-pointer' onClick={() => navigate('/me')}>
                     <ProfileIcon />
-                    My profile
+                    {t('menu.myProfile')}
                   </DropdownMenuItem>
                   <DropdownMenuItem className='gap-[8px] cursor-pointer'>
                     <GlobalIcon />
-                    My invitations
+                    {t('menu.myInvitations')}
                   </DropdownMenuItem>
                   <DropdownMenuItem className='gap-[8px] cursor-pointer'>
                     <DiscussionIcon />
-                    My appointments
+                    {t('menu.myAppointments')}
                   </DropdownMenuItem>
                   <DropdownMenuItem className='gap-[8px] cursor-pointer'>
                     <SettingsIcon />
-                    Settings
+                    {t('menu.settings')}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className='gap-[8px] cursor-pointer' onClick={onLogout}>
                   <LogoutIcon />
-                  Logout
+                  {t('menu.logout')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

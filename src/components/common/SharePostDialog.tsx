@@ -23,7 +23,6 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import Editor from '@/components/common/Editor';
 import { PRIVACY_OPTIONS } from '@/constants/constants';
-import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
 import ReactQuill from 'react-quill';
@@ -34,6 +33,7 @@ import { getRelativeTime } from '@/utils/date';
 import { Badge } from '@/components/ui/badge';
 import { getTagColor } from '@/utils/tag';
 import { createSharePost, resetPostState, setContent, setPrivacy } from '@/store/slices/postSlice';
+import { useTranslation } from 'react-i18next';
 
 interface ShareDialogProps {
   post: IPost;
@@ -53,6 +53,7 @@ const SharePostDialog = memo(({ post, isOpen, onOpenChange, children }: ShareDia
   const dispatch = useDispatch<AppDispatch>();
   const profile = useSelector((state: RootState) => state.profile.user);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // States
   const [mentions, setMentions] = useState<any[]>([]);
@@ -93,6 +94,22 @@ const SharePostDialog = memo(({ post, isOpen, onOpenChange, children }: ShareDia
     }
   };
 
+  // Helpers
+  const getPrivacyLabel = (value: string) => {
+    switch (value) {
+      case '0':
+        return t('post.privacy.public');
+      case '1':
+        return t('post.privacy.friends');
+      case '2':
+        return t('post.privacy.followers');
+      case '3':
+        return t('post.privacy.onlyMe');
+      default:
+        return '';
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -100,8 +117,8 @@ const SharePostDialog = memo(({ post, isOpen, onOpenChange, children }: ShareDia
         <ScrollArea>
           <div className='max-h-[calc(95vh-48px)] px-6'>
             <DialogHeader>
-              <DialogTitle>Share a post</DialogTitle>
-              <DialogDescription>Share this post with your thoughts</DialogDescription>
+              <DialogTitle>{t('post.title')}</DialogTitle>
+              <DialogDescription>{t('post.description')}</DialogDescription>
             </DialogHeader>
 
             <div className='flex items-center space-x-2 my-4'>
@@ -121,7 +138,7 @@ const SharePostDialog = memo(({ post, isOpen, onOpenChange, children }: ShareDia
                         <SelectItem key={option.value} value={option.value} className='cursor-pointer'>
                           <div className='flex items-center gap-2 text-xs'>
                             <option.icon className='w-4 h-4' />
-                            <span>{option.label}</span>
+                            <span>{getPrivacyLabel(option.value)}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -132,7 +149,6 @@ const SharePostDialog = memo(({ post, isOpen, onOpenChange, children }: ShareDia
             </div>
 
             <div className='mb-4'>
-              <Label>Add your thoughts</Label>
               <Editor
                 ref={quillRef}
                 value={content}
@@ -215,8 +231,9 @@ const SharePostDialog = memo(({ post, isOpen, onOpenChange, children }: ShareDia
                 </div>
               )}
 
-              <div className='text-xs text-zinc-500 mt-2'>
-                {post.like_count} likes • {post.comment_count} comments
+              <div className='mt-2 flex items-center gap-2 text-zinc-500 text-sm justify-end'>
+                <p className='cursor-pointer'>{t('post.likes', { count: post.like_count || 0 })}</p>
+                <p className='cursor-pointer'>{t('post.comments', { count: post.comment_count || 0 })}</p>
               </div>
             </div>
 
@@ -227,7 +244,7 @@ const SharePostDialog = memo(({ post, isOpen, onOpenChange, children }: ShareDia
                 type='submit'
                 onClick={handleSubmit}
               >
-                {isCreatingPost ? <Spinner size='small' /> : 'Share Post'}
+                {isCreatingPost ? <Spinner size='small' /> : t('post.sharePost')}
               </Button>
             </DialogFooter>
           </div>
