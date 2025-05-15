@@ -42,6 +42,8 @@ import FileUploadPreview from '@/components/common/FileUploadPreview';
 import Reply from './Reply';
 import { Badge } from '@/components/ui/badge';
 import { badgeConfig } from './Badge';
+import { useTranslation } from 'react-i18next';
+import { isRichTextEmpty } from '@/utils/text';
 
 interface QuestionDialogProps {
   question: IQuestion;
@@ -79,6 +81,7 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
   const navigate = useNavigate();
   const { groupId } = useParams();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // Selectors
   const replies = useSelector((state: RootState) => state.replies.data[question._id] || []);
@@ -441,10 +444,15 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
         <div className='flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
           <p className='cursor-pointer'>
             {question.upvotes - question.downvotes === 0
-              ? '0 votes'
-              : `${question.upvotes - question.downvotes > 0 ? '+' : ''}${question.upvotes - question.downvotes} votes`}
+              ? `0 ${t('question.votes')}`
+              : `${question.upvotes - question.downvotes > 0 ? '+' : ''}${question.upvotes - question.downvotes} ${t(
+                  'question.votes'
+                )}`}
           </p>
-          <p className='cursor-pointer'>{question.reply_count} replies</p>
+
+          <p className='cursor-pointer'>
+            {question.reply_count} {t('question.replies')}
+          </p>
         </div>
 
         <div className='flex items-center gap-2 py-2 border-t px-2'>
@@ -455,7 +463,7 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
             onClick={() => handleVote(VoteType.Upvote)}
           >
             <ThumbsUp size={16} />
-            <p>Upvote</p>
+            <p>{t('question.upvote')}</p>
           </div>
 
           <div
@@ -465,19 +473,19 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
             onClick={() => handleVote(VoteType.Downvote)}
           >
             <ThumbsDown size={16} />
-            <p>Downvote</p>
+            <p>{t('question.downvote')}</p>
           </div>
           <div className='text-zinc-500 text-sm flex flex-col flex-1 justify-center items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
             <MessageCircleMore size={16} />
-            <p>Reply</p>
+            <p>{t('question.reply')}</p>
           </div>
           <div className='text-zinc-500 text-sm flex flex-col flex-1 justify-center items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
             <Repeat2 size={16} />
-            <p>Publish</p>
+            <p>{t('question.publish')}</p>
           </div>
         </div>
         <div className='flex-grow flex flex-col'>
-          <div className='border rounded-lg'>
+          <div className='mt-2 relative'>
             <Editor
               ref={quillRef}
               value={convertedText}
@@ -485,40 +493,34 @@ const QuestionDialog: React.FC<QuestionDialogProps> = ({
               onChange={setConvertedText}
               setMentions={setMentions}
               mention_users={[...admins.map((admin) => admin.user_info), ...members.map((member) => member.user_info)]}
-              placeholder='Write your reply'
+              placeholder={t('question.writeReply')}
             />
+            <Button
+              variant='ghost'
+              size='icon'
+              disabled={
+                isCreatingReply ||
+                isUploadingFiles[question._id] ||
+                (isRichTextEmpty(convertedText) && uploadedUrls.length === 0)
+              }
+              onClick={onReply}
+              className='absolute right-[28px] bottom-[4px] -translate-y-1/2 bg-transparent hover:bg-transparent p-0 h-auto w-auto text-sky-500 hover:text-sky-600'
+            >
+              {isCreatingReply ? <Spinner size='small' /> : <Send size={16} />}
+            </Button>
           </div>
           {/* Media Upload Section */}
           <input type='file' ref={fileInputRef} className='hidden' multiple onChange={handleFileUpload} />
 
           <FileUploadPreview files={uploadedFiles} onRemove={handleFileRemove} />
-          <div className='mt-2 flex justify-between items-center'>
-            <Button
-              variant='ghost'
-              size='icon'
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploadingFiles[question._id]}
-            >
-              <Upload size={20} />
-            </Button>
-
-            <Button
-              disabled={
-                isCreatingReply || isUploadingFiles[question._id] || (!convertedText && uploadedUrls.length === 0)
-              }
-              onClick={onReply}
-              className='rounded-[20px] bg-sky-500 hover:bg-sky-600 text-white'
-            >
-              {isCreatingReply ? (
-                <Spinner size='small' />
-              ) : (
-                <>
-                  <Send className='mr-2' />
-                  Send
-                </>
-              )}
-            </Button>
-          </div>
+          <Button
+            variant='ghost'
+            size='icon'
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingFiles[question._id]}
+          >
+            <Upload size={20} />
+          </Button>
         </div>
         <div className='mt-4 flex flex-col gap-1'>
           {replies.map((reply) => (

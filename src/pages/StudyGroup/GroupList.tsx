@@ -6,17 +6,23 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { useEffect, useRef } from 'react';
 import { getJoinedGroups } from '@/store/slices/studyGroupsListSlice';
+import { useTranslation } from 'react-i18next';
 
 const GroupList = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
+  // Refs
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Hooks
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const { t } = useTranslation();
+
+  // Selectors
   const { joinedGroups, isLoadingJoinedGroups, hasMoreJoinedGroups, joinedGroupsCurrentPage } = useSelector(
     (state: RootState) => state.studyGroupsList
   );
 
-  // Infinite scroll logic
+  // Effects
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -74,9 +80,9 @@ const GroupList = () => {
       ) : (
         <div className='text-center py-12'>
           <Users className='mx-auto h-12 w-12 text-slate-300' />
-          <h3 className='mt-4 text-lg font-medium text-slate-700'>No study groups found</h3>
+          <h3 className='mt-4 text-lg font-medium text-slate-700'>{t('groups.noGroupsTitle')}</h3>
           <Button onClick={() => navigate('/groups/create')} className='mt-6 bg-sky-500 hover:bg-sky-600'>
-            <Plus className='mr-2 h-4 w-4' /> Create New Group
+            <Plus className='mr-2 h-4 w-4' /> {t('groups.createGroup')}
           </Button>
         </div>
       )}

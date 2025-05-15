@@ -37,6 +37,7 @@ import GroupUserHoverCard from '@/components/common/GroupUserHoverCard';
 import { Badge } from '@/components/ui/badge';
 import { getTagColor } from '@/utils/tag';
 import { badgeConfig } from './Badge';
+import { useTranslation } from 'react-i18next';
 
 interface QuestionProps {
   question: IQuestion;
@@ -62,6 +63,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const { t } = useTranslation();
 
   // Variables
   const MAX_HEIGHT = 120;
@@ -176,7 +178,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
     try {
       await dispatch(approveGroupQuestion({ groupId: question.group_id, questionId: question._id })).unwrap();
       toast({
-        description: 'Approve question successfully'
+        description: t('question.approveSuccess')
       });
       if (groupId) {
         dispatch(getGroupPendingCount(groupId)).unwrap();
@@ -185,7 +187,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
       console.error(err);
       navigate(0); // chữa cháy
       toast({
-        description: 'Failed to approve question',
+        description: t('question.approveError'),
         variant: 'destructive'
       });
     }
@@ -195,7 +197,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
     try {
       await dispatch(rejectGroupQuestion({ groupId: question.group_id, questionId: question._id })).unwrap();
       toast({
-        description: 'Reject question successfully'
+        description: t('question.rejectSuccess')
       });
       if (groupId) {
         dispatch(getGroupPendingCount(groupId)).unwrap();
@@ -204,7 +206,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
       console.error(err);
       navigate(0); // chữa cháy
       toast({
-        description: 'Failed to approve question',
+        description: t('question.rejectError'),
         variant: 'destructive'
       });
     }
@@ -230,7 +232,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                 {question.user_info.role === StudyGroupRole.Admin && (
                   <Badge className='bg-red-100 text-red-800 hover:bg-red-200 px-2 py-0.5 text-xs font-medium gap-1'>
                     <Shield size={12} />
-                    Admin
+                    {t('question.admin')}
                   </Badge>
                 )}
                 {question.user_info.badges && question.user_info.badges.length > 0 && (
@@ -309,25 +311,23 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {(role === StudyGroupRole.Admin || profile?._id === question.user_info._id) && (
-              <DropdownMenuItem onClick={handleOpenDeleteDialog}>Delete question</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleOpenDeleteDialog}>{t('question.delete')}</DropdownMenuItem>
             )}
-            <DropdownMenuItem>Report question</DropdownMenuItem>
-            <DropdownMenuItem>Turn on notifications</DropdownMenuItem>
+            <DropdownMenuItem>{t('question.report')}</DropdownMenuItem>
+            <DropdownMenuItem>{t('question.notifications')}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to delete this question?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your question and all its replies.
-              </AlertDialogDescription>
+              <AlertDialogTitle>{t('question.deleteConfirmTitle')}</AlertDialogTitle>
+              <AlertDialogDescription>{t('question.deleteConfirmDescription')}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className='outline-none'>Cancel</AlertDialogCancel>
+              <AlertDialogCancel className='outline-none'>{t('question.cancel')}</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteQuestion} className='bg-red-500 hover:bg-red-600 outline-none'>
-                Delete
+                {t('question.delete')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -370,7 +370,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
         )}
       </div>
       {question.tags && question.tags.length > 0 && (
-        <div className='flex flex-wrap gap-2 mt-3 mb-2'>
+        <div className='flex flex-wrap gap-2 mb-2'>
           {(showAllTags ? question.tags : question.tags.slice(0, 3)).map((tag) => {
             const { bg, text } = getTagColor(tag.name);
             return (
@@ -424,16 +424,18 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
         </div>
       ) : (
         <>
-          <div className='px-3 py-2 flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
+          <div className='px-3 py-2 flex items-center gap-2 text-zinc-500 text-sm justify-end'>
             <p className='cursor-pointer'>
               {question.upvotes - question.downvotes === 0
-                ? '0 votes'
-                : `${question.upvotes - question.downvotes > 0 ? '+' : ''}${
-                    question.upvotes - question.downvotes
-                  } votes`}
+                ? `0 ${t('question.votes')}`
+                : `${question.upvotes - question.downvotes > 0 ? '+' : ''}${question.upvotes - question.downvotes} ${t(
+                    'question.votes'
+                  )}`}
             </p>
 
-            <p className='cursor-pointer'>{question.reply_count} replies</p>
+            <p className='cursor-pointer'>
+              {question.reply_count} {t('question.replies')}
+            </p>
           </div>
           <div className='flex items-center gap-2 py-2 border-t px-2'>
             <div
@@ -443,7 +445,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
               onClick={() => handleVote(VoteType.Upvote)}
             >
               <ThumbsUp size={16} />
-              <p>Upvote</p>
+              <p>{t('question.upvote')}</p>
             </div>
 
             <div
@@ -453,14 +455,14 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
               onClick={() => handleVote(VoteType.Downvote)}
             >
               <ThumbsDown size={16} />
-              <p>Downvote</p>
+              <p>{t('question.downvote')}</p>
             </div>
             {mediaFiles.length > 0 ? (
               <Dialog open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>
                 <DialogTrigger className='flex-1 outline-none'>
                   <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
                     <MessageCircleMore size={16} />
-                    <p>Reply</p>
+                    <p>{t('question.reply')}</p>
                   </div>
                 </DialogTrigger>
                 <DialogContent className='max-w-[90vw] md:max-w-[100vw] max-h-[100vh] p-0 border-none'>
@@ -477,7 +479,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
                 <SheetTrigger className='flex-1 outline-none'>
                   <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
                     <MessageCircleMore size={16} />
-                    <p>Reply</p>
+                    <p>{t('question.reply')}</p>
                   </div>
                 </SheetTrigger>
                 <SheetContent className='md:w-[580px] p-0 border-none'>
@@ -493,7 +495,7 @@ const Question: React.FC<QuestionProps> = ({ question }) => {
 
             <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
               <Repeat2 size={16} />
-              <p>Publish</p>
+              <p>{t('question.publish')}</p>
             </div>
           </div>
         </>

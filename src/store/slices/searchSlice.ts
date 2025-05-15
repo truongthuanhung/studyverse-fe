@@ -21,6 +21,12 @@ interface ISearchHistory {
   updated_at: string;
 }
 
+interface Pagination {
+  page: number;
+  totalPages: number;
+  total: number;
+}
+
 interface SearchState {
   data: {
     questions: any[];
@@ -28,12 +34,29 @@ interface SearchState {
     posts: any[];
     groups: any[];
   };
+  previewData: {
+    users: any[];
+    posts: any[];
+    groups: any[];
+  };
   isLoading: boolean;
-  hasMore: boolean;
+  hasMoreUser: boolean;
+  hasMorePost: boolean;
+  hasMoreGroup: boolean;
+  hasMoreQuestion: boolean;
   error: string | null;
-  currentPage: number;
-  totalPages: number;
-  total: number;
+  currentUserPage: number;
+  currentPostPage: number;
+  currentGroupPage: number;
+  currentQuestionPage: number;
+  totalUserPages: number;
+  totalPostPages: number;
+  totalGroupPages: number;
+  totalQuestionPages: number;
+  totalUsers: number;
+  totalPosts: number;
+  totalGroups: number;
+  totalQuestions: number;
   searchHistory: ISearchHistory[];
   isLoadingHistory: boolean;
   historyError: string | null;
@@ -46,12 +69,29 @@ const initialState: SearchState = {
     posts: [],
     groups: []
   },
+  previewData: {
+    users: [],
+    posts: [],
+    groups: []
+  },
   isLoading: false,
-  hasMore: false,
+  hasMoreUser: true,
+  hasMorePost: true,
+  hasMoreGroup: true,
+  hasMoreQuestion: true,
   error: null,
-  currentPage: 1,
-  totalPages: 1,
-  total: 0,
+  currentUserPage: 1,
+  currentPostPage: 1,
+  currentGroupPage: 1,
+  currentQuestionPage: 0,
+  totalUserPages: 1,
+  totalPostPages: 1,
+  totalGroupPages: 1,
+  totalQuestionPages: 1,
+  totalUsers: 0,
+  totalPosts: 0,
+  totalGroups: 0,
+  totalQuestions: 0,
   searchHistory: [],
   isLoadingHistory: false,
   historyError: null
@@ -79,14 +119,48 @@ export const fetchGroupSearchResults = createAsyncThunk(
   }
 );
 
-// General search thunk
 export const fetchSearchResults = createAsyncThunk(
-  'search/fetchGeneralSearchResults',
-  async ({ query, page = 1, limit = 10 }: { query: string; page?: number; limit?: number }, { rejectWithValue }) => {
+  'search/fetchSearchResults',
+  async (
+    {
+      query,
+      type,
+      page = 1,
+      limit = 10
+    }: {
+      query: string;
+      type: 'user' | 'post' | 'group';
+      page?: number;
+      limit?: number;
+    },
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await generalSearch(query, {
-        page,
-        limit
+      const response = await generalSearch({
+        query,
+        type,
+        params: {
+          page,
+          limit
+        }
+      });
+      return { ...response.data, type };
+    } catch (error) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue('Error');
+    }
+  }
+);
+
+export const fetchSearchPreview = createAsyncThunk(
+  'search/fetchSearchPreview',
+  async ({ query }: { query: string }, { rejectWithValue }) => {
+    try {
+      const response = await generalSearch({
+        query,
+        params: {} // No pagination for preview
       });
       return response.data;
     } catch (error) {
@@ -202,12 +276,27 @@ const searchSlice = createSlice({
         posts: [],
         groups: []
       };
-      state.currentPage = 1;
-      state.hasMore = true;
+      state.currentUserPage = 1;
+      state.currentGroupPage = 1;
+      state.currentPostPage = 1;
+      state.currentQuestionPage = 1;
+
+      state.hasMoreUser = true;
+      state.hasMoreGroup = true;
+      state.hasMorePost = true;
+      state.hasMoreQuestion = true;
       state.error = null;
       state.isLoading = false;
-      state.totalPages = 1;
-      state.total = 0;
+
+      state.totalUserPages = 1;
+      state.totalPostPages = 1;
+      state.totalGroupPages = 1;
+      state.totalQuestionPages = 1;
+
+      state.totalUsers = 0;
+      state.totalPosts = 0;
+      state.totalGroups = 0;
+      state.totalQuestions = 0;
     },
     clearSearchHistoryErrors: (state) => {
       state.historyError = null;
@@ -215,7 +304,7 @@ const searchSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Group search results
+      // Group search results (questions)
       .addCase(fetchGroupSearchResults.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -223,55 +312,83 @@ const searchSlice = createSlice({
       .addCase(fetchGroupSearchResults.fulfilled, (state, action) => {
         state.isLoading = false;
         const { result } = action.payload;
-        if (state.currentPage === 1) {
-          state.data = {
-            ...state.data,
-            questions: result.questions
-          };
+        if (state.currentQuestionPage === 1) {
+          state.data.questions = result.questions || [];
         } else {
-          state.data = {
-            ...state.data,
-            questions: [...state.data.questions, ...result.questions]
-          };
+          state.data.questions = [...state.data.questions, ...(result.questions || [])];
         }
-        state.currentPage = result.pagination.page;
-        state.totalPages = result.pagination.totalPages;
-        state.total = result.pagination.total;
-        state.hasMore = result.pagination.page < result.pagination.totalPages;
+
+        state.currentQuestionPage = result.pagination.page;
+        state.totalQuestionPages = result.pagination.totalPages;
+        state.totalQuestions = result.pagination.total;
+        state.hasMoreQuestion = result.pagination.page < result.pagination.totalPages;
       })
       .addCase(fetchGroupSearchResults.rejected, (state, action) => {
         state.isLoading = false;
         state.error = (action.payload as string) || 'An error occurred';
       })
 
-      // General search results - using the same state as group search
+      // Search preview results (no type)
+      .addCase(fetchSearchPreview.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchSearchPreview.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { result } = action.payload;
+        state.previewData = {
+          users: result.users || [],
+          posts: result.posts || [],
+          groups: result.groups || []
+        };
+      })
+      .addCase(fetchSearchPreview.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = (action.payload as string) || 'An error occurred';
+      })
+
+      // General search results by type
       .addCase(fetchSearchResults.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchSearchResults.fulfilled, (state, action) => {
         state.isLoading = false;
-        const { result } = action.payload;
-        if (state.currentPage === 1) {
-          state.data = {
-            ...state.data,
-            users: result.users,
-            posts: result.posts,
-            groups: result.groups
-          };
-        } else {
-          state.data = {
-            ...state.data,
-            users: [...state.data.users, ...result.users],
-            posts: [...state.data.posts, ...result.posts],
-            groups: [...state.data.groups, ...result.groups]
-          };
+        const { result, type } = action.payload;
+        const pagination: Pagination = result.pagination;
+
+        // Handle each type with its own pagination state
+        if (type === 'user') {
+          if (state.currentUserPage === 1) {
+            state.data.users = result.users || [];
+          } else {
+            state.data.users = [...state.data.users, ...(result.users || [])];
+          }
+          state.currentUserPage = pagination.page;
+          state.totalUserPages = pagination.totalPages;
+          state.totalUsers = pagination.total;
+          state.hasMoreUser = pagination.page < pagination.totalPages;
+        } else if (type === 'post') {
+          if (pagination.page === 1) {
+            state.data.posts = result.posts || [];
+          } else {
+            state.data.posts = [...state.data.posts, ...(result.posts || [])];
+          }
+          state.currentPostPage = pagination.page;
+          state.totalPostPages = pagination.totalPages;
+          state.totalPosts = pagination.total;
+          state.hasMorePost = pagination.page < pagination.totalPages;
+        } else if (type === 'group') {
+          if (state.currentGroupPage === 1) {
+            state.data.groups = result.groups || [];
+          } else {
+            state.data.groups = [...state.data.groups, ...(result.groups || [])];
+          }
+          state.currentGroupPage = pagination.page;
+          state.totalGroupPages = pagination.totalPages;
+          state.totalGroups = pagination.total;
+          state.hasMoreGroup = pagination.page < pagination.totalPages;
         }
-        console.log(state.data);
-        state.currentPage = result.pagination.page;
-        state.totalPages = result.pagination.totalPages;
-        state.total = result.pagination.total;
-        state.hasMore = result.pagination.page < result.pagination.totalPages;
       })
       .addCase(fetchSearchResults.rejected, (state, action) => {
         state.isLoading = false;

@@ -13,6 +13,8 @@ import { useEffect, useState } from 'react';
 import { StudyGroupPrivacy } from '@/types/enums';
 import { editGroupById } from '@/store/slices/studyGroupSlice';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
+import { Spinner } from '@/components/ui/spinner';
 
 const schema = yup.object({
   name: yup.string().required('Name is required').min(3, 'Name must be at least 3 characters'),
@@ -21,12 +23,18 @@ const schema = yup.object({
 });
 
 const GroupSettings = () => {
+  // States
+  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
+
+  // Hooks
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { info, isLoading } = useSelector((state: RootState) => state.studyGroup);
   const { groupId } = useParams();
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const { t } = useTranslation();
+
+  // Selectors
+  const { info, isLoading } = useSelector((state: RootState) => state.studyGroup);
 
   const {
     register,
@@ -44,10 +52,9 @@ const GroupSettings = () => {
     }
   });
 
-  // Load initial data
+  // Effects
   useEffect(() => {
     if (info && !isDataLoaded) {
-      // Explicitly convert privacy to string to ensure correct type
       const privacyValue = info.privacy.toString();
 
       reset({
@@ -60,32 +67,7 @@ const GroupSettings = () => {
     }
   }, [info, reset, isDataLoaded]);
 
-  const onSubmit = async (data: any) => {
-    try {
-      if (!groupId || !info) return;
-
-      const body = {
-        name: data.name,
-        privacy: parseInt(data.privacy),
-        description: data.description
-      };
-
-      await dispatch(editGroupById({ groupId: info._id, body })).unwrap();
-      toast({
-        description: 'Group settings updated successfully',
-        variant: 'default'
-      });
-      navigate(`/groups/${groupId}/home`);
-    } catch (error: any) {
-      console.error('Failed to update group:', error);
-      toast({
-        description: 'Failed to update group settings',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  // Compare form values with original data to enable/disable save button
+  // Forms
   const formValues = watch();
   const isFormChanged =
     info && isDataLoaded
@@ -100,15 +82,38 @@ const GroupSettings = () => {
           description: info.description
         })
       : false;
-
-  // Helper function to determine if form is ready
   const isFormReady = isDataLoaded && !isLoading;
+
+  const onSubmit = async (data: any) => {
+    try {
+      if (!groupId || !info) return;
+
+      const body = {
+        name: data.name,
+        privacy: parseInt(data.privacy),
+        description: data.description
+      };
+
+      await dispatch(editGroupById({ groupId: info._id, body })).unwrap();
+      toast({
+        description: t('groups.updateSuccess'),
+        variant: 'default'
+      });
+      navigate(`/groups/${groupId}/home`);
+    } catch (error: any) {
+      console.error('Failed to update group:', error);
+      toast({
+        description: t('groups.updateError'),
+        variant: 'destructive'
+      });
+    }
+  };
 
   return (
     <div className='min-h-screen bg-slate-50 py-8'>
       <Card className='max-w-2xl mx-auto shadow-lg'>
         <CardHeader>
-          <CardTitle className='text-2xl font-semibold text-slate-800'>Group Settings</CardTitle>
+          <CardTitle className='text-2xl font-semibold text-slate-800'>{t('groups.settingsTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           {!isFormReady ? (
@@ -118,30 +123,30 @@ const GroupSettings = () => {
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
               <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>Name</label>
+                <label className='text-sm font-medium text-slate-700'>{t('groups.nameLabel')}</label>
                 <Input {...register('name')} className='w-full focus:ring-2 focus:ring-blue-500' />
                 {errors.name && <p className='text-sm text-red-500'>{errors.name.message}</p>}
               </div>
 
               <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>Group Privacy</label>
+                <label className='text-sm font-medium text-slate-700'>{t('groups.privacyLabel')}</label>
                 <Select
                   defaultValue={formValues.privacy}
                   onValueChange={(value) => setValue('privacy', value, { shouldValidate: true })}
                 >
                   <SelectTrigger className='w-full bg-white'>
-                    <SelectValue placeholder='Select privacy level' />
+                    <SelectValue placeholder={t('groups.privacyPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={StudyGroupPrivacy.Public.toString()}>Public</SelectItem>
-                    <SelectItem value={StudyGroupPrivacy.Private.toString()}>Private</SelectItem>
+                    <SelectItem value={StudyGroupPrivacy.Public.toString()}>{t('groups.public')}</SelectItem>
+                    <SelectItem value={StudyGroupPrivacy.Private.toString()}>{t('groups.private')}</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.privacy && <p className='text-sm text-red-500'>{errors.privacy.message}</p>}
               </div>
 
               <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>Description</label>
+                <label className='text-sm font-medium text-slate-700'>{t('groups.descriptionLabel')}</label>
                 <Textarea
                   {...register('description')}
                   className='min-h-32 w-full resize-none focus:ring-2 focus:ring-blue-500'
@@ -156,7 +161,7 @@ const GroupSettings = () => {
                   disabled={!isFormChanged || isLoading}
                   className='rounded-full px-6 bg-sky-500 hover:bg-sky-600 disabled:opacity-50'
                 >
-                  {isLoading ? 'Saving...' : 'Save changes'}
+                  {isLoading ? <Spinner size='small' /> : t('common.saveChanges')}
                 </Button>
               </div>
             </form>

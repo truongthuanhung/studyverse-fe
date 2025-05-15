@@ -1,24 +1,31 @@
 import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ChartColumnIncreasing, CircleHelp, Home, Settings, UserPlus, Users } from 'lucide-react';
+import { ChartColumnIncreasing, CircleHelp, Home, Plus, Settings, UserPlus, Users } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { getGroupJoinRequestsCount, getGroupPendingCount } from '@/store/slices/studyGroupSlice';
 import { useSocket } from '@/contexts/SocketContext';
+import { useTranslation } from 'react-i18next';
+import CreateDialog from '@/components/common/CreateDialog';
 
 const GroupDetailAdminSidebar = () => {
-  const [activeTab, setActiveTab] = useState<'manage' | 'chats'>('manage');
+  // Hooks
   const { groupId } = useParams();
   const location = useLocation();
   const slug = location.pathname.split('/').pop();
-
   const navigate = useNavigate();
   const { socket } = useSocket();
-
   const dispatch = useDispatch<AppDispatch>();
+  const { t } = useTranslation();
+
+  // States
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+
+  // Selectors
   const { pendingCount, joinRequestsCount } = useSelector((state: RootState) => state.studyGroup);
 
+  // Effects
   useEffect(() => {
     const fetchCounts = async () => {
       try {
@@ -59,29 +66,7 @@ const GroupDetailAdminSidebar = () => {
 
   return (
     <div className='w-full h-[calc(100vh-60px)] p-4 border-r hidden lg:block bg-white shadow-lg'>
-      <div className='flex items-center gap-2'>
-        <Button
-          className={`${
-            activeTab === 'manage'
-              ? 'bg-sky-500 hover:bg-sky-600 text-white'
-              : 'bg-gray-200 hover:bg-gray-300 text-primary'
-          } flex-1 rounded-[20px]`}
-          onClick={() => setActiveTab('manage')}
-        >
-          Manage
-        </Button>
-        <Button
-          className={`${
-            activeTab === 'chats'
-              ? 'bg-sky-500 hover:bg-sky-600 text-white'
-              : 'bg-gray-200 hover:bg-gray-300 text-primary'
-          } flex-1 rounded-[20px]`}
-          onClick={() => setActiveTab('chats')}
-        >
-          Chats
-        </Button>
-      </div>
-      <div className='flex flex-col mt-4 -mx-4'>
+      <div className='flex flex-col -mx-4'>
         <div
           onClick={() => navigate(`/groups/${groupId}/home`)}
           className={`${
@@ -89,7 +74,7 @@ const GroupDetailAdminSidebar = () => {
           } flex gap-4 items-center cursor-pointer px-4 py-3`}
         >
           <Home />
-          <p className='font-semibold'>Community home</p>
+          <p className='font-semibold'>{t('groupSidebar.communityHome')}</p>
         </div>
         <div
           onClick={() => navigate(`/groups/${groupId}/manage-questions`)}
@@ -98,7 +83,7 @@ const GroupDetailAdminSidebar = () => {
           } flex gap-4 items-center cursor-pointer px-4 py-3 relative`}
         >
           <CircleHelp />
-          <p className='font-semibold'>Manage questions</p>
+          <p className='font-semibold'>{t('groupSidebar.manageQuestions')}</p>
           {pendingCount > 0 && (
             <div className='absolute right-4 flex items-center justify-center'>
               <div className='bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
@@ -114,7 +99,7 @@ const GroupDetailAdminSidebar = () => {
           } flex gap-4 items-center cursor-pointer px-4 py-3`}
         >
           <UserPlus />
-          <p className='font-semibold'>Join requests</p>
+          <p className='font-semibold'>{t('groupSidebar.joinRequests')}</p>
           {joinRequestsCount > 0 && (
             <div className='absolute right-4 flex items-center justify-center'>
               <div className='bg-red-500 text-white text-xs font-bold rounded-full min-h-5 min-w-5 px-1.5 flex items-center justify-center'>
@@ -130,7 +115,7 @@ const GroupDetailAdminSidebar = () => {
           } flex gap-4 items-center cursor-pointer px-4 py-3`}
         >
           <Users />
-          <p className='font-semibold'>Membership</p>
+          <p className='font-semibold'>{t('groupSidebar.membership')}</p>
         </div>
         <div
           onClick={() => navigate(`/groups/${groupId}/analytics`)}
@@ -139,7 +124,7 @@ const GroupDetailAdminSidebar = () => {
           } flex gap-4 items-center cursor-pointer px-4 py-3`}
         >
           <ChartColumnIncreasing />
-          <p className='font-semibold'>Group analysis</p>
+          <p className='font-semibold'>{t('groupSidebar.groupAnalysis')}</p>
         </div>
         <div
           onClick={() => navigate(`/groups/${groupId}/settings`)}
@@ -148,15 +133,15 @@ const GroupDetailAdminSidebar = () => {
           } flex gap-4 items-center cursor-pointer px-4 py-3`}
         >
           <Settings />
-          <p className='font-semibold'>Group settings</p>
+          <p className='font-semibold'>{t('groupSidebar.groupSettings')}</p>
         </div>
       </div>
-      <Button
-        onClick={() => navigate(`/groups/${groupId}/create-question`)}
-        className='mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'
-      >
-        Create a question
-      </Button>
+      <CreateDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} isGroup={true}>
+        <Button className='mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white rounded-[20px]'>
+          <Plus className='mr-2 h-4 w-4' />
+          {t('groupSidebar.createQuestion')}
+        </Button>
+      </CreateDialog>
     </div>
   );
 };

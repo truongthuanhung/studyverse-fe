@@ -7,25 +7,31 @@ import { fetchStudyGroupJoinRequests, getGroupJoinRequestsCount } from '@/store/
 import { memo } from 'react';
 import { UserRoundPlus } from 'lucide-react';
 import { useSocket } from '@/contexts/SocketContext';
+import { useTranslation } from 'react-i18next';
 
 const GroupRequest = memo(() => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { joinRequests } = useSelector((state: RootState) => state.studyGroup);
+  // Refs
+  const requestRef = useRef<HTMLDivElement | null>(null);
+
+  // Hooks
   const { groupId } = useParams();
   const [searchParams] = useSearchParams();
+  const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
-  const highlightedRequestId = searchParams.get('requestId');
-  const requestRef = useRef<HTMLDivElement | null>(null);
+  const { t } = useTranslation();
   const { socket } = useSocket();
+  const highlightedRequestId = searchParams.get('requestId');
 
-  // Fetch join requests when groupId or location changes
+  // Selectors
+  const { joinRequests } = useSelector((state: RootState) => state.studyGroup);
+
+  // Effects
   useEffect(() => {
     if (groupId) {
       dispatch(fetchStudyGroupJoinRequests(groupId));
     }
   }, [groupId, dispatch, location.key]);
 
-  // Socket event handlers
   useEffect(() => {
     const handleNewJoinRequest = async () => {
       if (groupId) {
@@ -45,7 +51,6 @@ const GroupRequest = memo(() => {
     };
   }, [socket, groupId, dispatch]);
 
-  // Scroll to highlighted request
   useEffect(() => {
     if (highlightedRequestId && requestRef.current) {
       setTimeout(() => {
@@ -79,10 +84,8 @@ const GroupRequest = memo(() => {
         ) : (
           <div className='flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md w-full md:w-[580px] mx-auto mt-4'>
             <UserRoundPlus className='w-16 h-16 text-slate-400 mb-4' />
-            <h3 className='text-xl font-semibold text-slate-900 mb-2'>No requests yet</h3>
-            <p className='text-slate-600 text-center'>
-              When students request to join this group, they will appear here.
-            </p>
+            <h3 className='text-xl font-semibold text-slate-900 mb-2'>{t('groups.noRequestsTitle')}</h3>
+            <p className='text-slate-600 text-center'>{t('groups.noRequestsDescription')}</p>
           </div>
         )}
       </div>

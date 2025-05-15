@@ -4,6 +4,9 @@ import PersonCard from '@/components/common/PersonCard';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { fetchRecommendedGroupUsers, fetchRecommendedUsersWithMutualConnections } from '@/store/slices/communitySlice';
+import { useTranslation } from 'react-i18next';
+import { Spinner } from '@/components/ui/spinner';
+import { CirclePlus } from 'lucide-react';
 
 // Skeleton component for loading state
 const PersonCardSkeleton = () => {
@@ -23,7 +26,14 @@ const PersonCardSkeleton = () => {
 };
 
 const Community = () => {
+  // Constants
+  const skeletonArray = Array(8).fill(0);
+
+  // Hooks
   const dispatch = useDispatch<AppDispatch>();
+  const { t } = useTranslation();
+
+  // Selectors
   const {
     groupUsers,
     isLoadingGroupUsers,
@@ -36,12 +46,13 @@ const Community = () => {
     hasMoreMutualConnectionsUsers
   } = useSelector((state: RootState) => state.community);
 
+  // Effects
   useEffect(() => {
-    // Fetch both types of recommended users when component mounts
     dispatch(fetchRecommendedGroupUsers({ page: 1, limit: 8 }));
     dispatch(fetchRecommendedUsersWithMutualConnections({ page: 1, limit: 8 }));
   }, [dispatch]);
 
+  // Handlers
   const handleShowMoreGroupUsers = () => {
     if (hasMoreGroupUsers && !isLoadingGroupUsers) {
       dispatch(
@@ -64,14 +75,18 @@ const Community = () => {
     }
   };
 
-  // Create an array of skeleton placeholders when loading
-  const skeletonArray = Array(8).fill(0);
+  useEffect(() => {
+    console.log({
+      isLoadingGroupUsers,
+      isLoadingMutualConnectionsUsers
+    });
+  }, [isLoadingGroupUsers, isLoadingMutualConnectionsUsers]);
 
   return (
     <div className='max-w-screen-xl mx-auto p-4 bg-slate-100'>
       {/* Study Groups Section */}
       <div className='mb-12'>
-        <h2 className='text-xl font-medium mb-4'>People you may know from the study groups</h2>
+        <h2 className='text-xl font-medium mb-4'>{t('community.peopleFromStudyGroups')}</h2>
 
         {error && <div className='text-red-500 mb-4'>{error}</div>}
 
@@ -86,8 +101,19 @@ const Community = () => {
 
         {hasMoreGroupUsers && groupUsers.length > 0 && (
           <div className='flex justify-center my-4'>
-            <Button onClick={handleShowMoreGroupUsers} disabled={isLoadingGroupUsers} className='px-8'>
-              {isLoadingGroupUsers ? 'Loading...' : 'Load More'}
+            <Button
+              onClick={handleShowMoreGroupUsers}
+              disabled={isLoadingGroupUsers}
+              className='bg-sky-500 text-white hover:bg-sky-600 rounded-[20px] flex items-center justify-center gap-2'
+            >
+              {isLoadingGroupUsers ? (
+                <Spinner size='small' />
+              ) : (
+                <>
+                  <CirclePlus size={16} />
+                </>
+              )}
+              <span>{t('common.loadMore')}</span>
             </Button>
           </div>
         )}
@@ -95,7 +121,7 @@ const Community = () => {
 
       {/* Mutual Connections Section */}
       <div>
-        <h2 className='text-xl font-medium mb-4'>People who have mutual connections with you</h2>
+        <h2 className='text-xl font-medium mb-4'>{t('community.peopleWithMutualConnections')}</h2>
 
         {error && <div className='text-red-500 mb-4'>{error}</div>}
 
@@ -113,9 +139,16 @@ const Community = () => {
             <Button
               onClick={handleShowMoreMutualConnections}
               disabled={isLoadingMutualConnectionsUsers}
-              className='px-8'
+              className='bg-sky-500 text-white hover:bg-sky-600 rounded-[20px] flex items-center justify-center gap-2'
             >
-              {isLoadingMutualConnectionsUsers ? 'Loading...' : 'Load More'}
+              {isLoadingMutualConnectionsUsers ? (
+                <Spinner size='small' />
+              ) : (
+                <>
+                  <CirclePlus size={16} />
+                </>
+              )}
+              <span>{t('common.loadMore')}</span>
             </Button>
           </div>
         )}

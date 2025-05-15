@@ -29,6 +29,7 @@ import { CreateCommentRequestBody, IComment } from '@/types/post';
 import { createComment, fetchChildComments, likeOnComment, unlikeOnComment } from '@/store/slices/commentSlice';
 import { Spinner } from '../ui/spinner';
 import { cleanContent } from '@/utils/quill';
+import { useTranslation } from 'react-i18next';
 
 interface CommentProps {
   comment: IComment;
@@ -55,6 +56,7 @@ const Comment: React.FC<CommentProps> = ({ comment, isPending = false, postOwner
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Selectors
   const profile = useSelector((state: RootState) => state.profile.user);
@@ -64,12 +66,10 @@ const Comment: React.FC<CommentProps> = ({ comment, isPending = false, postOwner
   const { isLoading } = useSelector((state: RootState) => state.comments);
 
   // Handlers
-  // Xóa useEffect hiện tại và thay thế bằng hàm này
   const handleToggleReplies = async () => {
     const newShowRepliesState = !showReplies;
     setShowReplies(newShowRepliesState);
 
-    // Chỉ tải dữ liệu khi hiển thị replies và chưa có dữ liệu
     if (
       newShowRepliesState &&
       comment.comment_count > 0 &&
@@ -168,10 +168,6 @@ const Comment: React.FC<CommentProps> = ({ comment, isPending = false, postOwner
 
     setIsUpdating(true);
     try {
-      // TODO: Implement update comment functionality
-      console.log('Updating comment:', comment._id, 'with content:', editContent);
-
-      // Mock success
       setIsEditing(false);
       toast({
         description: 'Comment updated successfully'
@@ -188,10 +184,6 @@ const Comment: React.FC<CommentProps> = ({ comment, isPending = false, postOwner
 
   const handleDelete = async () => {
     try {
-      // TODO: Implement delete comment functionality
-      console.log('Deleting comment:', comment._id);
-
-      // Mock success
       toast({
         description: 'Comment deleted successfully',
         variant: 'default'
@@ -334,7 +326,7 @@ const Comment: React.FC<CommentProps> = ({ comment, isPending = false, postOwner
               onClick={handleToggleReplies}
             >
               <MessageSquare size={16} />
-              <span>{showReplies ? 'Hide Replies' : 'Reply'}</span>
+              <span>{showReplies ? t('question.hideReply') : t('question.reply')}</span>
               {comment.comment_count > 0 && (
                 <span className='ml-1 text-xs bg-gray-100 px-2 py-0.5 rounded-full'>{comment.comment_count}</span>
               )}
@@ -365,7 +357,7 @@ const Comment: React.FC<CommentProps> = ({ comment, isPending = false, postOwner
                   className='mt-2'
                 >
                   {childComments?.isLoading ? <Loader2 className='w-4 h-4 animate-spin mr-2' /> : null}
-                  Load More Comments
+                  {t('question.loadMoreReply')}
                 </Button>
               )}
 
@@ -373,7 +365,7 @@ const Comment: React.FC<CommentProps> = ({ comment, isPending = false, postOwner
                 <p className='text-sm text-zinc-500'>No replies yet</p>
               )}
 
-              <div className='border rounded-lg'>
+              <div className='relative'>
                 <Editor
                   ref={editorRef}
                   value={replyContent}
@@ -381,24 +373,16 @@ const Comment: React.FC<CommentProps> = ({ comment, isPending = false, postOwner
                   onChange={setReplyContent}
                   setMentions={setMentions}
                   mention_users={[]}
-                  placeholder='Write your comment'
+                  placeholder={t('question.writeReply')}
                 />
-              </div>
-
-              <div className='mt-2 flex justify-between items-center'>
                 <Button
                   disabled={isLoading || !replyContent}
                   onClick={onReply}
-                  className='rounded-[20px] bg-sky-500 hover:bg-sky-600 text-white'
+                  variant='ghost'
+                  size='icon'
+                  className='absolute right-[28px] bottom-[4px] -translate-y-1/2 bg-transparent hover:bg-transparent p-0 h-auto w-auto text-sky-500 hover:text-sky-600'
                 >
-                  {isLoading ? (
-                    <Spinner size='small' />
-                  ) : (
-                    <>
-                      <Send className='mr-2' />
-                      Send
-                    </>
-                  )}
+                  {isLoading ? <Spinner size='small' /> : <Send size={16} />}
                 </Button>
               </div>
             </div>
