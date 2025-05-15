@@ -11,6 +11,7 @@ import { BookOpen, CheckCircle, Clock, User, XCircle } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface InvitationCardProps {
   invitation: Invitation;
@@ -18,14 +19,18 @@ interface InvitationCardProps {
 }
 
 const InvitationCard: React.FC<InvitationCardProps> = ({ invitation, isHighlighted = false }) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  // States
   const [isApproving, setIsApproving] = useState<boolean>(false);
   const [isDeclining, setIsDeclining] = useState<boolean>(false);
   const [isVisible, setIsVisible] = useState<boolean>(isHighlighted);
 
-  // Handle highlight effect with auto-dismissal after 3 seconds
+  // Hooks
+  const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  // Effects
   useEffect(() => {
     if (isHighlighted) {
       setIsVisible(true);
@@ -36,12 +41,13 @@ const InvitationCard: React.FC<InvitationCardProps> = ({ invitation, isHighlight
     }
   }, [isHighlighted]);
 
+  // Handlers
   const handleApprove = async (invitationId: string) => {
     try {
       setIsApproving(true);
       await dispatch(acceptInvitation(invitationId)).unwrap();
       toast({
-        description: 'Invitation has been approved successfully'
+        description: t('invitations.approveSuccess')
       });
       if (isHighlighted) {
         navigate('/invitations', { replace: true });
@@ -50,7 +56,7 @@ const InvitationCard: React.FC<InvitationCardProps> = ({ invitation, isHighlight
       console.error(err);
       toast({
         variant: 'destructive',
-        description: 'Failed to approve the invitation'
+        description: t('invitations.approveFailed')
       });
     } finally {
       setIsApproving(false);
@@ -62,7 +68,7 @@ const InvitationCard: React.FC<InvitationCardProps> = ({ invitation, isHighlight
       setIsDeclining(true);
       await dispatch(rejectInvitation(invitationId)).unwrap();
       toast({
-        description: 'Invitation has been declined successfully'
+        description: t('invitations.declineSuccess')
       });
       if (isHighlighted) {
         navigate('/invitations', { replace: true });
@@ -71,7 +77,7 @@ const InvitationCard: React.FC<InvitationCardProps> = ({ invitation, isHighlight
       console.error(err);
       toast({
         variant: 'destructive',
-        description: 'Failed to decline the invitation'
+        description: t('invitations.declineFailed')
       });
     } finally {
       setIsDeclining(false);
@@ -106,7 +112,7 @@ const InvitationCard: React.FC<InvitationCardProps> = ({ invitation, isHighlight
             </span>
             <div className='flex items-center text-sm gap-1 text-zinc-500 mt-1'>
               <User size={12} />
-              <span>Invited by </span>
+              <span>{t('invitations.invitedBy')} </span>
               <span
                 className='font-medium cursor-pointer'
                 onClick={() => {
@@ -119,7 +125,7 @@ const InvitationCard: React.FC<InvitationCardProps> = ({ invitation, isHighlight
           </div>
           <Badge variant='outline' className='border-sky-200 text-sky-600 bg-sky-50'>
             <BookOpen size={14} className='mr-1' />
-            Study Group
+            {t('groups.title')}
           </Badge>
         </div>
       </CardHeader>
@@ -158,7 +164,7 @@ const InvitationCard: React.FC<InvitationCardProps> = ({ invitation, isHighlight
           ) : (
             <>
               <XCircle className='mr-1 h-4 w-4 text-rose-500' />
-              Decline
+              {t('common.decline')}
             </>
           )}
         </Button>
@@ -173,7 +179,7 @@ const InvitationCard: React.FC<InvitationCardProps> = ({ invitation, isHighlight
           ) : (
             <>
               <CheckCircle className='mr-1 h-4 w-4' />
-              Approve
+              {t('common.approve')}
             </>
           )}
         </Button>

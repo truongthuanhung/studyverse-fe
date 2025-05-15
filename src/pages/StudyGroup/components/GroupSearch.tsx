@@ -19,6 +19,7 @@ import { AppDispatch, RootState } from '@/store/store';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getRelativeTime } from '@/utils/date';
+import { useTranslation } from 'react-i18next';
 
 interface GroupSearchProps {
   groupId: string;
@@ -41,20 +42,27 @@ interface SearchHistory {
 }
 
 const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
+  // Refs
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  // States
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [submittedQuery, setSubmittedQuery] = useState<string>('');
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('results');
+
+  // Hooks
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  // Selectors
   const { data, isLoading, totalQuestions, currentQuestionPage, hasMoreQuestion, searchHistory, isLoadingHistory } =
     useSelector((state: RootState) => state.search);
-
   const searchResults = data.questions;
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [submittedQuery, setSubmittedQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('results');
-  const loaderRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-
+  // Effects
   useEffect(() => {
     if (isLoading || !hasMoreQuestion) return;
 
@@ -89,7 +97,6 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
     };
   }, [hasMoreQuestion, isLoading, currentQuestionPage, dispatch, submittedQuery, groupId]);
 
-  // Clear search results when dialog closes
   useEffect(() => {
     if (!isSearchOpen) {
       dispatch(clearSearchResults());
@@ -99,6 +106,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
     }
   }, [isSearchOpen, dispatch]);
 
+  // Handlers
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -180,7 +188,6 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
     dispatch(clearSearchResults());
   };
 
-  // Highlight keywords in text
   const highlightKeywords = (text: string, keywords: string) => {
     if (!keywords.trim()) return text;
 
@@ -252,11 +259,9 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
     );
   };
 
-  // Show history tab if clicked or if there are no search results
   const handleTabChange = (value: string) => {
     setActiveTab(value);
 
-    // If switching to history tab, refresh the history data
     if (value === 'history') {
       dispatch(fetchGroupSearchHistory(groupId));
     }
@@ -268,13 +273,13 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
         {children || (
           <Button className='rounded-full' variant='outline'>
             <Search size={16} className='mr-2' />
-            Search
+            {t('search.title')}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className='sm:max-w-2xl max-h-[90vh]'>
         <DialogHeader>
-          <DialogTitle>Search in group</DialogTitle>
+          <DialogTitle>{t('search.groupSearch')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSearch} className='flex gap-2 mt-2'>
@@ -283,7 +288,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Enter search keywords...'
+              placeholder={t('search.placeholder')}
               className='pl-10 pr-10'
             />
             {searchQuery && (
@@ -301,7 +306,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
             type='submit'
             disabled={isLoading && currentQuestionPage === 1}
           >
-            {isLoading && currentQuestionPage === 1 ? 'Searching...' : 'Search'}
+            {isLoading && currentQuestionPage === 1 ? t('search.searching') : t('search.buttonText')}
           </Button>
         </form>
 
@@ -309,14 +314,14 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
           <TabsList className='mb-4'>
             <TabsTrigger value='results' className='flex items-center'>
               <Search size={16} className='mr-2' />
-              Results
+              {t('search.tabs.results')}
               {totalQuestions > 0 && (
                 <span className='ml-2 bg-sky-100 text-sky-700 text-xs px-2 py-0.5 rounded-full'>{totalQuestions}</span>
               )}
             </TabsTrigger>
             <TabsTrigger value='history' className='flex items-center'>
               <HistoryIcon size={16} className='mr-2' />
-              History
+              {t('search.tabs.history')}
               {searchHistory.length > 0 && (
                 <span className='ml-2 bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full'>
                   {searchHistory.length}
@@ -359,14 +364,14 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
               {!submittedQuery && (
                 <div className='text-center py-10'>
                   <Search size={40} className='mx-auto text-gray-300' />
-                  <p className='text-gray-500 mt-3'>Enter keywords to search</p>
+                  <p className='text-gray-500 mt-3'>{t('search.emptyStates.initial')}</p>
                 </div>
               )}
 
               {isLoading && submittedQuery && currentQuestionPage === 0 && (
                 <div className='text-center py-10'>
                   <div className='w-8 h-8 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto'></div>
-                  <p className='text-gray-500 mt-3'>Searching...</p>
+                  <p className='text-gray-500 mt-3'>{t('search.searching')}</p>
                 </div>
               )}
             </ScrollArea>
@@ -374,7 +379,7 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
 
           <TabsContent value='history' className='mt-0'>
             <div className='flex justify-between items-center mb-4'>
-              <h3 className='text-sm font-medium'>Recent searches</h3>
+              <h3 className='text-sm font-medium'>{t('search.history.recentSearches')}</h3>
               {searchHistory.length > 0 && (
                 <Button
                   variant='ghost'
@@ -393,14 +398,14 @@ const GroupSearch: React.FC<GroupSearchProps> = ({ groupId, children }) => {
               {isLoadingHistory ? (
                 <div className='text-center py-10'>
                   <div className='w-8 h-8 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto'></div>
-                  <p className='text-gray-500 mt-3'>Loading search history...</p>
+                  <p className='text-gray-500 mt-3'>{t('search.history.loadingHistory')}</p>
                 </div>
               ) : searchHistory.length > 0 ? (
                 <div className='border rounded-md overflow-hidden'>{searchHistory.map(renderHistoryItem)}</div>
               ) : (
                 <div className='text-center py-10'>
                   <HistoryIcon size={40} className='mx-auto text-gray-300' />
-                  <p className='text-gray-500 mt-3'>No search history</p>
+                  <p className='text-gray-500 mt-3'>{t('search.emptyStates.noHistory')}</p>
                   <p className='text-gray-400 text-sm mt-1'>Your recent searches will appear here</p>
                 </div>
               )}

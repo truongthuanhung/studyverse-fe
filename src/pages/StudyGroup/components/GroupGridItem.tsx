@@ -11,9 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import { cancelRequest, requestToJoin } from '@/store/slices/studyGroupSlice';
 import { AppDispatch } from '@/store/store';
 import { StudyGroup } from '@/types/group';
-import { formatDateGMT7 } from '@/utils/date';
+import { formatDateToDDMMYYYY_GMT7 } from '@/utils/date';
 import { Calendar, MoreHorizontal, Users, BookOpen, ExternalLink, UserPlus, Ban } from 'lucide-react';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,6 +30,7 @@ const GroupGridItem: React.FC<GroupGridItemProps> = ({
 }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  const { t } = useTranslation();
 
   const navigateToGroup = (group_id: string) => {
     navigate(`/groups/${group_id}/home`);
@@ -112,13 +114,15 @@ const GroupGridItem: React.FC<GroupGridItemProps> = ({
           {isJoined && (
             <div className='flex items-center text-sm text-slate-500'>
               <Calendar className='h-4 w-4 mr-1' />
-              <span>Joined {formatDateGMT7(group.joined_at)}</span>
+              <span>{`${t('groups.joined')}  ${formatDateToDDMMYYYY_GMT7(group.joined_at)}`}</span>
             </div>
           )}
 
           <div className='flex items-center text-sm text-slate-500'>
             <Users className='h-4 w-4 mr-1' />
-            <span>{group.member_count || 0} members</span>
+            <span>
+              {group.member_count || 0} {t('groups.members')}
+            </span>
           </div>
         </div>
       </CardContent>
@@ -126,7 +130,7 @@ const GroupGridItem: React.FC<GroupGridItemProps> = ({
       <CardFooter className='p-4 pt-0 flex gap-2'>
         {isJoined ? (
           <Button onClick={() => navigateToGroup(group._id)} className='bg-sky-500 hover:bg-sky-600 text-white flex-1'>
-            <ExternalLink className='mr-2 h-4 w-4' /> View Group
+            <ExternalLink className='mr-2 h-4 w-4' /> {t('groups.viewGroup')}
           </Button>
         ) : (
           <Button

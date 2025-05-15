@@ -26,6 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { getFullTime, getRelativeTime } from '@/utils/date';
 import { getTagColor } from '@/utils/tag';
 import { Badge } from '../ui/badge';
+import { useTranslation } from 'react-i18next';
 
 interface PostDialogProps {
   post: IPost;
@@ -33,23 +34,31 @@ interface PostDialogProps {
 }
 
 const PostDialog: React.FC<PostDialogProps> = ({ post: initialPost, initialImageIndex = 0 }) => {
+  // Refs
+  const quillRef = useRef<ReactQuill | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // States
+  const [content, setContent] = useState('');
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(initialImageIndex);
+  const [showAllTags, setShowAllTags] = useState(false);
+
+  // Hooks
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  // Selectors
   const storePost = useSelector((state: RootState) => state.posts.posts.find((p) => p._id === initialPost._id));
   const comments = useSelector((state: RootState) => state.comments.comments[initialPost._id] || []);
   const { user } = useSelector((state: RootState) => state.profile);
   const post = storePost || initialPost;
-  console.log(post);
-  const [content, setContent] = useState('');
-  const quillRef = useRef<ReactQuill | null>(null);
-  const [currentMediaIndex, setCurrentMediaIndex] = useState(initialImageIndex);
-
-  const [showAllTags, setShowAllTags] = useState(false);
   const currentPage = useSelector((state: RootState) => state.comments.currentPage[initialPost._id] || 0);
   const hasMore = useSelector((state: RootState) => state.comments.hasMore[initialPost._id] || false);
   const isLoading = useSelector((state: RootState) => state.comments.isLoading);
+  const pendingComments = useSelector((state: RootState) => state.comments.pendingComments[initialPost._id] || []);
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  // Effects
   useEffect(() => {
     if (currentPage === 0) {
       dispatch(fetchComments({ postId: initialPost._id, page: 1, limit: 5 }));
@@ -116,8 +125,6 @@ const PostDialog: React.FC<PostDialogProps> = ({ post: initialPost, initialImage
 
     return cleanedContent;
   };
-
-  const pendingComments = useSelector((state: RootState) => state.comments.pendingComments[initialPost._id] || []);
 
   const onReply = async () => {
     const sanitizedContent = cleanContent(content);
@@ -279,8 +286,8 @@ const PostDialog: React.FC<PostDialogProps> = ({ post: initialPost, initialImage
         )}
 
         <div className='flex items-center gap-2 text-zinc-500 text-sm justify-end py-1'>
-          <p className='cursor-pointer'>{post.like_count} likes</p>
-          <p className='cursor-pointer'>{post.comment_count} comments</p>
+          <p className='cursor-pointer'>{t('post.likes', { count: post.like_count || 0 })}</p>
+          <p className='cursor-pointer'>{t('post.comments', { count: post.comment_count || 0 })}</p>
         </div>
 
         <div className='flex items-center justify-center mt-1'>
@@ -291,15 +298,15 @@ const PostDialog: React.FC<PostDialogProps> = ({ post: initialPost, initialImage
             } text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm`}
           >
             <ThumbsUp size={16} />
-            <p>Like</p>
+            <p>{t('post.like')}</p>
           </div>
-          <div className='flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
+          <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
             <MessageCircleMore size={16} />
-            <p className='text-sm'>Comment</p>
+            <p>{t('post.comment')}</p>
           </div>
-          <div className='flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
+          <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
             <Repeat2 size={16} />
-            <p className='text-sm'>Share</p>
+            <p>{t('post.share')}</p>
           </div>
         </div>
 
@@ -334,7 +341,7 @@ const PostDialog: React.FC<PostDialogProps> = ({ post: initialPost, initialImage
                 onClick={loadMoreComments}
                 className='cursor-pointer inline-flex rounded text-xs font-semibold hover:bg-gray-100 px-2 py-1'
               >
-                Load more comments
+                {t('post.loadMoreComment')}
               </p>
             </div>
           )}

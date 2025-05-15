@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getRelativeTime } from '@/utils/date';
+import { useTranslation } from 'react-i18next';
 
 interface UserResult {
   _id: string;
@@ -67,6 +68,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   const searchState = useSelector((state: RootState) => state.search);
+  const { t } = useTranslation();
 
   const {
     data,
@@ -394,7 +396,9 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
             <div className='text-xs text-gray-500 mt-1'>
               {user.username && <span className='mr-3'>@{user.username}</span>}
               {user.location && <span className='mr-3'>{user.location}</span>}
-              <span>Joined {formatDate(user.created_at)}</span>
+              <span>
+                {t('search.timeIndicators.joined')} {formatDate(user.created_at)}
+              </span>
             </div>
           </div>
         </CardContent>
@@ -434,7 +438,9 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
               />
             )}
             <div className='text-xs text-gray-500 mt-1'>
-              <span>Created {formatDate(group.created_at)}</span>
+              <span>
+                {t('search.timeIndicators.created')} {formatDate(group.created_at)}
+              </span>
             </div>
           </div>
         </CardContent>
@@ -466,11 +472,13 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
                 <Badge variant={post.privacy === 0 ? 'outline' : 'secondary'} className='text-xs mr-2'>
                   {post.privacy === 0 ? 'Public' : 'Private'}
                 </Badge>
-                <span>Posted {getRelativeTime(post.created_at)}</span>
+                <span>
+                  {t('search.timeIndicators.posted')} {getRelativeTime(post.created_at)}
+                </span>
               </div>
               {post.medias.length > 0 && (
                 <Badge variant='outline' className='text-xs'>
-                  {post.medias.length} media
+                  {post.medias.length} {t('search.badges.media')}
                 </Badge>
               )}
             </div>
@@ -505,7 +513,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Delete this search</p>
+              <p>{t('search.tooltips.deleteSearch')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -559,13 +567,13 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
         {children || (
           <Button className='rounded-full' variant='outline'>
             <Search size={16} className='mr-2' />
-            Search
+            {t('search.title')}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className='sm:max-w-2xl max-h-[90vh]'>
         <DialogHeader>
-          <DialogTitle>Search</DialogTitle>
+          <DialogTitle>{t('search.title')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSearch} className='flex gap-2 mt-2'>
@@ -574,7 +582,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Enter search keywords...'
+              placeholder={t('search.placeholder')}
               className='pl-10 pr-10'
             />
             {searchQuery && (
@@ -590,9 +598,9 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
           <Button
             className='rounded-[20px] bg-sky-500 hover:bg-sky-600'
             type='submit'
-            disabled={isLoading && currentPage === 1}
+            disabled={(isLoading && currentPage === 1) || !searchQuery}
           >
-            {isLoading && currentPage === 1 ? 'Searching...' : 'Search'}
+            {isLoading && currentPage === 1 ? t('search.searching') : t('search.buttonText')}
           </Button>
         </form>
 
@@ -600,14 +608,14 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
           <TabsList className='mb-4'>
             <TabsTrigger value='results' className='flex items-center'>
               <Search size={16} className='mr-2' />
-              Results
+              {t('search.tabs.results')}
               {total > 0 && (
                 <span className='ml-2 bg-sky-100 text-sky-700 text-xs px-2 py-0.5 rounded-full'>{total}</span>
               )}
             </TabsTrigger>
             <TabsTrigger value='history' className='flex items-center'>
               <HistoryIcon size={16} className='mr-2' />
-              History
+              {t('search.tabs.history')}
               {searchHistory.length > 0 && (
                 <span className='ml-2 bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full'>
                   {searchHistory.length}
@@ -622,19 +630,19 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
                 <Tabs value={resultTypeTab} onValueChange={setResultTypeTab}>
                   <TabsList className='w-full'>
                     <TabsTrigger value='all' className='flex-1'>
-                      All
+                      {t('search.resultTypes.all')}
                     </TabsTrigger>
                     <TabsTrigger value='users' className='flex-1'>
                       <User size={14} className='mr-1' />
-                      Users {totalUsers > 0 && `(${totalUsers})`}
+                      {t('search.resultTypes.users')} {totalUsers > 0 && `(${totalUsers})`}
                     </TabsTrigger>
                     <TabsTrigger value='groups' className='flex-1'>
                       <Users size={14} className='mr-1' />
-                      Groups {totalGroups > 0 && `(${totalGroups})`}
+                      {t('search.resultTypes.groups')} {totalGroups > 0 && `(${totalGroups})`}
                     </TabsTrigger>
                     <TabsTrigger value='posts' className='flex-1'>
                       <FileText size={14} className='mr-1' />
-                      Posts {totalPosts > 0 && `(${totalPosts})`}
+                      {t('search.resultTypes.posts')} {totalPosts > 0 && `(${totalPosts})`}
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -645,28 +653,30 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
               {!submittedQuery && (
                 <div className='text-center py-10'>
                   <Search size={40} className='mx-auto text-gray-300' />
-                  <p className='text-gray-500 mt-3'>Enter keywords to search</p>
+                  <p className='text-gray-500 mt-3'>{t('search.emptyStates.initial')}</p>
                 </div>
               )}
 
               {isLoading && submittedQuery && currentPage === 1 && (
                 <div className='text-center py-10'>
                   <div className='w-8 h-8 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto'></div>
-                  <p className='text-gray-500 mt-3'>Searching...</p>
+                  <p className='text-gray-500 mt-3'>{t('search.searching')}</p>
                 </div>
               )}
 
               {submittedQuery && !isLoading && currentPage === 1 && !hasAnyResults && (
                 <div className='text-center py-10'>
-                  <p className='text-gray-500'>No matching results found</p>
-                  <p className='text-sm text-gray-400 mt-1'>Try with different keywords</p>
+                  <p className='text-gray-500'>{t('search.emptyStates.noResults')}</p>
+                  <p className='text-sm text-gray-400 mt-1'>{t('search.emptyStates.tryAgain')}</p>
                 </div>
               )}
 
               {/* Display users */}
               {hasAnyResults && (resultTypeTab === 'all' || resultTypeTab === 'users') && hasUsers && (
                 <div className='mb-4'>
-                  {resultTypeTab === 'all' && <h3 className='text-sm font-medium mb-2'>Users</h3>}
+                  {resultTypeTab === 'all' && (
+                    <h3 className='text-sm font-medium mb-2'>{t('search.resultTypes.users')}</h3>
+                  )}
                   {resultTypeTab === 'all'
                     ? previewData.users.map((user: UserResult) => renderUserItem(user))
                     : data.users.map((user: UserResult) => renderUserItem(user))}
@@ -683,7 +693,9 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
               {/* Display groups */}
               {hasAnyResults && (resultTypeTab === 'all' || resultTypeTab === 'groups') && hasGroups && (
                 <div className='mb-4'>
-                  {resultTypeTab === 'all' && <h3 className='text-sm font-medium mb-2'>Groups</h3>}
+                  {resultTypeTab === 'all' && (
+                    <h3 className='text-sm font-medium mb-2'>{t('search.resultTypes.groups')}</h3>
+                  )}
                   {resultTypeTab === 'all'
                     ? previewData.groups.map((group: GroupResult) => renderGroupItem(group))
                     : data.groups.map((group: GroupResult) => renderGroupItem(group))}
@@ -700,7 +712,9 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
               {/* Display posts */}
               {hasAnyResults && (resultTypeTab === 'all' || resultTypeTab === 'posts') && hasPosts && (
                 <div className='mb-4'>
-                  {resultTypeTab === 'all' && <h3 className='text-sm font-medium mb-2'>Posts</h3>}
+                  {resultTypeTab === 'all' && (
+                    <h3 className='text-sm font-medium mb-2'>{t('search.resultTypes.posts')}</h3>
+                  )}
                   {resultTypeTab === 'all'
                     ? previewData.posts.map((post: PostResult) => renderPostItem(post))
                     : data.posts.map((post: PostResult) => renderPostItem(post))}
@@ -718,7 +732,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
 
           <TabsContent value='history' className='mt-0'>
             <div className='flex justify-between items-center mb-4'>
-              <h3 className='text-sm font-medium'>Recent searches</h3>
+              <h3 className='text-sm font-medium'>{t('search.history.recentSearches')}</h3>
               {searchHistory.length > 0 && (
                 <Button
                   variant='ghost'
@@ -728,7 +742,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
                   disabled={isLoadingHistory}
                 >
                   <Trash2 size={14} className='mr-1' />
-                  Clear all
+                  {t('search.history.clearAll')}
                 </Button>
               )}
             </div>
@@ -737,7 +751,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
               {isLoadingHistory ? (
                 <div className='text-center py-10'>
                   <div className='w-8 h-8 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto'></div>
-                  <p className='text-gray-500 mt-3'>Loading search history...</p>
+                  <p className='text-gray-500 mt-3'>{t('search.history.loadingHistory')}</p>
                 </div>
               ) : searchHistory.length > 0 ? (
                 <div className='border rounded-md overflow-hidden'>
@@ -746,8 +760,8 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ children }) => {
               ) : (
                 <div className='text-center py-10'>
                   <HistoryIcon size={40} className='mx-auto text-gray-300' />
-                  <p className='text-gray-500 mt-3'>No search history</p>
-                  <p className='text-gray-400 text-sm mt-1'>Your recent searches will appear here</p>
+                  <p className='text-gray-500 mt-3'>{t('search.emptyStates.noHistory')}</p>
+                  <p className='text-gray-400 text-sm mt-1'>{t('search.emptyStates.historyWillAppear')}</p>
                 </div>
               )}
             </ScrollArea>

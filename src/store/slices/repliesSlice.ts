@@ -846,9 +846,30 @@ const repliesSlice = createSlice({
       .addCase(removeReply.fulfilled, (state, action) => {
         const { questionId, replyId } = action.payload;
 
-        // Remove the reply from the state
         if (state.data[questionId]) {
-          state.data[questionId] = state.data[questionId].filter((reply) => reply._id !== replyId);
+          // Step 1: Check if the reply to be deleted is a top-level reply
+          const replyToDelete = state.data[questionId].find((reply) => reply._id === replyId);
+
+          if (replyToDelete) {
+            // It's a top-level reply, remove it from the main array
+            state.data[questionId] = state.data[questionId].filter((reply) => reply._id !== replyId);
+          } else {
+            // It's a child reply, find its parent and remove it from childReplies
+            state.data[questionId] = state.data[questionId].map((parentReply) => {
+              if (parentReply.childReplies && parentReply.childReplies.data.some((child) => child._id === replyId)) {
+                // Found the parent, update its child replies array
+                return {
+                  ...parentReply,
+                  reply_count: parentReply.reply_count > 0 ? parentReply.reply_count - 1 : 0,
+                  childReplies: {
+                    ...parentReply.childReplies,
+                    data: parentReply.childReplies.data.filter((child) => child._id !== replyId)
+                  }
+                };
+              }
+              return parentReply;
+            });
+          }
         }
 
         state.isDeletingReply = false;

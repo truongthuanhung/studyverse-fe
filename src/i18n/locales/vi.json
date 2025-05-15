@@ -1,0 +1,273 @@
+{
+  "common": {
+    "language": "Ngôn ngữ",
+    "loadMore": "Tải thêm",
+    "post": "Đăng",
+    "loading": "Đang tải",
+    "saveChanges": "Lưu thay đổi",
+    "cancel": "Hủy",
+    "search": "Tìm kiếm",
+    "approve": "Chấp nhận",
+    "decline": "Từ chối"
+  },
+  "user": {
+    "follow": "Theo dõi",
+    "unfollow": "Hủy theo dõi",
+    "followSuccess": "Theo dõi thành công",
+    "unfollowSuccess": "Hủy theo dõi thành công",
+    "followError": "Có lỗi xảy ra! Vui lòng thử lại"
+  },
+  "menu": {
+    "myProfile": "Hồ sơ của tôi",
+    "myInvitations": "Lời mời của tôi",
+    "myAppointments": "Cuộc hẹn của tôi",
+    "settings": "Cài đặt",
+    "logout": "Đăng xuất"
+  },
+  "navigation": {
+    "home": "Trang chủ",
+    "community": "Cộng đồng",
+    "studyGroups": "Nhóm học tập",
+    "messages": "Tin nhắn",
+    "invitations": "Lời mời",
+    "notifications": "Thông báo"
+  },
+  "post": {
+    "sharePost": "Chia sẻ bài viết",
+    "deleteQuestion": "Xóa câu hỏi",
+    "reportQuestion": "Báo cáo câu hỏi",
+    "turnOnNotifications": "Bật thông báo",
+    "seeMore": "Xem thêm",
+    "seeLess": "Thu gọn",
+    "likes": "{{count}} lượt thích",
+    "comments": "{{count}} bình luận",
+    "noLikesYet": "Chưa có lượt thích nào",
+    "like": "Thích",
+    "comment": "Bình luận",
+    "reply": "Phản hồi",
+    "share": "Chia sẻ",
+    "showMoreTags": "+{{count}} thẻ khác",
+    "showLessTags": "Hiển thị ít hơn",
+    "loadMoreComment": "Hiển thị thêm bình luận",
+    "privacy": {
+      "public": "Công khai",
+      "friends": "Bạn bè",
+      "followers": "Người theo dõi",
+      "onlyMe": "Chỉ mình tôi"
+    },
+    "title": "Chia sẻ bài viết",
+    "description": "Chia sẻ bài viết này với suy nghĩ của bạn",
+    "addThoughts": "Thêm suy nghĩ của bạn",
+    "sharedSuccess": "Chia sẻ bài viết thành công",
+    "sharedError": "Chia sẻ bài viết thất bại"
+  },
+  "profile": {
+    "myProfile": "Hồ sơ của tôi",
+    "myInvitations": "Lời mời của tôi",
+    "myAppointments": "Lịch hẹn của tôi",
+    "settings": "Cài đặt",
+    "logout": "Đăng xuất"
+  },
+  "sidebar": {
+    "connections": "Kết nối",
+    "friends": "Bạn bè",
+    "followers": "Người theo dõi",
+    "following": "Đang theo dõi",
+    "featuredGroups": "Nhóm nổi bật",
+    "viewAll": "Xem tất cả",
+    "noFeaturedGroups": "Không có nhóm nổi bật nào",
+    "contacts": "Liên hệ",
+    "noContactsFound": "Không tìm thấy liên hệ nào",
+    "noContactsAvailable": "Chưa có liên hệ nào",
+    "footer": {
+      "copyright": "© 2024 Công ty StudyVerse",
+      "terms": {
+        "termsOfService": "Điều khoản dịch vụ",
+        "privacyPolicy": "Chính sách bảo mật",
+        "warranty": "Bảo hành",
+        "termsOfSale": "Điều khoản bán hàng",
+        "cookiePolicy": "Chính sách Cookie",
+        "helpCenter": "Trung tâm trợ giúp"
+      }
+    }
+  },
+  "groups": {
+    "noGroupsTitle": "Không tìm thấy nhóm học tập nào",
+    "createGroup": "Tạo nhóm học tập",
+    "title": "Nhóm học tập",
+    "searchPlaceholder": "Tìm kiếm nhóm học tập",
+    "myGroups": "Nhóm học của tôi",
+    "discoverGroups": "Khám phá nhóm học tập",
+    "openGroup": "Mở nhóm",
+    "viewMaterials": "Xem tài liệu",
+    "seeMembers": "Xem thành viên",
+    "joined": "Đã tham gia",
+    "members": "thành viên",
+    "viewGroup": "Xem nhóm",
+    "requestToJoin": "Yêu cầu tham gia",
+    "cancelJoinRequest": "Hủy yêu cầu tham gia",
+    "requestSentSuccess": "Gửi yêu cầu thành công",
+    "cancelRequestSuccess": "Hủy yêu cầu thành công",
+    "requestError": "Đã xảy ra lỗi. Vui lòng thử lại.",
+    "privateGroup": "Nhóm riêng tư",
+    "publicGroup": "Nhóm công khai",
+    "inviteFriends": "Mời bạn bè",
+    "shareGroup": "Chia sẻ nhóm này",
+    "aboutGroup": "Giới thiệu về nhóm học tập",
+    "private": "Riêng tư",
+    "privateDescription": "Chỉ thành viên mới có thể xem ai ở trong nhóm và những gì họ đăng.",
+    "public": "Công khai",
+    "publicDescription": "Tất cả mọi người có thể xem ai ở trong nhóm và những gì họ đăng.",
+    "history": "Lịch sử",
+    "createdOn": "Nhóm học tập được tạo vào {{date}}",
+    "coverPhoto": "Ảnh bìa nhóm",
+    "editGroupError": "Không thể chỉnh sửa nhóm học tập",
+
+    "pendingTab": "Câu hỏi đang chờ",
+    "rejectedTab": "Câu hỏi bị từ chối",
+    "emptyPendingTitle": "Không có câu hỏi đang chờ",
+    "emptyPendingDescription": "Hiện tại không có câu hỏi nào đang chờ phê duyệt. Các câu hỏi mới sẽ xuất hiện ở đây khi sinh viên gửi lên.",
+    "emptyRejectedTitle": "Không có câu hỏi bị từ chối",
+    "emptyRejectedDescription": "Hiện tại không có câu hỏi nào bị từ chối. Những câu hỏi bị từ chối bởi người kiểm duyệt sẽ xuất hiện ở đây.",
+
+    "noRequestsTitle": "Chưa có yêu cầu nào",
+    "noRequestsDescription": "Khi sinh viên yêu cầu tham gia nhóm này, các yêu cầu sẽ hiển thị tại đây.",
+
+    "settingsTitle": "Cài đặt nhóm",
+    "loading": "Đang tải dữ liệu nhóm...",
+    "nameLabel": "Tên nhóm",
+    "privacyLabel": "Quyền riêng tư",
+    "privacyPublic": "Công khai",
+    "privacyPrivate": "Riêng tư",
+    "privacyPlaceholder": "Chọn mức độ riêng tư",
+    "descriptionLabel": "Mô tả",
+    "descriptionPlaceholder": "Nhập mô tả nhóm...",
+    "updateSuccess": "Cập nhật cài đặt nhóm thành công",
+    "updateError": "Cập nhật cài đặt nhóm thất bại",
+
+    "noQuestionTitle": "Chưa có câu hỏi nào",
+    "noQuestionDescription": "Hãy trở thành người đầu tiên đặt câu hỏi!",
+    "askQuestion": "Đặt câu hỏi"
+  },
+  "search": {
+    "title": "Tìm kiếm",
+    "groupSearch": "Tìm kiếm trong nhóm học tập",
+    "placeholder": "Nhập từ khóa tìm kiếm...",
+    "buttonText": "Tìm kiếm",
+    "searching": "Đang tìm kiếm...",
+    "tabs": {
+      "results": "Kết quả",
+      "history": "Lịch sử"
+    },
+    "resultTypes": {
+      "all": "Tất cả",
+      "users": "Người dùng",
+      "groups": "Nhóm",
+      "posts": "Bài viết"
+    },
+    "emptyStates": {
+      "initial": "Nhập từ khóa để tìm kiếm",
+      "noResults": "Không tìm thấy kết quả phù hợp",
+      "tryAgain": "Thử với từ khóa khác",
+      "noHistory": "Không có lịch sử tìm kiếm",
+      "historyWillAppear": "Tìm kiếm gần đây của bạn sẽ xuất hiện ở đây"
+    },
+    "history": {
+      "recentSearches": "Tìm kiếm gần đây",
+      "clearAll": "Xóa tất cả",
+      "loadingHistory": "Đang tải lịch sử tìm kiếm..."
+    },
+    "badges": {
+      "public": "Công khai",
+      "private": "Riêng tư",
+      "teacher": "Giáo viên",
+      "student": "Học sinh",
+      "media": "phương tiện"
+    },
+    "timeIndicators": {
+      "joined": "Đã tham gia",
+      "created": "Đã tạo",
+      "posted": "Đã đăng"
+    },
+    "tooltips": {
+      "deleteSearch": "Xóa tìm kiếm này"
+    }
+  },
+  "community": {
+    "peopleFromStudyGroups": "Những người bạn có thể quen từ nhóm học tập",
+    "peopleWithMutualConnections": "Những người có kết nối chung với bạn"
+  },
+  "groupSidebar": {
+    "communityHome": "Trang chủ cộng đồng",
+    "manageQuestions": "Quản lý câu hỏi",
+    "joinRequests": "Yêu cầu tham gia",
+    "membership": "Thành viên",
+    "groupAnalysis": "Phân tích nhóm",
+    "groupSettings": "Cài đặt nhóm",
+    "createQuestion": "Tạo câu hỏi"
+  },
+  "createDialog": {
+    "createQuestion": "Tạo câu hỏi",
+    "createPost": "Tạo bài viết",
+    "whatsOnYourMind": "Bạn đang nghĩ gì, {{userName}}?",
+    "title": "Tiêu đề",
+    "enterTitle": "Nhập tiêu đề câu hỏi của bạn",
+    "problemDetails": "Chi tiết vấn đề của bạn là gì?",
+    "problemDescription": "Giới thiệu vấn đề và mở rộng những gì bạn đã đặt trong tiêu đề. Tối thiểu 20 ký tự.",
+    "tags": "Thẻ",
+    "tagsDescription": "Thêm thẻ để giúp người khác tìm thấy câu hỏi của bạn dễ dàng hơn",
+    "searchTags": "Tìm kiếm thẻ...",
+    "typeToSearchTags": "Nhập để tìm kiếm thẻ",
+    "noTagsFound": "Không tìm thấy thẻ nào",
+    "attachFiles": "Đính kèm tệp",
+    "emptyFieldsError": "Tiêu đề và nội dung không được để trống",
+    "maxFilesError": "Tối đa {maxFiles} tệp được phép",
+    "createSuccess": "Tạo câu hỏi thành công",
+    "failedToLoadTags": "Không thể tải thẻ"
+  },
+  "question": {
+    "admin": "Quản trị viên",
+    "delete": "Xóa câu hỏi",
+    "report": "Báo cáo câu hỏi",
+    "notifications": "Bật thông báo",
+    "deleteConfirmTitle": "Bạn có chắc chắn muốn xóa câu hỏi này không?",
+    "deleteConfirmDescription": "Hành động này không thể hoàn tác. Điều này sẽ xóa vĩnh viễn câu hỏi của bạn và tất cả các câu trả lời.",
+    "cancel": "Hủy",
+    "approveSuccess": "Phê duyệt câu hỏi thành công",
+    "rejectSuccess": "Từ chối câu hỏi thành công",
+    "approveError": "Không thể phê duyệt câu hỏi",
+    "rejectError": "Không thể từ chối câu hỏi",
+    "seeMore": "Xem thêm",
+    "seeLess": "Thu gọn",
+    "showMore": "+{count} thẻ khác",
+    "showLess": "Ẩn bớt",
+    "votes": "đánh giá",
+    "positiveVotes": "+{count} lượt bình chọn",
+    "negativeVotes": "{count} lượt bình chọn",
+    "replies": "phản hồi",
+    "upvote": "Thích",
+    "downvote": "Không thích",
+    "reply": "Phản hồi",
+    "publish": "Công khai",
+    "approve": "Phê duyệt",
+    "decline": "Từ chối",
+    "writeReply": "Viết phản hồi",
+    "hideReply": "Ẩn phản hồi",
+    "loadMoreReply": "Tải thêm các phản hồi",
+    "noReply": "Không có phản hồi"
+  },
+  "invitations": {
+    "title": "Lời mời vào nhóm",
+    "description": "Quản lý lời mời vào nhóm học tập trên StudyVerse",
+    "empty": "Bạn chưa có lời mời tham gia nhóm nào",
+    "count": "{{count}} lời mời",
+    "invitedBy": "Được mời bởi",
+    "invitationSentOn": "Lời mời được gửi vào {{date}}",
+    "approveSuccess": "Đã chấp nhận lời mời thành công",
+    "approveFailed": "Không thể chấp nhận lời mời",
+    "declineSuccess": "Đã từ chối lời mời thành công",
+    "declineFailed": "Không thể từ chối lời mời",
+    "decline": "Từ chối",
+    "approve": "Chấp nhận"
+  }
+}

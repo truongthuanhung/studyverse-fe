@@ -11,11 +11,13 @@ import { useEffect } from 'react';
 import { getUserFeaturedGroups } from '@/store/slices/studyGroupsListSlice';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const LeftSidebar = () => {
   const dispatch = useDispatch<AppDispatch>();
   const profile = useSelector((state: RootState) => state.profile.user);
   const { featuredGroups, isLoadingFeaturedGroups } = useSelector((state: RootState) => state.studyGroupsList);
+  const { t } = useTranslation();
 
   useEffect(() => {
     dispatch(getUserFeaturedGroups({ limit: 5 }));
@@ -42,14 +44,14 @@ const LeftSidebar = () => {
         <div className='mt-4'>
           <div className='flex items-center gap-2 font-medium'>
             <Users size={18} className='text-primary' />
-            <span>Connections</span>
+            <span>{t('sidebar.connections')}</span>
           </div>
 
           <div className='ml-6 mt-3'>
             <div className='flex items-center justify-between'>
               <div className='flex items-center gap-2'>
                 <User size={14} className='text-muted-foreground' />
-                <span className='text-muted-foreground text-sm'>Friends</span>
+                <span className='text-muted-foreground text-sm'>{t('sidebar.friends')}</span>
               </div>
               <Badge variant='outline' className='text-sky-500 bg-sky-50'>
                 {profile?.friends || 0}
@@ -59,7 +61,7 @@ const LeftSidebar = () => {
             <div className='flex items-center justify-between mt-2'>
               <div className='flex items-center gap-2'>
                 <UserCheck size={14} className='text-muted-foreground' />
-                <span className='text-muted-foreground text-sm'>Followers</span>
+                <span className='text-muted-foreground text-sm'>{t('sidebar.followers')}</span>
               </div>
               <Badge variant='outline' className='text-sky-500 bg-sky-50'>
                 {profile?.followers || 0}
@@ -69,7 +71,7 @@ const LeftSidebar = () => {
             <div className='flex items-center justify-between mt-2'>
               <div className='flex items-center gap-2'>
                 <UserPlus size={14} className='text-muted-foreground' />
-                <span className='text-muted-foreground text-sm'>Following</span>
+                <span className='text-muted-foreground text-sm'>{t('sidebar.following')}</span>
               </div>
               <Badge variant='outline' className='text-sky-500 bg-sky-50'>
                 {profile?.followings || 0}
@@ -85,10 +87,10 @@ const LeftSidebar = () => {
           <div className='flex items-center justify-between mb-2'>
             <div className='flex items-center gap-2 font-medium'>
               <BookOpen size={18} className='text-primary' />
-              <span>Featured groups</span>
+              <span>{t('sidebar.featuredGroups')}</span>
             </div>
             <Link className='text-sky-500 hover:text-sky-600 text-sm' to='/groups/my-groups'>
-              View all
+              {t('sidebar.viewAll')}
             </Link>
           </div>
 
@@ -116,7 +118,7 @@ const LeftSidebar = () => {
               </>
             ) : (
               <div className='text-sm text-muted-foreground text-center py-4 bg-accent/30 rounded-md'>
-                No featured groups available
+                {t('sidebar.noFeaturedGroups')}
               </div>
             )}
           </div>
@@ -128,17 +130,22 @@ const LeftSidebar = () => {
         <div className='mt-4'>
           <div className='flex items-center justify-center gap-2 text-xs text-muted-foreground'>
             <img src={MainLogo} alt='StudyVerse Logo' className='h-12' />
-            <span>© 2024 StudyVerse Corp.</span>
+            <span>{t('sidebar.footer.copyright')}</span>
           </div>
 
           <div className='flex flex-wrap justify-center text-xs text-muted-foreground mt-4'>
-            {['Terms of Service', 'Privacy Policy', 'Warranty', 'Terms of Sale', 'Cookie Policy', 'Help Center'].map(
-              (item) => (
-                <button key={item} className='px-2 py-1 hover:text-primary transition-colors'>
-                  {item}
-                </button>
-              )
-            )}
+            {[
+              t('sidebar.footer.terms.termsOfService'),
+              t('sidebar.footer.terms.privacyPolicy'),
+              t('sidebar.footer.terms.warranty'),
+              t('sidebar.footer.terms.termsOfSale'),
+              t('sidebar.footer.terms.cookiePolicy'),
+              t('sidebar.footer.terms.helpCenter')
+            ].map((item) => (
+              <button key={item} className='px-2 py-1 hover:text-primary transition-colors'>
+                {item}
+              </button>
+            ))}
           </div>
         </div>
       </div>

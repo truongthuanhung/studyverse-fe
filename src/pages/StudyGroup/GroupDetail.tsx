@@ -28,6 +28,8 @@ import bg from '@/assets/images/mainLogo.jpeg';
 import { useSocket } from '@/contexts/SocketContext';
 import InviteUsersDialog from '@/components/common/InviteUsersDialog';
 import GroupSearch from './components/GroupSearch';
+import { useTranslation } from 'react-i18next';
+import { formatDateToDDMMYYYY_GMT7 } from '@/utils/date';
 
 const GroupDetail = () => {
   // Constants
@@ -69,6 +71,7 @@ const GroupDetail = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { socket } = useSocket();
+  const { t } = useTranslation();
 
   // Effects
   useEffect(() => {
@@ -148,7 +151,7 @@ const GroupDetail = () => {
           } catch (editError) {
             console.error('Failed to edit study group:', editError);
             toast({
-              description: 'Failed to edit study group',
+              description: t('groups.editGroupError'),
               variant: 'destructive'
             });
           } finally {
@@ -168,17 +171,16 @@ const GroupDetail = () => {
     if (hasRequested) {
       await dispatch(cancelRequest(groupId as string));
       toast({
-        description: 'Cancel request successfully'
+        description: t('groups.cancelRequestSuccess')
       });
     } else {
       await dispatch(requestToJoin(groupId as string));
       toast({
-        description: 'Request sent successfully'
+        description: t('groups.requestSentSuccess')
       });
     }
     setHasRequested(!hasRequested);
   };
-
   const checkRouteAccess = () => {
     const currentPath = location.pathname.split(`/groups/${groupId}/`)[1]?.split('/')[0] || 'home';
 
@@ -258,7 +260,7 @@ const GroupDetail = () => {
                   ) : (
                     <img
                       src={studyGroup?.info?.cover_photo}
-                      alt='Group cover'
+                      alt={t('groups.coverPhoto')}
                       className='block w-full object-cover absolute top-0 left-0 h-full'
                     />
                   )}
@@ -289,10 +291,10 @@ const GroupDetail = () => {
                           className='bg-sky-500 text-white hover:bg-sky-600 rounded-[20px]'
                           disabled={isUploading}
                         >
-                          {isUploading ? <Spinner size='small' /> : 'Save changes'}
+                          {isUploading ? <Spinner size='small' /> : t('common.saveChanges')}
                         </Button>
                         <Button onClick={handleCancel} className='rounded-[20px]' variant='outline'>
-                          Cancel
+                          {t('common.cancel')}
                         </Button>
                       </div>
                     </div>
@@ -308,19 +310,19 @@ const GroupDetail = () => {
                         {studyGroup.info?.privacy === StudyGroupPrivacy.Private ? (
                           <>
                             <Lock size={16} />
-                            <p className='text-sm'>Private group</p>
+                            <p className='text-sm'>{t('groups.privateGroup')}</p>
                           </>
                         ) : (
                           <>
                             <Globe size={16} />
-                            <p className='text-sm'>Public group</p>
+                            <p className='text-sm'>{t('groups.publicGroup')}</p>
                           </>
                         )}
                       </div>
                       <div className='flex items-center gap-2 text-zinc-500 font-medium'>
                         <PersonFilledIcon />
                         <Link to={`/groups/${groupId}/members`} className='text-sm cursor-pointer'>
-                          {studyGroup?.info?.member_count || 0} members
+                          {studyGroup?.info?.member_count || 0} {t('groups.members')}
                         </Link>
                       </div>
                     </div>
@@ -329,7 +331,7 @@ const GroupDetail = () => {
                         <InviteUsersDialog groupId={groupId as string}>
                           <Button className='rounded-[20px] text-white bg-sky-500 hover:bg-sky-600'>
                             <UserPlus size={16} className='mr-2' />
-                            Invite friends
+                            {t('groups.inviteFriends')}
                           </Button>
                         </InviteUsersDialog>
                       ) : (
@@ -347,20 +349,20 @@ const GroupDetail = () => {
                           ) : (
                             <UserPlus size={16} className='mr-2' />
                           )}
-                          {hasRequested ? 'Cancel join request' : 'Request to join'}
+                          {hasRequested ? t('groups.cancelJoinRequest') : t('groups.requestToJoin')}
                         </Button>
                       )}
 
                       <Button className='rounded-[20px]' variant='outline'>
                         <Share size={16} className='mr-2' />
-                        Share this group
+                        {t('groups.shareGroup')}
                       </Button>
 
                       {studyGroup.role !== StudyGroupRole.Guest && (
                         <GroupSearch groupId={groupId as string}>
                           <Button className='rounded-[20px]' variant='outline'>
                             <Search size={16} className='mr-2' />
-                            Search
+                            {t('common.search')}
                           </Button>
                         </GroupSearch>
                       )}
@@ -376,7 +378,7 @@ const GroupDetail = () => {
                 <div className='py-10'>
                   <Card className='max-w-2xl mx-auto'>
                     <CardHeader>
-                      <CardTitle>About this group</CardTitle>
+                      <CardTitle>{t('groups.aboutGroup')}</CardTitle>
                       <CardDescription>{studyGroup.info?.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -385,29 +387,27 @@ const GroupDetail = () => {
                           <div className='flex items-center gap-3'>
                             <Lock size={18} />
                             <div className='flex flex-col'>
-                              <p className='font-semibold'>Private</p>
-                              <p className='text-sm text-muted-foreground'>
-                                Only members can see who's in the group and what they post.
-                              </p>
+                              <p className='font-semibold'>{t('groups.private')}</p>
+                              <p className='text-sm text-muted-foreground'>{t('groups.privateDescription')}</p>
                             </div>
                           </div>
                         ) : (
                           <div className='flex items-center gap-3'>
                             <Globe size={18} />
                             <div className='flex flex-col'>
-                              <p className='font-semibold'>Public</p>
-                              <p className='text-sm text-muted-foreground'>
-                                Everyone can see who's in the group and what they post.
-                              </p>
+                              <p className='font-semibold'>{t('groups.public')}</p>
+                              <p className='text-sm text-muted-foreground'>{t('groups.publicDescription')}</p>
                             </div>
                           </div>
                         )}
                         <div className='flex items-center gap-3 mt-2'>
                           <Clock5 size={18} />
                           <div className='flex flex-col'>
-                            <p className='font-semibold'>History</p>
+                            <p className='font-semibold'>{t('groups.history')}</p>
                             <p className='text-sm text-muted-foreground'>
-                              Study group created on {studyGroup.info?.created_at as string}
+                              {t('groups.createdOn', {
+                                date: formatDateToDDMMYYYY_GMT7(studyGroup.info?.created_at || '') as string
+                              })}
                             </p>
                           </div>
                         </div>

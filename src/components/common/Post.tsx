@@ -37,6 +37,7 @@ import { getTagColor } from '@/utils/tag';
 import SharePostDialog from './SharePostDialog';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { getInitialsAvatarFallback } from '@/utils/text';
+import { useTranslation } from 'react-i18next';
 
 interface PostProps {
   post: IPost;
@@ -51,6 +52,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   // States
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
@@ -214,10 +216,10 @@ const Post: React.FC<PostProps> = ({ post }) => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>
-                      {post.privacy === 0 && 'Public'}
-                      {post.privacy === 1 && 'Friends'}
-                      {post.privacy === 2 && 'Followers'}
-                      {post.privacy === 3 && 'Only me'}
+                      {post.privacy === 0 && t('post.privacy.public')}
+                      {post.privacy === 1 && t('post.privacy.friends')}
+                      {post.privacy === 2 && t('post.privacy.followers')}
+                      {post.privacy === 3 && t('post.privacy.onlyMe')}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -248,9 +250,9 @@ const Post: React.FC<PostProps> = ({ post }) => {
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem>Delete question</DropdownMenuItem>
-            <DropdownMenuItem>Report question</DropdownMenuItem>
-            <DropdownMenuItem>Turn on notifications</DropdownMenuItem>
+            <DropdownMenuItem>{t('post.deleteQuestion')}</DropdownMenuItem>
+            <DropdownMenuItem>{t('post.reportQuestion')}</DropdownMenuItem>
+            <DropdownMenuItem>{t('post.turnOnNotifications')}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -276,7 +278,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
               className='text-sky-500 hover:text-sky-600 text-sm font-medium mt-1'
               onClick={() => setIsExpanded(!isExpanded)}
             >
-              {isExpanded ? 'See less' : 'See more'}
+              {isExpanded ? t('post.seeLess') : t('post.seeMore')}
             </button>
           )}
         </div>
@@ -336,7 +338,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
                       setIsParentExpanded(!isParentExpanded);
                     }}
                   >
-                    {isParentExpanded ? 'See less' : 'See more'}
+                    {isParentExpanded ? t('post.seeLess') : t('post.seeMore')}
                   </button>
                 )}
               </div>
@@ -380,7 +382,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
               variant='outline'
               onClick={() => setShowAllTags(true)}
             >
-              +{post.tags.length - 3} more
+              {t('post.showMoreTags', { count: post.tags.length - 3 })}
             </Badge>
           )}
           {showAllTags && post.tags.length > 3 && (
@@ -389,7 +391,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
               variant='outline'
               onClick={() => setShowAllTags(false)}
             >
-              Show less
+              {t('post.showLessTags')}
             </Badge>
           )}
         </div>
@@ -402,7 +404,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
       <div className='px-3 py-2 flex items-center gap-2 text-zinc-500 text-sm justify-end'>
         <Dialog onOpenChange={onOpenLikeDialog}>
           <DialogTrigger>
-            <p className='cursor-pointer'>{post.like_count} likes</p>
+            <p className='cursor-pointer'>{t('post.likes', { count: post.like_count || 0 })}</p>
           </DialogTrigger>
           <DialogContent className='max-w-[85vw] md:max-w-[480px] max-h-[90vh] px-0 pb-2 border-none'>
             <DialogHeader className='px-6'>
@@ -419,14 +421,14 @@ const Post: React.FC<PostProps> = ({ post }) => {
                   {likes.length > 0 ? (
                     likes.map((like) => <LikeItem key={like._id} like={like} />)
                   ) : (
-                    <p className='text-zinc-500 text-sm py-2 px-6'>No likes yet</p>
+                    <p className='text-zinc-500 text-sm py-2 px-6'>{t('post.noLikesYet')}</p>
                   )}
                 </>
               )}
             </div>
           </DialogContent>
         </Dialog>
-        <p className='cursor-pointer'>{post.comment_count} comments</p>
+        <p className='cursor-pointer'>{t('post.comments', { count: post.comment_count || 0 })}</p>
       </div>
       <Separator />
       <div className='flex items-center justify-center py-1 px-3'>
@@ -437,14 +439,14 @@ const Post: React.FC<PostProps> = ({ post }) => {
           } text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm`}
         >
           <ThumbsUp size={16} />
-          <p>Like</p>
+          <p>{t('post.like')}</p>
         </div>
         {mediaFiles.length > 0 ? (
           <Dialog>
             <DialogTrigger className='flex-1 outline-none'>
               <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
                 <MessageCircleMore size={16} />
-                <p>Comment</p>
+                <p>{t('post.comment')}</p>
               </div>
             </DialogTrigger>
             <DialogContent className='max-w-[90vw] md:max-w-[100vw] max-h-[100vh] p-0 border-none'>
@@ -456,7 +458,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
             <SheetTrigger className='flex-1 outline-none'>
               <div className='text-zinc-500 text-sm flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
                 <MessageCircleMore size={16} />
-                <p>Reply</p>
+                <p>{t('post.comment')}</p>
               </div>
             </SheetTrigger>
             <SheetContent className='md:w-[580px] p-0 border-none'>
@@ -467,7 +469,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
         <SharePostDialog post={post} isOpen={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
           <div className='text-sm text-zinc-500 flex flex-1 justify-center gap-2 items-center cursor-pointer py-2 hover:bg-gray-100 rounded-sm'>
             <Share size={16} />
-            <p>Share</p>
+            <p>{t('post.share')}</p>
           </div>
         </SharePostDialog>
       </div>

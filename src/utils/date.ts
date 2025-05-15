@@ -134,4 +134,17 @@ export const formatDateGMT7 = (isoString: string) => {
   const day = gmt7Date.getUTCDate();
   const year = gmt7Date.getUTCFullYear();
   return `${month} ${day}, ${year}`;
-}
+};
+
+export const formatDateToDDMMYYYY_GMT7 = (isoString: string): string => {
+  const date = new Date(isoString);
+
+  const gmt7Timestamp = date.getTime() + 7 * 60 * 60 * 1000;
+  const gmt7Date = new Date(gmt7Timestamp);
+
+  const day = String(gmt7Date.getUTCDate()).padStart(2, '0');
+  const month = String(gmt7Date.getUTCMonth() + 1).padStart(2, '0');
+  const year = gmt7Date.getUTCFullYear();
+
+  return `${day}/${month}/${year}`;
+};

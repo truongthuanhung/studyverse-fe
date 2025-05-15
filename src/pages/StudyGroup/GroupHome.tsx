@@ -12,38 +12,48 @@ import { Clock5, FileQuestion, Globe, Hash, Lock, MessageSquare } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StudyGroupPrivacy } from '@/types/enums';
-import { formatDateGMT7 } from '@/utils/date';
+import { formatDateToDDMMYYYY_GMT7 } from '@/utils/date';
 import { getTagInGroup } from '@/services/tags.services';
 import { getTagColor } from '@/utils/tag';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 
 const EmptyQuestions = ({ onCreateClick }: { onCreateClick: () => void }) => {
+  const { t } = useTranslation();
   return (
     <div className='flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md w-full'>
       <FileQuestion className='w-16 h-16 text-slate-400 mb-4' />
-      <h3 className='text-xl font-semibold text-slate-900 mb-2'>No questions yet</h3>
-      <p className='text-slate-600 text-center mb-4'>Be the first to start a discussion in this group!</p>
+      <h3 className='text-xl font-semibold text-slate-900 mb-2'>{t('groups.noQuestionTitle')}</h3>
+      <p className='text-slate-600 text-center mb-4'>{t('groups.noQuestionDescription')}</p>
       <Button onClick={onCreateClick} className='bg-sky-500 hover:bg-sky-600 rounded-[20px]'>
-        Ask a Question
+        {t('groups.askQuestion')}
       </Button>
     </div>
   );
 };
 
 const GroupHome = memo(() => {
-  const { data, isFetchingQuestions, hasMore, currentPage } = useSelector((state: RootState) => state.questions);
-  const profile = useSelector((state: RootState) => state.profile.user);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { groupId } = useParams();
+  // Refs
   const containerRef = useRef<HTMLDivElement>(null);
-  const studyGroup = useSelector((state: RootState) => state.studyGroup);
 
-  const [searchParams] = useSearchParams();
-  const tagId = searchParams.get('tagId');
+  // States
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [tagInfo, setTagInfo] = useState<TagInfo | null>(null);
 
+  // Hooks
+  const [searchParams] = useSearchParams();
+  const { groupId } = useParams();
+  const tagId = searchParams.get('tagId');
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  // Selectors
+  const { data, isFetchingQuestions, hasMore, currentPage } = useSelector((state: RootState) => state.questions);
+  const profile = useSelector((state: RootState) => state.profile.user);
+  const studyGroup = useSelector((state: RootState) => state.studyGroup);
+
+  // Effects
   useEffect(() => {
     if (groupId) {
       dispatch(
@@ -110,6 +120,7 @@ const GroupHome = memo(() => {
     };
   }, [hasMore, isFetchingQuestions, currentPage, groupId]);
 
+  // Handlers
   const handleCreateClick = () => {
     setIsDialogOpen(true);
   };
@@ -149,7 +160,7 @@ const GroupHome = memo(() => {
                 <AvatarImage src={profile?.avatar || 'https://github.com/shadcn.png'} />
                 <AvatarFallback>CN</AvatarFallback>
               </Avatar>
-              <CreateDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} isLoading={false} isGroup={true} />
+              <CreateDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} isGroup={true} />
             </div>
           )}
           <div className='flex flex-col gap-4 py-4'>
@@ -165,7 +176,7 @@ const GroupHome = memo(() => {
                   <Question key={question._id} question={question} />
                 ))}
                 {/* Loading indicator */}
-                <div ref={containerRef} className='h-10 w-full'>
+                <div ref={containerRef} className={`${hasMore ? 'h-10' : 'hidden'} w-full`}>
                   {/* Thêm chiều cao cụ thể */}
                   {isFetchingQuestions && (
                     <div className='flex justify-center'>
@@ -180,7 +191,7 @@ const GroupHome = memo(() => {
         <div className='hidden lg:block w-80'>
           <Card className='sticky top-4'>
             <CardHeader>
-              <CardTitle>About this group</CardTitle>
+              <CardTitle>{t('groups.aboutGroup')}</CardTitle>
               <CardDescription className='text-zinc-500'>{studyGroup.info?.description}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -191,10 +202,8 @@ const GroupHome = memo(() => {
                       <Lock className='w-5 h-5' />
                     </div>
                     <div className='flex flex-col'>
-                      <p className='font-semibold'>Private</p>
-                      <p className='text-sm text-zinc-500'>
-                        Only members can see who's in the group and what they post.
-                      </p>
+                      <p className='font-semibold'>{t('groups.private')}</p>
+                      <p className='text-sm text-muted-foreground'>{t('groups.privateDescription')}</p>
                     </div>
                   </div>
                 ) : (
@@ -203,8 +212,8 @@ const GroupHome = memo(() => {
                       <Globe className='w-5 h-5' />
                     </div>
                     <div className='flex flex-col'>
-                      <p className='font-semibold'>Public</p>
-                      <p className='text-sm text-zinc-500'>Everyone can see who's in the group and what they post.</p>
+                      <p className='font-semibold'>{t('groups.public')}</p>
+                      <p className='text-sm text-muted-foreground'>{t('groups.publicDescription')}</p>
                     </div>
                   </div>
                 )}
@@ -213,9 +222,11 @@ const GroupHome = memo(() => {
                     <Clock5 className='w-5 h-5' />
                   </div>
                   <div className='flex flex-col'>
-                    <p className='font-semibold'>History</p>
-                    <p className='text-sm text-zinc-500'>
-                      Study group created on {formatDateGMT7(studyGroup.info?.created_at as string)}
+                    <p className='font-semibold'>{t('groups.history')}</p>
+                    <p className='text-sm text-muted-foreground'>
+                      {t('groups.createdOn', {
+                        date: formatDateToDDMMYYYY_GMT7(studyGroup.info?.created_at || '') as string
+                      })}
                     </p>
                   </div>
                 </div>

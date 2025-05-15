@@ -10,23 +10,30 @@ import PostSkeleton from '@/components/common/PostSkeleton';
 import { useToast } from '@/hooks/use-toast';
 import InvitationCard from './components/InvitationCard';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const Invitations = () => {
+  // Refs
+  const containerRef = useRef<HTMLDivElement>(null);
+  const highlightedCardRef = useRef<HTMLDivElement>(null);
+
+  // States
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+  // Hooks
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const invitationIdParam = searchParams.get('invitationId');
-  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const { t } = useTranslation();
 
+  // Selectors
   const { invitations, isLoading, hasMore, currentPage, pagination } = useSelector(
     (state: RootState) => state.invitations
   );
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const highlightedCardRef = useRef<HTMLDivElement>(null);
-
-  // Fetch initial invitations
+  // Effects
   useEffect(() => {
     dispatch(
       fetchInvitations({
@@ -36,13 +43,11 @@ const Invitations = () => {
     );
   }, []);
 
-  // Handle invitationId param in URL
   useEffect(() => {
     const fetchSingleInvitation = async () => {
       if (invitationIdParam) {
         setHighlightedId(invitationIdParam);
 
-        // Kiểm tra xem invitation đã có trong danh sách chưa
         const exists = invitations.some((inv: Invitation) => inv._id === invitationIdParam);
 
         if (!exists) {
@@ -65,7 +70,6 @@ const Invitations = () => {
     fetchSingleInvitation();
   }, [invitationIdParam, dispatch, invitations]);
 
-  // Scroll to highlighted invitation
   useEffect(() => {
     if (highlightedId) {
       const scrollTimer = setTimeout(() => {
@@ -89,7 +93,6 @@ const Invitations = () => {
     }
   }, [highlightedId]);
 
-  // Infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -121,21 +124,22 @@ const Invitations = () => {
   }, [hasMore, isLoading, currentPage]);
 
   return (
-    <div className='w-full max-w-3xl mx-auto p-4'>
+    <div className='w-full max-w-3xl mx-auto p-4 min-h-[calc(100vh-60px)]'>
       <div className='mb-6'>
         <div className='flex items-center justify-between'>
           <h2 className='text-2xl font-bold flex items-center'>
             <Users className='mr-2' size={24} />
-            Group Invitations
+            {t('invitations.title')}
           </h2>
           {invitations.length > 0 && (
             <Badge variant='default' className='bg-sky-500 hover:bg-sky-600'>
-              {pagination?.total || invitations.length}{' '}
-              {(pagination?.total || invitations.length) === 1 ? 'invitation' : 'invitations'}
+              {t('invitations.count', {
+                count: pagination?.total || invitations.length
+              })}
             </Badge>
           )}
         </div>
-        <p className='text-slate-600 mt-1 text-sm'>Manage your study group invitations on StudyVerse</p>
+        <p className='text-slate-600 mt-1 text-sm'>{t('invitations.description')}</p>
         <Separator className='mt-4 bg-slate-200' />
       </div>
 
@@ -153,7 +157,7 @@ const Invitations = () => {
           <CardContent className='pt-6 pb-6 text-center'>
             <p className='text-slate-500 flex items-center justify-center'>
               <Users className='mr-2 text-slate-400' size={20} />
-              You don't have any group invitations
+              {t('invitations.empty')}
             </p>
           </CardContent>
         </Card>
@@ -173,7 +177,10 @@ const Invitations = () => {
           })}
 
           {/* Loading indicator and intersection observer reference */}
-          <div ref={containerRef} className={`flex flex-col gap-4 items-center justify-center ${isLoading ? 'h-20' : 'h-0'}`}>
+          <div
+            ref={containerRef}
+            className={`flex flex-col gap-4 items-center justify-center ${isLoading ? 'h-20' : 'h-0'}`}
+          >
             {isLoading && (
               <>
                 <PostSkeleton />

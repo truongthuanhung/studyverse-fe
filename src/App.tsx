@@ -33,6 +33,7 @@ import { GroupsListLayout } from './layouts';
 import GroupDiscover from './pages/StudyGroup/GroupDiscover';
 import Invitations from './pages/Invitations/Invitations';
 import LeftSidebarOnlyLayout from './layouts/partials/LeftSidebarOnlyLayout';
+import './i18n/i18n';
 
 // Loading component for Suspense fallback
 const Loading = () => <div className='flex items-center justify-center h-screen'>Loading...</div>;
